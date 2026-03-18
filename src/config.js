@@ -80,8 +80,18 @@ function deepMerge(base, override) {
   return result
 }
 
+// Keys that should ALWAYS come from env (never stored in DB)
+const ENV_ONLY_KEYS = new Set([
+  'dashboardPort', 'dashboardPass', 'dashboardAI',
+  'groqKey', 'owner', 'prefixo',
+  'autoUpdate', 'autoUpload', 'selfBot',
+  'github.repo',
+])
+
 function init() {
   for (const [k, v] of Object.entries(DEFAULTS)) {
+    // Never store env-only keys in DB
+    if (ENV_ONLY_KEYS.has(k)) continue
     if (!configDB.has(k)) configDB.set(k, v)
   }
   const savedMenu = configDB.get('menu', {})
@@ -90,7 +100,11 @@ function init() {
 init()
 
 export const CONFIG = new Proxy({}, {
-  get(_, prop) { return configDB.get(prop) ?? DEFAULTS[prop] },
+  get(_, prop) {
+    // Env-only keys always come from DEFAULTS (which reads from env)
+    if (ENV_ONLY_KEYS.has(prop)) return DEFAULTS[prop]
+    return configDB.get(prop) ?? DEFAULTS[prop]
+  },
   set(_, prop, value) { configDB.set(prop, value); return true }
 })
 

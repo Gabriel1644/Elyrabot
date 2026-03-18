@@ -6,6 +6,7 @@ import { createServer } from 'http'
 import { Server } from 'socket.io'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import os from 'os'
 import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
@@ -584,8 +585,21 @@ export function startDashboard() {
       res.sendFile(path.join(__dirname, '../public/index.html'))
   })
 
-  http.listen(CONFIG.dashboardPort, '0.0.0.0', () => {
-    logInfo(`Dashboard: http://localhost:${CONFIG.dashboardPort}`)
+  const PORT = CONFIG.dashboardPort || 3000
+  // Get LAN IP for display
+  let lanIP = 'localhost'
+  try {
+    const nets = os.networkInterfaces()
+    for (const list of Object.values(nets)) {
+      for (const iface of list) {
+        if (iface.family === 'IPv4' && !iface.internal) { lanIP = iface.address; break }
+      }
+    }
+  } catch {}
+  http.listen(PORT, '0.0.0.0', () => {
+    logInfo(`Dashboard ativo na porta ${PORT}`)
+    logInfo(`Local:      http://localhost:${PORT}`)
+    logInfo(`Rede local: http://${lanIP}:${PORT}`)
   })
 
   return io

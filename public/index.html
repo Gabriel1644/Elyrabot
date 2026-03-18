@@ -1261,10 +1261,15 @@ function markDirty() {
 }
 function edSwitchTab(tab, el) {
   _edTab = tab
-  document.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
+  // Remove 'on' only from tabs inside the modal
+  const modal = G('ed-modal')
+  if (modal) modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
   if (el) el.classList.add('on')
   const tabs = ['basic','perm','menu','alias']
-  tabs.forEach(t => { const el = G('ed-tab-'+t); if (el) el.style.display = t === tab ? 'block' : 'none' })
+  tabs.forEach(t => {
+    const tabEl = G('ed-tab-'+t)
+    if (tabEl) tabEl.style.display = t === tab ? 'block' : 'none'
+  })
 }
 function tryCloseEd() {
   if (_edDirty) {
@@ -1296,7 +1301,7 @@ function openEd(name) {
   const db = G('ed-dirty-badge'); if (db) db.style.display = 'none'
 
   syncEd(); renderEdAliases(); renderEdMenus()
-  edSwitchTab('basic', document.querySelector('.ed-tab'))
+  edSwitchTab('basic', G('ed-modal')?.querySelector('.ed-tab'))
 
   // Show modal
   const m = G('ed-modal'); if (m) m.style.display = 'flex'
