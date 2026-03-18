@@ -1,0 +1,85 @@
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { logInfo, logOk, logWarn } from './logger.js'
+import { configDB } from './database.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const CMDS_DIR = path.join(__dirname, 'commands')
+
+// commandMap: name → command module
+export const commandMap = new Map()
+// aliasMap: alias → command name
+export const aliasMap   = new Map()
+
+export async function loadCommands() {
+  commandMap.clear()
+  aliasMap.clear()
+
+  let total = 0
+  const dirs = fs.readdirSync(CMDS_DIR).filter(d =>
+    fs.statSync(path.join(CMDS_DIR, d)).isDirectory()
+  )
+
+  for (const dir of dirs) {
+    const files = fs.readdirSync(path.join(CMDS_DIR, dir))
+      .filter(f => f.endsWith('.js'))
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(CMDS_DIR, dir, file)
+        // Force cache bust on reload
+        const mod = await import(`${filePath}?v=${Date.now()}`)
+        const exp = mod.default
+
+        // Suporta export default [...] ou export default { ... }
+        const cmds = Array.isArray(exp) ? exp : [exp]
+
+        for (const cmd of cmds) {
+          if (!cmd?.name) { logWarn(`Comando sem nome em: ${file}`); continue }
+          commandMap.set(cmd.name, cmd)
+          if (cmd.aliases) for (const a of cmd.aliases) aliasMap.set(a, cmd.name)
+          total++
+        }
+      } catch (e) {
+        logWarn(`Erro ao carregar ${file}: ${e.message}`)
+      }
+    }
+  }
+
+  logOk(`${total} comandos carregados`)
+  return total
+}
+
+export function getCommand(name) {
+  if (commandMap.has(name)) return commandMap.get(name)
+  const real = aliasMap.get(name)
+  if (real) return commandMap.get(real)
+  return null
+}
+
+export function isCommandEnabled(name) {
+  const overrides = configDB.get('comandosAtivos', {})
+  if (name in overrides) return overrides[name]
+  const cmd = commandMap.get(name)
+  return cmd?.enabled !== false
+}
+
+export function toggleCommand(name, state) {
+  const overrides = configDB.get('comandosAtivos', {})
+  overrides[name] = state
+  configDB.set('comandosAtivos', overrides)
+}
+
+export function getCommandList() {
+  const overrides = configDB.get('comandosAtivos', {})
+  return Array.from(commandMap.values()).map(cmd => ({
+    name:        cmd.name,
+    aliases:     cmd.aliases || [],
+    description: cmd.description || '',
+    category:    cmd.category || 'misc',
+    usage:       cmd.usage || `!${cmd.name}`,
+    enabled:     name in overrides ? overrides[cmd.name] : (cmd.enabled !== false),
+    cooldown:    cmd.cooldown || 0
+  }))
+}

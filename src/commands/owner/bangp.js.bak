@@ -1,0 +1,23 @@
+export default {
+  name: 'bangp',
+  aliases: [],
+  description: 'Privar o bot de executar comandos ou ler mensagens em um grupo específico.',
+  category: 'admin',
+  usage: '!bangp',
+  cooldown: 5,
+  async execute({ sock, msg, from, userId, usuario, args, argStr, reply, isAdmin, isOwner }) {
+    if (!isAdmin) return reply('Apenas administradores podem usar este comando.');
+    const gruposPrivados = await read_file('gruposPrivados.json');
+    if (!gruposPrivados) return reply('Erro ao ler o arquivo de grupos privados.');
+    const grupoPrivado = gruposPrivados.find((grupo) => grupo.id === from);
+    if (grupoPrivado) {
+      gruposPrivados.splice(gruposPrivados.indexOf(grupoPrivado), 1);
+      await write_file('gruposPrivados.json', JSON.stringify(gruposPrivados));
+      return reply('O bot foi reativado neste grupo.');
+    } else {
+      gruposPrivados.push({ id: from });
+      await write_file('gruposPrivados.json', JSON.stringify(gruposPrivados));
+      return reply('O bot foi privado neste grupo.');
+    }
+  }
+};
