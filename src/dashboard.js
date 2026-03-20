@@ -12,6 +12,8 @@ import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB } from './database.js'
+import JsonDB from './database.js'
+const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
 import { getMinionList, getMinionStats, addSubdono, removeSubdono, listSubdonos, ROLE_NAMES } from './permissions.js'
 import { getAllContribs, getContribStats, approveContrib, rejectContrib } from './contributions.js'
@@ -42,6 +44,8 @@ Imports disponíveis (dentro da execute):
 import axios from 'axios'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+const execAsync = promisify(exec)
+import { promisify } from 'util'
 import fs from 'fs'
 import { CONFIG } from '../../config.js'
 import { configDB, groupsDB, usersDB, statsDB } from '../../database.js'
@@ -57,6 +61,7 @@ export function startDashboard() {
 
   setSocket(io)
   app.use(express.json({ limit: '5mb' }))
+  app.use('/data/uploads', express.static(path.join(__dirname, '../data/uploads')))
   app.use(express.static(path.join(__dirname, '../public')))
 
   function auth(req, res, next) {
@@ -137,6 +142,30 @@ export function startDashboard() {
     } catch (e) {
       res.status(500).json({ error: e.message })
     }
+  })
+
+  // ── Salvar metadados do comando (desc, usage, cooldown) ──
+  app.put('/api/commands/:name/meta', auth, async (req, res) => {
+    try {
+      const { description, usage, cooldown } = req.body
+      const name = req.params.name
+      const existing = cmdMetaDB.get(name, {})
+      const updated  = { ...existing }
+      if (description !== undefined) updated.description = description
+      if (usage       !== undefined) updated.usage       = usage
+      if (cooldown    !== undefined) updated.cooldown    = parseInt(cooldown) || 0
+      cmdMetaDB.set(name, updated)
+
+      // Apply to live command object in memory
+      const { commandMap } = await import('./loader.js').catch(() => ({}))
+      const cmd = commandMap?.get(name)
+      if (cmd) {
+        if (description !== undefined) cmd.description = description
+        if (usage       !== undefined) cmd.usage       = usage
+        if (cooldown    !== undefined) cmd.cooldown    = parseInt(cooldown) || 0
+      }
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
   })
 
   // ── Config ───────────────────────────────────────────────
@@ -244,6 +273,28 @@ export function startDashboard() {
     if (!descricao) return res.status(400).json({ error: 'Descrição requerida' })
     const key = CONFIG.groqKey || process.env.GROQ_API_KEY
     if (!key) return res.status(400).json({ error: 'GROQ_API_KEY não configurada' })
+
+    // Tenta primeiro com Manus (agente com tools), fallback para Groq direto
+    try {
+      const { runAgent } = await import('./manus.js')
+      const result = await runAgent(
+        `Crie um comando de WhatsApp para o bot Kaius: ${descricao}\n\nUse a ferramenta create_command. O código deve ser ES Module válido com export default.`,
+        'dashboard_gen',
+        null
+      )
+      if (result?.commandResult?.code) {
+        return res.json({ ok: true, code: result.commandResult.code, via: 'manus' })
+      }
+      // Manus respondeu sem criar código — extrai o código da resposta de texto
+      if (result?.text) {
+        let code = result.text.replace(/^```(?:javascript|js)?\n?/gm, '').replace(/\n?```/gm, '').trim()
+        if (code.includes('export default')) return res.json({ ok: true, code, via: 'manus-text' })
+      }
+    } catch (e) {
+      logWarn('Manus geração falhou, usando Groq direto: ' + e.message)
+    }
+
+    // Fallback: Groq direto
     try {
       const groq = new Groq({ apiKey: key })
       const resp = await groq.chat.completions.create({
@@ -252,12 +303,12 @@ export function startDashboard() {
           { role: 'system', content: SYSTEM_CMD_GENERATOR },
           { role: 'user', content: `Crie um comando de WhatsApp para: ${descricao}` }
         ],
-        max_tokens: 2000,
-        temperature: 0.3,
+        max_tokens: 2500,
+        temperature: 0.25,
       })
       let code = resp.choices[0].message.content.trim()
       code = code.replace(/^```(?:javascript|js)?\n?/m, '').replace(/\n?```$/m, '').trim()
-      res.json({ ok: true, code })
+      res.json({ ok: true, code, via: 'groq' })
     } catch (e) {
       res.status(500).json({ ok: false, error: e.message })
     }
@@ -495,6 +546,58 @@ export function startDashboard() {
     try { allowedGroupsDB.delete(decodeURIComponent(req.params.jid)); res.json({ ok: true }) }
     catch (e) { res.status(500).json({ error: e.message }) }
   })
+
+
+  // ── Upload de mídia (áudio mp3→opus, imagem, vídeo) ──────
+  app.post('/api/upload', auth, async (req, res) => {
+    try {
+      const chunks = []
+      req.on('data', chunk => chunks.push(chunk))
+      req.on('end', async () => {
+        const buf      = Buffer.concat(chunks)
+        const mime     = req.headers['content-type'] || 'application/octet-stream'
+        const filename = decodeURIComponent(req.headers['x-filename'] || 'upload')
+        const isAudio  = mime.includes('audio') || filename.match(/\.(mp3|wav|ogg|m4a|aac|flac)$/i)
+
+        const uploadsDir = path.join(__dirname, '../data/uploads')
+        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+
+        if (isAudio) {
+          // Converte para opus (formato WhatsApp PTT)
+          const inFile  = path.join(uploadsDir, `in_${Date.now()}.tmp`)
+          const outFile = path.join(uploadsDir, `audio_${Date.now()}.ogg`)
+          fs.writeFileSync(inFile, buf)
+
+          try {
+            await new Promise((resolve, reject) => {
+              const cmd = `ffmpeg -y -i "${inFile}" -c:a libopus -b:a 64k -ar 48000 "${outFile}" 2>&1`
+              execAsync(cmd).then(() => resolve()).catch(e => reject(new Error('ffmpeg: ' + e.message.slice(0, 200))))
+            })
+            fs.unlinkSync(inFile)
+            // Serve the file as static URL
+            const relPath = `/data/uploads/${path.basename(outFile)}`
+            res.json({ ok: true, url: relPath, type: 'audio', mimetype: 'audio/ogg; codecs=opus', filename: path.basename(outFile) })
+          } catch (e) {
+            // ffmpeg not available — save as-is
+            try { fs.unlinkSync(inFile) } catch {}
+            const outRaw = path.join(uploadsDir, filename)
+            fs.writeFileSync(outRaw, buf)
+            const relPath = `/data/uploads/${filename}`
+            res.json({ ok: true, url: relPath, type: 'audio', mimetype: mime, filename, warning: 'ffmpeg indisponível — arquivo salvo sem conversão' })
+          }
+        } else {
+          // Imagem / vídeo / outros
+          const outFile = path.join(uploadsDir, `${Date.now()}_${filename}`)
+          fs.writeFileSync(outFile, buf)
+          const relPath = `/data/uploads/${path.basename(outFile)}`
+          const type = mime.startsWith('image') ? 'image' : mime.startsWith('video') ? 'video' : 'other'
+          res.json({ ok: true, url: relPath, type, mimetype: mime, filename: path.basename(outFile) })
+        }
+      })
+      req.on('error', e => res.status(500).json({ error: e.message }))
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
 
   // ── Reviver QR / Limpar Auth ──────────────────────────────
   // Limpa arquivos desnecessários da pasta auth sem desconectar

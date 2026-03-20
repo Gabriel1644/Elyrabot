@@ -7,9 +7,12 @@ import { fileURLToPath } from 'url'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { logInfo, logOk, logWarn } from './logger.js'
-import { configDB } from './database.js'         // ← único import
+import { configDB } from './database.js'
+import JsonDB from './database.js'
+const cmdMetaDB = new JsonDB('cmdmeta')  // metadados editados pelo painel         // ← único import
 
 const execAsync = promisify(exec)
+const _fileModTimes = new Map()  // mtime cache para evitar reimport
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const CMDS_DIR  = path.join(__dirname, 'commands')
 const ROOT_DIR  = path.resolve(__dirname, '..')
@@ -36,10 +39,22 @@ export async function loadCommands() {
     for (const file of files) {
       try {
         const fp   = path.join(CMDS_DIR, dir, file)
-        const mod  = await import(`${fp}?v=${Date.now()}`)
+        // Cache-bust only if file was modified since last load
+        const mtime = fs.statSync(fp).mtimeMs
+        const cached_mtime = _fileModTimes.get(fp)
+        const v = mtime !== cached_mtime ? mtime : (cached_mtime || 0)
+        _fileModTimes.set(fp, mtime)
+        const mod  = await import(`${fp}?v=${v}`)
         const cmds = Array.isArray(mod.default) ? mod.default : [mod.default]
         for (const cmd of cmds) {
           if (!cmd?.name) { logWarn(`Sem nome: ${file}`); continue }
+          // Apply any saved metadata overrides from the dashboard panel
+          const meta = cmdMetaDB.get(cmd.name, null)
+          if (meta) {
+            if (meta.description !== undefined) cmd.description = meta.description
+            if (meta.usage       !== undefined) cmd.usage       = meta.usage
+            if (meta.cooldown    !== undefined) cmd.cooldown    = meta.cooldown
+          }
           commandMap.set(cmd.name, cmd)
           if (cmd.aliases) for (const a of cmd.aliases) aliasMap.set(a, cmd.name)
           total++

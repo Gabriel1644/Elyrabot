@@ -15,6 +15,7 @@ import {
   hasPermission, getSubdonoPerms, cleanNum, ROLES, ROLE_NAMES
 } from './permissions.js'
 import { cmdPermsDB } from './database.js'
+import { runHooks } from './hooks.js'
 
 export let botJid = null
 export function setBotJid(jid) { botJid = jid }
@@ -22,6 +23,7 @@ let _sock = null
 export function setSock(sock) { _sock = sock }
 
 const spamMap = new Map()
+const _groupMetaCache = new Map()  // Cache de metadata de grupo (30s TTL)
 
 // ── Fuzzy matching — distância de Levenshtein ─────────────
 function levenshtein(a, b) {
@@ -152,13 +154,17 @@ export async function handleMessage(sock, msg) {
     }
   }
 
-  // ── Tracking ───────────────────────────────────────────
+  // ── Tracking (assíncrono — não bloqueia o processamento) ──
   if (!isMe) {
-    let grupoNome = null
-    if (isGrupo) {
-      try { const m = await sock.groupMetadata(from); grupoNome = m.subject } catch {}
+    // Não bloqueia: tracking roda em background
+    const _trackAsync = async () => {
+      let grupoNome = null
+      if (isGrupo) {
+        try { const m = await sock.groupMetadata(from); grupoNome = m.subject } catch {}
+      }
+      trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
     }
-    trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
+    _trackAsync().catch(() => {})
   }
 
   // ── Banido ─────────────────────────────────────────────
@@ -208,20 +214,71 @@ export async function handleMessage(sock, msg) {
       if (!matched) continue
 
       // Monta resposta
-      const resp = (auto.response || '').replace('{nome}', usuario).replace('{grupo}', 'grupo')
+      // Substitui variáveis na resposta
+      const hora = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })
+      const data = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      const textoCapturado = texto.trim()
+
+      // Respostas aleatórias: separe opções com | usando matchType "random"
+      let respRaw = auto.response || ''
+      if (auto.multiResponse && respRaw.includes('|')) {
+        const opcoes = respRaw.split('|').map(s => s.trim()).filter(Boolean)
+        respRaw = opcoes[Math.floor(Math.random() * opcoes.length)]
+      }
+
+      const resp = respRaw
+        .replace(/\{nome\}/gi, usuario)
+        .replace(/\{grupo\}/gi, nomeGrupo || 'grupo')
+        .replace(/\{hora\}/gi, hora)
+        .replace(/\{data\}/gi, data)
+        .replace(/\{texto\}/gi, textoCapturado)
+        .replace(/\{prefix\}/gi, p)
+
       try {
+        // Reação antes de responder (se configurada)
+        if (auto.reactEmoji) {
+          await sock.sendMessage(from, { react: { text: auto.reactEmoji, key: msg.key } })
+        }
+
+        // Deletar a mensagem do usuário (se configurado)
+        if (auto.deleteMessage) {
+          try { await sock.sendMessage(from, { delete: msg.key }) } catch {}
+        }
+
+        // Enviar resposta de acordo com o tipo
         if (auto.type === 'audio' && auto.mediaUrl) {
-          await sock.sendMessage(from, { audio: { url: auto.mediaUrl }, mimetype: 'audio/mpeg', ptt: false }, { quoted: msg })
+          // Detecta se é opus/ogg (PTT) ou mp3 (música)
+          const isOpus = auto.mediaUrl.includes('.ogg') || auto.mimetype?.includes('opus')
+          await sock.sendMessage(from, {
+            audio: { url: auto.mediaUrl },
+            mimetype: isOpus ? 'audio/ogg; codecs=opus' : 'audio/mpeg',
+            ptt: isOpus,
+          }, { quoted: auto.noQuote ? undefined : msg })
+          if (resp) await sock.sendMessage(from, { text: resp }, { quoted: msg })
+
         } else if (auto.type === 'image' && auto.mediaUrl) {
           await sock.sendMessage(from, { image: { url: auto.mediaUrl }, caption: resp }, { quoted: msg })
+
         } else if (auto.type === 'video' && auto.mediaUrl) {
           await sock.sendMessage(from, { video: { url: auto.mediaUrl }, caption: resp }, { quoted: msg })
+
         } else if (auto.type === 'sticker' && auto.mediaUrl) {
           await sock.sendMessage(from, { sticker: { url: auto.mediaUrl } }, { quoted: msg })
+          if (resp) await sock.sendMessage(from, { text: resp }, { quoted: msg })
+
+        } else if (auto.type === 'mention' && resp) {
+          // Menciona o usuário na resposta
+          await sock.sendMessage(from, {
+            text: resp,
+            mentions: [userId],
+          }, { quoted: msg })
+
         } else if (resp) {
           await sock.sendMessage(from, { text: resp }, { quoted: msg })
         }
-      } catch {}
+      } catch (e) {
+        logWarn(`Automação "${auto.trigger}" erro: ${e.message}`)
+      }
       if (auto.stopPropagation !== false) return  // não processa comandos após automação
     }
   }
@@ -282,6 +339,18 @@ export async function handleMessage(sock, msg) {
       }
       return
     }
+  }
+
+  // ── Hooks de mensagem (registrados por comandos) ──────────
+  if (!isMe) {
+    const hookCtx = {
+      sock, msg, from, userId, usuario, texto, isGrupo,
+      nomeGrupo: null,  // será preenchido se precisar
+      reply: (text) => sock.sendMessage(from, { text, quoted: msg }),
+      react: (e)    => sock.sendMessage(from, { react: { text: e, key: msg.key } }),
+    }
+    const stopped = await runHooks(hookCtx)
+    if (stopped) return  // Hook parou a propagação
   }
 
   // ── Prefix check — suporta "! menu", " !menu", ">>" e "$" ─
@@ -348,10 +417,20 @@ export async function handleMessage(sock, msg) {
     return
   }
 
-  // Metadata do grupo
+  // Metadata do grupo (cache 30s por grupo para evitar requests desnecessários)
   let nomeGrupo = null, membros = []
   if (isGrupo) {
-    try { const m = await sock.groupMetadata(from); nomeGrupo = m.subject; membros = m.participants } catch {}
+    const cacheKey = `gmeta:${from}`
+    const cached = _groupMetaCache.get(cacheKey)
+    if (cached && Date.now() - cached.ts < 30000) {
+      nomeGrupo = cached.subject; membros = cached.participants
+    } else {
+      try {
+        const m = await sock.groupMetadata(from)
+        nomeGrupo = m.subject; membros = m.participants
+        _groupMetaCache.set(cacheKey, { subject: m.subject, participants: m.participants, ts: Date.now() })
+      } catch {}
+    }
   }
 
   const isAdminUser   = await isGroupAdmin(sock, from, userId)

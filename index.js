@@ -135,6 +135,11 @@ async function conectar() {
         }
       }
       startPulse(CONFIG.nome)
+
+      // Restaura hooks de mensagem salvos (antiword, autoreact, etc.)
+      import('./src/commands/owner/hooks_cmd.js')
+        .then(m => m.restoreHooks?.(sock))
+        .catch(() => {})
     } else if (connection === 'connecting') {
       logInfo('Conectando...')
       emitStatus('connecting')

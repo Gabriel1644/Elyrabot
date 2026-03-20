@@ -239,6 +239,193 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
 @keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); } 50% { box-shadow: 0 0 0 4px rgba(0,255,136,.12); } }
 /* ── Sidebar hover width smooth ────────────────────── */
 .sb { will-change: width; }
+
+/* ════════════════════════════════════════════════════════
+   ANIMAÇÕES & EFEITOS VISUAIS
+   ════════════════════════════════════════════════════════ */
+
+/* Partícula de fundo */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.05) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+.main{position:relative;z-index:1;}
+
+/* Page load stagger */
+.tab.on{animation:pageIn .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pageIn{
+  from{opacity:0;transform:translateY(14px) scale(.99)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Cards — hover lift + glow */
+.card{
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,border-color .2s;
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
+  transition:left .4s ease;
+}
+.card:hover::before{left:140%}
+.card:hover{
+  transform:translateY(-4px) scale(1.01);
+  box-shadow:0 12px 40px rgba(0,255,136,.12),0 4px 16px rgba(0,0,0,.4);
+  border-color:rgba(0,255,136,.25)!important;
+}
+
+/* Nav items — smooth slide */
+.ni{position:relative;overflow:hidden}
+.ni::after{
+  content:'';position:absolute;left:0;top:0;width:3px;height:100%;
+  background:var(--ac);transform:scaleY(0);transform-origin:bottom;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.ni.on::after{transform:scaleY(1)}
+.ni.on{animation:navGlow .4s ease forwards}
+@keyframes navGlow{
+  0%{background:transparent}
+  50%{background:rgba(0,255,136,.15)}
+  100%{background:rgba(0,255,136,.08)}
+}
+
+/* Buttons — ripple effect */
+.btn{position:relative;overflow:hidden;}
+.btn::after{
+  content:'';position:absolute;top:50%;left:50%;
+  width:0;height:0;border-radius:50%;
+  background:rgba(255,255,255,.15);
+  transform:translate(-50%,-50%);
+  transition:width .4s ease,height .4s ease,opacity .4s ease;
+  opacity:0;pointer-events:none;
+}
+.btn:active::after{width:200px;height:200px;opacity:1;transition:0s}
+
+/* Panels — fade in on load */
+.pnl{
+  animation:pnlIn .4s cubic-bezier(.2,.8,.2,1) both;
+  animation-delay:calc(var(--i,0) * 60ms);
+}
+@keyframes pnlIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Command items — fast hover */
+.ci{transition:all .15s;position:relative}
+.ci::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:0;
+  background:linear-gradient(90deg,rgba(0,255,136,.08),transparent);
+  transition:width .2s ease;border-radius:6px;pointer-events:none;
+}
+.ci:hover::before{width:100%}
+.ci:hover{transform:translateX(3px)}
+
+/* Modal — spring animation */
+.mo-box{
+  animation:modalSpring .28s cubic-bezier(.34,1.56,.64,1) both !important;
+}
+@keyframes modalSpring{
+  from{opacity:0;transform:scale(.88) translateY(-20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+/* Toast — bounce in */
+.toast{animation:toastBounce .4s cubic-bezier(.34,1.56,.64,1) both!important}
+@keyframes toastBounce{
+  from{opacity:0;transform:translateY(24px) scale(.8)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Status badge — pulse verde quando online */
+.badge.online{
+  animation:onlinePulse 2.5s ease-in-out infinite;
+  box-shadow:0 0 0 0 rgba(0,255,136,.4);
+}
+@keyframes onlinePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}
+  50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}
+}
+
+/* Sidebar logo giro suave */
+.sb-logo{display:inline-block;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.sb:hover .sb-logo{transform:rotate(15deg) scale(1.1)}
+
+/* Input focus glow */
+.fi input:focus,.fi textarea:focus,.fi select:focus{
+  box-shadow:0 0 0 3px rgba(0,255,136,.15),0 0 16px rgba(0,255,136,.08)!important;
+}
+
+/* Log entries — slide in */
+.le{animation:leIn .2s ease both}
+@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+
+/* Toggle — spring */
+.tog-th{transition:all .25s cubic-bezier(.34,1.56,.64,1)!important}
+
+/* Grid cards stagger */
+.grid .card:nth-child(1){animation-delay:.05s}
+.grid .card:nth-child(2){animation-delay:.1s}
+.grid .card:nth-child(3){animation-delay:.15s}
+.grid .card:nth-child(4){animation-delay:.2s}
+.card{animation:cardIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* Scanning line no fundo */
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+.main::after{
+  content:'';position:fixed;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(0,255,136,.06) 50%,transparent 100%);
+  animation:scan 8s linear infinite;pointer-events:none;z-index:0;
+}
+
+/* Tab transition */
+.tab{position:relative}
+.tab.on .pnl:nth-child(1){--i:0}
+.tab.on .pnl:nth-child(2){--i:1}
+.tab.on .pnl:nth-child(3){--i:2}
+.tab.on .pnl:nth-child(4){--i:3}
+.tab.on .pnl:nth-child(5){--i:4}
+
+/* Scrollbar mais bonita */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px;opacity:.4}
+
+/* Editor tabs underline */
+.ed-tab.on{
+  color:var(--ac)!important;
+  text-shadow:0 0 12px rgba(0,255,136,.4);
+}
+.ed-tab.on::after{
+  content:'';display:block;height:2px;
+  background:linear-gradient(90deg,transparent,var(--ac),transparent);
+  border-radius:2px;
+  animation:tabUnderline .2s ease forwards;
+}
+@keyframes tabUnderline{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Número dos cards animado */
+.card-val{
+  transition:all .3s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* Hint boxes */
+.hint{
+  border-left:3px solid var(--ac);
+  position:relative;overflow:hidden;
+}
+.hint::after{
+  content:'';position:absolute;top:0;left:0;width:2px;height:100%;
+  background:var(--ac);
+  animation:hintBar 2s ease-in-out infinite;
+}
+@keyframes hintBar{0%,100%{opacity:.4}50%{opacity:1}}
+
 </style>
 </head>
 <body>
@@ -786,12 +973,29 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
         </select>
       </div>
     </div>
-    <div id="auto-media-row" class="fi" style="display:none"><label>URL da Mídia</label><input id="auto-media" placeholder="https://..."/></div>
+    <div id="auto-media-row" style="display:none">
+      <div class="fi"><label>URL da Mídia</label><input id="auto-media" placeholder="https://... ou faça upload abaixo"/></div>
+      <div class="fi">
+        <label>📤 Upload (mp3 → vira opus automaticamente)</label>
+        <div style="display:flex;gap:7px;align-items:center">
+          <input type="file" id="auto-media-file" accept="audio/*,image/*,video/*" style="flex:1;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);padding:6px;border-radius:var(--r);font-size:11px" onchange="uploadAutoMedia(this)"/>
+          <span id="auto-upload-status" style="font-size:11px;color:var(--tx3)"></span>
+        </div>
+      </div>
+    </div>
     <div class="row2">
       <div class="fi"><label>Cooldown (s)</label><input id="auto-cd" type="number" min="0" value="0"/></div>
-      <div class="fi" style="display:flex;align-items:flex-end;padding-bottom:4px">
-        <label class="tog"><input type="checkbox" id="auto-stop" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Parar após trigger</span></label>
-      </div>
+      <div class="fi"><label>Emoji de Reação (opcional)</label><input id="auto-react-emoji" placeholder="❤️ 🔥 ✅ (deixe vazio)"/></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+      <label class="tog"><input type="checkbox" id="auto-stop" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Parar após trigger</span></label>
+      <label class="tog"><input type="checkbox" id="auto-multi"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Resposta aleatória (separe com |)</span></label>
+      <label class="tog"><input type="checkbox" id="auto-delete"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Deletar msg do usuário</span></label>
+      <label class="tog"><input type="checkbox" id="auto-noquote"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Sem citação</span></label>
+    </div>
+    <div class="hint" style="font-size:11px">
+      💡 Variáveis: <code>{nome}</code> <code>{grupo}</code> <code>{hora}</code> <code>{data}</code> <code>{texto}</code> <code>{prefix}</code><br>
+      🎲 Resposta aleatória: <code>oi|olá|e aí!</code> — escolhe uma aleatoriamente
     </div>
     <div class="mo-act">
       <button class="btn btn-q btn-sm" onclick="closeAutoModal()">Cancelar</button>
@@ -852,838 +1056,879 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
 </div>
 
 <script>
-// ── Helpers básicos ─────────────────────────────────────
-function G(id){return document.getElementById(id)}
-function toast(msg,t='s'){const el=document.createElement('div');el.className=`toast ${t}`;el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
-async function api(u,o={}){try{const r=await fetch(u,{headers:{'Content-Type':'application/json'},...o});return await r.json()}catch(e){console.error('API error',u,e);return{error:e.message}}}
-const post=(u,b)=>api(u,{method:'POST',body:JSON.stringify(b)})
-const put=(u,b)=>api(u,{method:'PUT',body:JSON.stringify(b)})
-const del=(u)=>api(u,{method:'DELETE'})
+// ═══════════════════════════════════════════════════════════════
+//  KAIUS BOT DASHBOARD — JS Único e Limpo v27
+//  Sem duplicatas, sem overrides quebrados
+// ═══════════════════════════════════════════════════════════════
 
-// ── Estado global ────────────────────────────────────────
-let allCmds=[],allPerms={},allMenuTargets={},allAutos=[],allContribs=[]
-let curCat='all',curLF='all',curMF='all',curCF='all'
-let edCmd=null,edRole='',edLoc='both',edAliases=[],edMenuTargets=[]
-let menuLines=[],CATS=['core','fun','rpg','media','info','tools','admin','owner','misc']
-let _mtCmd=null
+// ── Helpers ──────────────────────────────────────────────────
+const G = id => document.getElementById(id)
+
+function toast(msg, t='s', dur=3200) {
+  const el = document.createElement('div')
+  el.className = `toast ${t}`; el.textContent = msg
+  document.body.appendChild(el)
+  setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(8px)' }, dur-400)
+  setTimeout(() => el.remove(), dur)
+  sfx(t==='s'?'success':t==='e'?'error':'notify')
+}
+
+async function api(u, o={}) {
+  try {
+    const r = await fetch(u, {headers:{'Content-Type':'application/json'}, ...o})
+    return await r.json()
+  } catch(e) { console.error('API', u, e); return {error:e.message} }
+}
+const post = (u,b) => api(u,{method:'POST',body:JSON.stringify(b)})
+const put  = (u,b) => api(u,{method:'PUT', body:JSON.stringify(b)})
+const del  = (u)   => api(u,{method:'DELETE'})
+
+// ── SFX ─────────────────────────────────────────────────────
+let _sfxCtx = null
+const sfxEnabled = () => localStorage.getItem('sfx') !== 'off'
+
+function sfx(type) {
+  if (!sfxEnabled()) return
+  try {
+    if (!_sfxCtx) _sfxCtx = new (window.AudioContext||window.webkitAudioContext)()
+    if (_sfxCtx.state === 'suspended') _sfxCtx.resume()
+    const t = _sfxCtx.currentTime
+    const presets = {
+      click:   {freqs:[800],       wave:'sine',     dur:0.07, vol:0.08},
+      success: {freqs:[520,660,800],wave:'sine',    dur:0.30, vol:0.10},
+      error:   {freqs:[300,200],   wave:'sawtooth', dur:0.25, vol:0.09},
+      save:    {freqs:[440,550,660],wave:'sine',    dur:0.32, vol:0.10},
+      open:    {freqs:[500,700],   wave:'sine',     dur:0.15, vol:0.08},
+      close:   {freqs:[700,400],   wave:'sine',     dur:0.12, vol:0.07},
+      notify:  {freqs:[880,1100],  wave:'sine',     dur:0.20, vol:0.09},
+      toggle:  {freqs:[600],       wave:'sine',     dur:0.08, vol:0.07},
+      delete:  {freqs:[400,250],   wave:'sawtooth', dur:0.20, vol:0.08},
+      install: {freqs:[440,550,660,880],wave:'sine',dur:0.45, vol:0.09},
+    }
+    const p = presets[type] || presets.click
+    const seg = p.dur / p.freqs.length
+    p.freqs.forEach((freq,i) => {
+      const o = _sfxCtx.createOscillator(), g = _sfxCtx.createGain()
+      o.connect(g); g.connect(_sfxCtx.destination)
+      const s = t + i*seg*0.6
+      o.type = p.wave; o.frequency.setValueAtTime(freq,s)
+      g.gain.setValueAtTime(0.001,s)
+      g.gain.linearRampToValueAtTime(p.vol,s+0.02)
+      g.gain.exponentialRampToValueAtTime(0.001,s+seg)
+      o.start(s); o.stop(s+seg+0.05)
+    })
+  } catch{}
+}
+
+function toggleSFX() {
+  const on = sfxEnabled()
+  localStorage.setItem('sfx', on?'off':'on')
+  const btn = G('sfx-btn'); if(btn) btn.textContent = on?'🔇':'🔊'
+  if(!on) sfx('toggle')
+}
+
+// ── Estado global ────────────────────────────────────────────
+let allCmds=[], allPerms={}, allMenuTargets={}, allAutos=[], allContribs=[]
+let curCat='all', curLF='all', curMF='all', curCF='all'
+let edCmd=null, edRole='', edLoc='both', edAliases=[], edMenuTargets=[], _edDirty=false
+let menuLines=[], _mtCmd=null
+let CATS=['core','fun','rpg','media','info','tools','admin','owner','misc']
 
 const MENU_OPS=[
-  {id:'menubn',l:'🎭 Brincadeiras'},{id:'menugold',l:'💎 RPG/Gold'},
+  {id:'menubn',l:'🎭 Brincadeiras'},{id:'menugold',l:'💎 RPG'},
   {id:'menudown',l:'📥 Downloads'},{id:'menujogos',l:'🎮 Jogos'},
   {id:'menudono',l:'👑 Dono'},{id:'menuutils',l:'🔧 Utilidades'},
   {id:'menufig',l:'🖼️ Figurinhas'},{id:'menuadm',l:'⭐ Admin'},
-  {id:'menumemb',l:'👥 Membros'},{id:'menuia',l:'🤖 IA'},{id:'menuall',l:'📋 Tudo'},
+  {id:'menumemb',l:'👥 Membros'},{id:'menuia',l:'🤖 IA'},
+  {id:'menuall',l:'📋 Tudo'}
 ]
 const RL={1:'👑 Dono',2:'🌟 Sub-Dono',3:'⭐ Admin',4:'💎 VIP',5:'👤 Todos'}
-const RC={1:'pb-dn',2:'pb-sd',3:'pb-ad',4:'pb-vp',5:'pb-us'}
 
-// ── Navegação ────────────────────────────────────────────
-document.querySelectorAll('.ni[data-tab]').forEach(n=>{
-  n.onclick=function(){
-    const id=this.dataset.tab
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
-    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('on'))
-    const el=G('tab-'+id);if(el)el.classList.add('on')
-    this.classList.add('on')
-    const loaders={dash:loadStatus,cmds:loadCmds,menus:loadMenuCfg,auto:loadAutos,cfg:loadCfg,minions:loadMinions,subdons:loadSDs,contribs:loadContribs,grupos:loadGrupos}
-    if(loaders[id])loaders[id]()
+// ── Socket.IO — UMA instância ────────────────────────────────
+const socket = io()
+
+socket.on('init', ({logs, commands}) => {
+  if (Array.isArray(commands) && commands.length) {
+    allCmds = commands
+    const el = G('s-loaded'); if(el) animCount(el, commands.length)
+  }
+  ;(logs||[]).forEach(addLog)
+})
+socket.on('log', e => addLog(e))
+socket.on('reload', ({total}) => {
+  loadCmds(); toast(`${total||0} cmds recarregados`); sfx('install')
+})
+socket.on('status', ({status, jid}) => {
+  const b = G('status-badge'), tx = G('status-txt')
+  if (!b || !tx) return
+  if (status === 'open') {
+    b.className = 'badge online'
+    tx.textContent = jid ? '+'+jid.split('@')[0].split(':')[0].slice(-6) : 'Online'
+    spawnParticles()
+  } else if (status === 'close') {
+    b.className = 'badge offline'; tx.textContent = 'Desconectado'
+  } else {
+    b.className = 'badge offline'; tx.textContent = 'Conectando...'
   }
 })
-function go(id){document.querySelector(`.ni[data-tab="${id}"]`)?.click()}
+socket.on('qr', ({qr}) => {
+  const c=G('pair-code'); if(c)c.textContent=qr
+  const r=G('pair-res'); if(r)r.style.display='block'
+})
 
-// ── Dashboard ────────────────────────────────────────────
-async function loadStatus(){
-  const d=await api('/api/status');if(d.error)return
-  G('s-msgs').textContent=(d.msgs||0).toLocaleString()
-  G('s-cmds').textContent=(d.cmdsTotal||0).toLocaleString()
-  G('s-loaded').textContent=allCmds.length||d.cmdsTotal||'—'
-  G('s-uptime').textContent=d.uptime||'—'
-  const nm=d.nome||'ElyraBot'
-  G('page-title').textContent=nm+' Dashboard'
-  G('dash-title').textContent='✦ '+nm
-  G('sb-nm').textContent=nm
-  const el=G('top-cmds')
-  if(!d.topCmds?.length){el.innerHTML='<div class="empty">Nenhum comando usado</div>';return}
-  el.innerHTML=d.topCmds.map(([n,c],i)=>`<div class="ci"><div class="ci-info"><div class="ci-name">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} !${n}</div></div><span class="tag tg">${c}x</span></div>`).join('')
+// ── Animações ────────────────────────────────────────────────
+function animCount(el, target, dur=700) {
+  if(!el||isNaN(target)) return
+  const start = parseInt(el.textContent.replace(/\D/g,''))||0
+  const t0 = performance.now()
+  const tick = now => {
+    const p = Math.min((now-t0)/dur,1), e = 1-Math.pow(1-p,3)
+    el.textContent = Math.round(start+(target-start)*e).toLocaleString('pt-BR')
+    if(p<1) requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
 }
 
-// ── Comandos ─────────────────────────────────────────────
-async function loadCmds(){
-  const[list,perms,targets]=await Promise.all([api('/api/commands'),api('/api/cmdperms'),api('/api/menutargets')])
-  if(!Array.isArray(list))return
-  allCmds=list;allPerms=perms||{};allMenuTargets=targets||{}
-  G('s-loaded').textContent=list.length
+function spawnParticles() {
+  const b = G('status-badge'); if(!b) return
+  const rect = b.getBoundingClientRect()
+  for(let i=0;i<14;i++) {
+    const p = document.createElement('div')
+    const angle = (i/14)*Math.PI*2, dist=30+Math.random()*30
+    p.style.cssText=`position:fixed;width:5px;height:5px;border-radius:50%;background:var(--ac);pointer-events:none;z-index:9999;left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:ptcl .6s ease-out forwards`
+    document.body.appendChild(p); setTimeout(()=>p.remove(),600)
+  }
+}
+
+// Ripple nos botões
+document.addEventListener('mousedown', e => {
+  const btn = e.target.closest('.btn')
+  if(!btn||btn.dataset.noripple) return
+  const rect=btn.getBoundingClientRect(), size=Math.max(rect.width,rect.height)
+  const rp = document.createElement('span')
+  rp.style.cssText=`position:absolute;border-radius:50%;width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;background:rgba(255,255,255,.18);animation:ripple .5s ease-out forwards;pointer-events:none;z-index:99`
+  btn.appendChild(rp); setTimeout(()=>rp.remove(),500)
+}, {passive:true})
+
+// ── Navegação ────────────────────────────────────────────────
+const LOADERS = {
+  dash:loadStatus, cmds:loadCmds, menus:loadMenuCfg, auto:loadAutos,
+  cfg:loadCfg, minions:loadMinions, subdons:loadSDs,
+  contribs:loadContribs, grupos:loadGrupos
+}
+
+function goTab(id) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
+  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('on'))
+  const tab=G('tab-'+id); if(tab) tab.classList.add('on')
+  document.querySelectorAll(`[data-tab="${id}"]`).forEach(x=>x.classList.add('on'))
+  const mm=G('mob-more-menu'); if(mm) mm.style.display='none'
+  if(LOADERS[id]) LOADERS[id]()
+  history.replaceState(null,'','#'+id)
+  sfx('click')
+}
+
+function toggleMobMore() {
+  const mm=G('mob-more-menu'), btn=G('mob-more-btn')
+  if(!mm) return
+  const open = mm.style.display==='flex'
+  mm.style.display = open?'none':'flex'
+  if(btn) btn.classList.toggle('on',!open)
+}
+
+// Fecha menu mobile ao clicar fora
+document.addEventListener('click', e => {
+  const mm=G('mob-more-menu'), mb=G('mob-more-btn')
+  if(mm && mb && !mm.contains(e.target) && !mb.contains(e.target))
+    mm.style.display='none'
+}, {passive:true})
+
+// Wire up nav items
+document.querySelectorAll('[data-tab]').forEach(n => {
+  n.onclick = function(e) { e.stopPropagation(); goTab(this.dataset.tab) }
+})
+
+// ── Dashboard ────────────────────────────────────────────────
+async function loadStatus() {
+  const d = await api('/api/status'); if(d.error) return
+  animCount(G('s-msgs'),   parseInt(d.msgs||0))
+  animCount(G('s-cmds'),   parseInt(d.cmdsTotal||0))
+  animCount(G('s-loaded'), allCmds.length || parseInt(d.cmdsAtivos||0))
+  const ut=G('s-uptime'); if(ut) ut.textContent=d.uptime||'—'
+  const nm=d.nome||'KaiusBot'
+  if(G('dash-title')) G('dash-title').textContent='✦ '+nm
+  if(G('sb-nm'))     G('sb-nm').textContent=nm
+  document.title = nm+' Dashboard'
+  const el=G('top-cmds')
+  if(el && d.topCmds?.length)
+    el.innerHTML=d.topCmds.map(([n,c],i)=>
+      `<div class="ci"><div class="ci-info"><div class="ci-name">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]||'▸'} .${n}</div></div><span class="tag tg">${c}×</span></div>`
+    ).join('')
+}
+
+// ── Comandos ─────────────────────────────────────────────────
+async function loadCmds() {
+  const [list,perms,targets] = await Promise.all([
+    api('/api/commands'), api('/api/cmdperms'), api('/api/menutargets')
+  ])
+  if(!Array.isArray(list)) return
+  allCmds=list; allPerms=perms||{}; allMenuTargets=targets||{}
+  animCount(G('s-loaded'), list.length)
   renderCmds()
 }
-function renderCmds(){
-  const q=G('cmd-search')?.value.toLowerCase()||''
-  const f=allCmds.filter(c=>(curCat==='all'||c.category===curCat)&&(!q||c.name.includes(q)||c.description?.toLowerCase().includes(q)))
-  const el=G('cmd-list');if(!f.length){el.innerHTML='<div class="empty">Nenhum comando</div>';return}
+
+function renderCmds() {
+  const q=(G('cmd-search')?.value||'').toLowerCase().trim()
+  const f=allCmds.filter(c=>
+    (curCat==='all'||c.category===curCat)&&
+    (!q||c.name.includes(q)||(c.description||'').toLowerCase().includes(q)||c.aliases?.some(a=>a.includes(q)))
+  )
+  const el=G('cmd-list'); if(!el) return
+  if(!f.length){el.innerHTML='<div class="empty">Nenhum resultado</div>';return}
   el.innerHTML=f.map(c=>{
-    const p=allPerms[c.name],has=!!p
-    const rb=p?.minRole?`<span class="pb ${RC[p.minRole]||'pb-def'}">${RL[p.minRole]||p.minRole}</span>`:''
-    const tgts=(allMenuTargets[c.name]||c.menuTargets||[])
-    const tb=tgts.length?`<span class="pb pb-sd">📋 ${tgts.length}</span>`:''
+    const perm=allPerms[c.name], tgts=allMenuTargets[c.name]||c.menuTargets||[]
     const isSel=edCmd?.name===c.name
-    return`<div class="ci${isSel?' sel':''}" onclick="openEd('${c.name}')">
+    return `<div class="ci${isSel?' sel':''}" onclick="openEd('${c.name}')" style="cursor:pointer">
       <div class="ci-info">
-        <div class="ci-name">!${c.name}${c.aliases?.length?` <span style="color:var(--tx3);font-size:10px">| ${c.aliases.join(', ')}</span>`:''}</div>
-        <div class="ci-desc">${c.description||''}</div>
+        <div class="ci-name" style="color:var(--ac)">.${c.name}${c.aliases?.length?`<span style="color:var(--tx3);font-size:10px"> · ${c.aliases.slice(0,2).join(', ')}</span>`:''}</div>
+        <div class="ci-desc">${c.description||'Sem descrição'}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        ${rb}${tb}
+      <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
+        ${perm?.minRole?`<span class="tag to">${RL[perm.minRole]||''}</span>`:''}
+        ${tgts.length?`<span class="tag tb2">📋${tgts.length}</span>`:''}
         <span class="ci-cat">${c.category}</span>
         <label class="tog" style="gap:0" onclick="event.stopPropagation()">
           <input type="checkbox" ${c.enabled!==false?'checked':''} onchange="toggleCmd('${c.name}',this.checked)"/>
           <div class="tog-t"><div class="tog-th"></div></div>
         </label>
       </div>
-    </div>`}).join('')
+    </div>`
+  }).join('')
 }
-function setCat(el){curCat=el.dataset.cat;document.querySelectorAll('.fb-btn[data-cat]').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderCmds()}
-async function toggleCmd(name,enabled){await post(`/api/commands/${name}/toggle`,{enabled});const c=allCmds.find(x=>x.name===name);if(c)c.enabled=enabled;toast(`!${name} ${enabled?'ativado':'desativado'}`)}
-async function reloadCmds(){const r=await post('/api/reload',{});toast(`${r.total||0} cmds recarregados`);await loadCmds();if(edCmd)openEd(edCmd.name)}
-async function delCmd(){if(!edCmd)return;if(!confirm(`Deletar !${edCmd.name}?`))return;await del(`/api/commands/${edCmd.name}`);toast(`!${edCmd.name} deletado`);closeEd();loadCmds()}
 
-function renderEdAliases(){
-  const el=G('ed-aliases')
-  el.innerHTML=edAliases.length?edAliases.map(a=>`<span class="alias-tag">${a}<span class="rm" onclick="rmAlias('${a}')">✕</span></span>`).join(''):'<span style="color:var(--tx3);font-size:11px">Nenhum</span>'
+function setCat(el) {
+  curCat=el.dataset.cat
+  document.querySelectorAll('.fb-btn[data-cat]').forEach(b=>b.classList.remove('on'))
+  el.classList.add('on'); renderCmds()
 }
-function addAlias(){const v=G('new-alias').value.trim().toLowerCase().replace(/\s+/g,'');if(!v)return;if(edAliases.includes(v)){toast('Já existe','e');return};edAliases.push(v);G('new-alias').value='';renderEdAliases()}
-function rmAlias(a){edAliases=edAliases.filter(x=>x!==a);renderEdAliases()}
-function renderEdMenus(){
-  const el=G('ed-menus');if(!el)return
-  el.innerHTML=MENU_OPS.map(o=>`<button class="mt-chip${edMenuTargets.includes(o.id)?' on':''}" onclick="toggleEdMenu('${o.id}')">${o.l}</button>`).join('')
+
+async function toggleCmd(name,enabled) {
+  await post(`/api/commands/${name}/toggle`,{enabled})
+  const c=allCmds.find(x=>x.name===name); if(c)c.enabled=enabled
+  toast(`.${name} ${enabled?'ativado':'desativado'}`)
 }
-function toggleEdMenu(id){edMenuTargets.includes(id)?edMenuTargets=edMenuTargets.filter(x=>x!==id):edMenuTargets.push(id);renderEdMenus()}
-async function toggleEdCmd(){if(!edCmd)return;const enabled=G('ed-enabled').checked;await post(`/api/commands/${edCmd.name}/toggle`,{enabled});const c=allCmds.find(x=>x.name===edCmd.name);if(c)c.enabled=enabled}
-async function saveCmd(){
-  if(!edCmd)return
+
+async function reloadCmds() {
+  const r=await post('/api/reload',{}); sfx('install')
+  toast(`${r.total||0} cmds recarregados`); await loadCmds()
+  if(edCmd) openEd(edCmd.name)
+}
+
+async function delCmd() {
+  if(!edCmd||!confirm(`Deletar .${edCmd.name}?`)) return
+  await del(`/api/commands/${edCmd.name}`)
+  toast(`.${edCmd.name} deletado`,'i'); sfx('delete')
+  closeEdModal(); loadCmds()
+}
+
+// ── Editor Popup ─────────────────────────────────────────────
+function markDirty() {
+  _edDirty=true
+  const b=G('ed-dirty-badge'); if(b) b.style.display='inline-block'
+}
+
+function edSwitchTab(tab, triggerEl) {
+  const modal=G('ed-modal'); if(!modal) return
+  modal.querySelectorAll('.ed-tab').forEach(b=>b.classList.remove('on'))
+  if(triggerEl) triggerEl.classList.add('on')
+  else {
+    const btn=modal.querySelector(`.ed-tab[data-tab="${tab}"]`)
+    if(btn) btn.classList.add('on')
+    else modal.querySelectorAll('.ed-tab')[0]?.classList.add('on')
+  }
+  ;['basic','perm','menu','alias'].forEach(t=>{
+    const e=G('ed-tab-'+t); if(e) e.style.display=t===tab?'block':'none'
+  })
+}
+
+function syncEd() {
+  document.querySelectorAll('#ed-roles .rp-btn').forEach(b=>b.classList.toggle('sel',b.dataset.role===edRole))
+  document.querySelectorAll('#ed-locs .rp-btn').forEach(b=>b.classList.toggle('sel',b.dataset.loc===edLoc))
+}
+
+function selR(el) { edRole=el.dataset.role; syncEd(); markDirty() }
+function selL(el) { edLoc=el.dataset.loc;   syncEd(); markDirty() }
+
+function tryCloseEd() {
+  if(_edDirty&&!confirm('Alterações não salvas. Sair mesmo assim?')) return
+  closeEdModal()
+}
+
+function closeEdModal() {
+  edCmd=null; _edDirty=false
+  const m=G('ed-modal'); if(m) m.style.display='none'
+  sfx('close'); renderCmds()
+}
+
+function closeEd() { tryCloseEd() }
+
+function openEd(name) {
+  const cmd=allCmds.find(c=>c.name===name); if(!cmd) return
+  edCmd=cmd; _edDirty=false
+  const perm=allPerms[name]
+  edRole=perm?.minRole?String(perm.minRole):''; edLoc=perm?.allowedIn||'both'
+  edAliases=[...(cmd.aliases||[])]; edMenuTargets=[...(allMenuTargets[name]||cmd.menuTargets||[])]
+
+  const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
+  sv('ed-desc',   cmd.description||'')
+  sv('ed-usage',  cmd.usage||'.'+name)
+  sv('ed-cd',     cmd.cooldown||0)
+  const t=G('ed-title'); if(t) t.textContent='.'+name
+  const en=G('ed-enabled'); if(en) en.checked=cmd.enabled!==false
+  const bd=G('ed-dirty-badge'); if(bd) bd.style.display='none'
+
+  syncEd(); renderEdAliases(); renderEdMenus()
+  const m=G('ed-modal'); if(!m) return
+  m.style.display='flex'; edSwitchTab('basic'); sfx('open'); renderCmds()
+}
+
+function renderEdAliases() {
+  const el=G('ed-aliases'); if(!el) return
+  el.innerHTML=edAliases.length
+    ?edAliases.map(a=>`<span class="alias-tag">${a}<span class="rm" onclick="rmAlias('${a}')">✕</span></span>`).join('')
+    :'<span style="color:var(--tx3);font-size:11px">Nenhum alias</span>'
+}
+function addAlias() {
+  const inp=G('new-alias'); if(!inp) return
+  const v=inp.value.trim().toLowerCase().replace(/\s+/g,'')
+  if(!v) return
+  if(edAliases.includes(v)){toast('Já existe','e');return}
+  edAliases.push(v); inp.value=''; renderEdAliases(); markDirty()
+}
+function rmAlias(a) { edAliases=edAliases.filter(x=>x!==a); renderEdAliases(); markDirty() }
+
+function renderEdMenus() {
+  const el=G('ed-menus'); if(!el) return
+  el.innerHTML=MENU_OPS.map(o=>
+    `<button class="mt-chip${edMenuTargets.includes(o.id)?' on':''}" onclick="toggleEdMenu('${o.id}')">${o.l}</button>`
+  ).join('')
+}
+function toggleEdMenu(id) {
+  edMenuTargets.includes(id)
+    ?edMenuTargets=edMenuTargets.filter(x=>x!==id)
+    :edMenuTargets.push(id)
+  renderEdMenus(); markDirty()
+}
+
+async function toggleEdCmd() {
+  if(!edCmd) return
+  const en=G('ed-enabled')?.checked
+  await post(`/api/commands/${edCmd.name}/toggle`,{enabled:en})
+  const c=allCmds.find(x=>x.name===edCmd.name); if(c) c.enabled=en
+}
+
+async function saveCmd() {
+  if(!edCmd) return
+  const desc=G('ed-desc')?.value, usage=G('ed-usage')?.value, cooldown=parseInt(G('ed-cd')?.value)||0
+
+  // 1. Metadados (desc/uso/cooldown)
+  await fetch(`/api/commands/${edCmd.name}/meta`,{
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({description:desc,usage,cooldown})
+  }).catch(()=>{})
+
+  // 2. Permissões
   const body={minRole:edRole?parseInt(edRole):null,allowedIn:edLoc||'both'}
-  if(!body.minRole&&body.allowedIn==='both')await del(`/api/cmdperms/${edCmd.name}`)
+  if(!body.minRole&&body.allowedIn==='both') await del(`/api/cmdperms/${edCmd.name}`)
   else await post(`/api/cmdperms/${edCmd.name}`,body)
+
+  // 3. Aliases
   await post(`/api/commands/${edCmd.name}/aliases`,{aliases:edAliases})
-  if(edMenuTargets.length)await post(`/api/menutargets/${edCmd.name}`,{menus:edMenuTargets})
+
+  // 4. Menus
+  if(edMenuTargets.length) await post(`/api/menutargets/${edCmd.name}`,{menus:edMenuTargets})
   else await del(`/api/menutargets/${edCmd.name}`)
+
+  // 5. Atualiza local
   const c=allCmds.find(x=>x.name===edCmd.name)
-  if(c){c.aliases=edAliases;c.menuTargets=edMenuTargets}
+  if(c){c.aliases=edAliases;c.menuTargets=edMenuTargets;c.description=desc;c.usage=usage;c.cooldown=cooldown}
   allPerms[edCmd.name]=(!body.minRole&&body.allowedIn==='both')?null:body
   allMenuTargets[edCmd.name]=edMenuTargets.length?edMenuTargets:undefined
-  toast(`!${edCmd.name} salvo!`);renderCmds()
+  _edDirty=false
+  const bd=G('ed-dirty-badge'); if(bd) bd.style.display='none'
+  toast('✅ Salvo!'); sfx('save'); renderCmds()
 }
-async function editSrc(){
-  if(!edCmd)return
-  G('src-title').textContent=`Código: !${edCmd.name}`
+
+async function editSrc() {
+  if(!edCmd) return
   const r=await api(`/api/commands/${edCmd.name}/source`)
-  G('src-code').value=r.source||''
-  G('src-modal').style.display='flex'
+  if(r.error){toast('Código não disponível','i');return}
+  if(G('src-title')) G('src-title').textContent='Código: .'+edCmd.name
+  if(G('src-code')) G('src-code').value=r.source||''
+  const m=G('src-modal'); if(m) m.style.display='flex'; sfx('open')
 }
-async function saveSrc(){
-  if(!edCmd)return
-  const code=G('src-code').value.trim();if(!code)return
+
+async function saveSrc() {
+  if(!edCmd) return
+  const code=G('src-code')?.value.trim(); if(!code) return
   const r=await post(`/api/commands/${edCmd.name}/source`,{source:code,category:edCmd.category})
-  if(r.ok){toast('Código salvo!');G('src-modal').style.display='none';await loadCmds()}
+  if(r.ok){toast('Código salvo!');sfx('install');G('src-modal').style.display='none';await loadCmds()}
   else toast('Erro: '+(r.error||''),'e')
 }
 
-// ── Menus ────────────────────────────────────────────────
-async function loadMenuCfg(){
-  const d=await api('/api/config');if(!d.menu)return
-  const m=d.menu
-  G('m-footer').value=m.footerTexto||''
-  G('m-botnome').value=m.botNomeDisplay||''
-  G('m-foto').value=m.botFoto||''
-  G('m-bold').checked=!!m.negrito;G('m-italic').checked=!!m.italico;G('m-desc').checked=!!m.mostrarDescricao
-  G('m-top').value=m.borderTop||'';G('m-bot').value=m.borderBot||''
-  G('m-side').value=m.borderSide||'│';G('m-item').value=m.itemPrefix||'├';G('m-sub').value=m.subPrefix||'└'
-  menuLines=m.menuLines||[{label:'!menubn'},{label:'!menugold'},{label:'!menudown'},{label:'!menujogos'},{label:'!menudono'},{label:'!menuutils'},{label:'!menufig'},{label:'!menuadm'},{label:'!menumemb'},{label:'!menuia'}]
-  Object.keys({...m.icons||{},...m.nomes||{}}).forEach(c=>{if(!CATS.includes(c))CATS.push(c)})
-  renderCatTable(m);renderMenuLines();updPrev()
+function openMtModal(name) {
+  _mtCmd=name
+  if(G('mt-cmd')) G('mt-cmd').textContent='.'+name
+  document.querySelectorAll('#mt-chips .mt-chip').forEach(b=>b.classList.remove('on'))
+  const m=G('mt-modal'); if(m) m.style.display='flex'
 }
-function renderMenuLines(){
-  const el=G('menu-lines-list');if(!el)return
-  if(!menuLines.length){el.innerHTML='<div class="empty">Nenhuma linha</div>';return}
-  el.innerHTML=menuLines.map((l,i)=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:7px">
-    <input value="${l.label||''}" style="flex:1;padding:6px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none;font-family:var(--f)" onchange="menuLines[${i}].label=this.value;updPrev()" onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--br2)'"/>
-    <button class="btn btn-r btn-sm" onclick="rmMenuLine(${i})"><i class="fas fa-trash"></i></button>
-    ${i>0?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},-1)">▲</button>`:'<span style="width:32px"></span>'}
-    ${i<menuLines.length-1?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},1)">▼</button>`:'<span style="width:32px"></span>'}
-  </div>`).join('')
+function skipMt() { const m=G('mt-modal');if(m)m.style.display='none';_mtCmd=null;goTab('cmds') }
+async function saveMt() {
+  const name=_mtCmd; if(!name) return
+  const menus=[...document.querySelectorAll('#mt-chips .mt-chip.on')].map(b=>b.dataset.id)
+  if(menus.length) await post(`/api/menutargets/${name}`,{menus})
+  allMenuTargets[name]=menus
+  const m=G('mt-modal'); if(m) m.style.display='none'; _mtCmd=null
+  toast('✅ Salvo!'); await loadCmds(); openEd(name); goTab('cmds')
+}
+
+// ── Menus ────────────────────────────────────────────────────
+async function loadMenuCfg() {
+  const d=await api('/api/config'); if(!d.menu) return
+  const m=d.menu
+  const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
+  const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
+  sv('m-footer',m.footerTexto); sv('m-botnome',m.botNomeDisplay); sv('m-foto',m.botFoto)
+  sv('m-top',m.borderTop); sv('m-bot',m.borderBot); sv('m-side',m.borderSide||'│')
+  sv('m-item',m.itemPrefix||'├'); sv('m-sub',m.subPrefix||'└')
+  sc('m-bold',m.negrito); sc('m-italic',m.italico); sc('m-desc',m.mostrarDescricao)
+  menuLines=m.menuLines||[]; renderCatTable(m); renderMenuLines(); updPrev()
+}
+
+function renderMenuLines() {
+  const el=G('menu-lines-list'); if(!el) return
+  el.innerHTML=menuLines.map((l,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+      <input value="${l.label||''}" style="flex:1;padding:5px 9px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px" onchange="menuLines[${i}].label=this.value;updPrev()"/>
+      <button class="btn btn-r btn-sm" onclick="rmMenuLine(${i})">✕</button>
+      ${i>0?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},-1)">▲</button>`:''}
+      ${i<menuLines.length-1?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},1)">▼</button>`:''}
+    </div>`).join('')
 }
 function addMenuLine(){menuLines.push({label:'!novocomando'});renderMenuLines();updPrev()}
 function rmMenuLine(i){menuLines.splice(i,1);renderMenuLines();updPrev()}
 function mvMenuLine(i,d){const j=i+d;if(j<0||j>=menuLines.length)return;[menuLines[i],menuLines[j]]=[menuLines[j],menuLines[i]];renderMenuLines();updPrev()}
-function renderCatTable(m={}){
+
+function renderCatTable(m={}) {
   const vis=m.categoriasVisiveis||['core','fun','rpg','media','info','tools','admin']
-  const el=G('cat-table')
-  el.innerHTML=`<div style="display:grid;grid-template-columns:50px 1fr 60px 40px;gap:7px;margin-bottom:7px;padding:0 2px">
-    <span style="color:var(--tx3);font-size:10px;font-family:var(--f2);text-align:center">ATIVO</span>
-    <span style="color:var(--tx3);font-size:10px;font-family:var(--f2)">ID → NOME</span>
-    <span style="color:var(--tx3);font-size:10px;font-family:var(--f2);text-align:center">ÍCONE</span>
-    <span></span>
-  </div>`+CATS.map(c=>`<div style="display:grid;grid-template-columns:50px 1fr 60px 40px;gap:7px;align-items:center;margin-bottom:6px">
-    <div style="display:flex;justify-content:center"><label class="tog"><input type="checkbox" id="cv-${c}" ${vis.includes(c)?'checked':''} onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div></label></div>
-    <div style="display:flex;align-items:center;gap:5px">
-      <span style="color:var(--tx3);font-size:10px;font-family:var(--f2);flex-shrink:0;min-width:34px">${c}</span>
-      <input id="cn-${c}" value="${(m.nomes?.[c]||c).toUpperCase()}" style="flex:1;padding:4px 8px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:6px;font-size:12px;outline:none" oninput="updPrev()"/>
-    </div>
-    <input id="ic-${c}" value="${m.icons?.[c]||''}" maxlength="10" placeholder="—" style="width:100%;padding:4px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:6px;font-size:16px;text-align:center;outline:none" oninput="updPrev()"/>
-    <button class="btn btn-r btn-sm" onclick="rmCat('${c}')"><i class="fas fa-trash"></i></button>
-  </div>`).join('')
+  const el=G('cat-table'); if(!el) return
+  el.innerHTML=CATS.map(c=>`
+    <div style="display:grid;grid-template-columns:44px 1fr 52px 32px;gap:6px;align-items:center;margin-bottom:5px">
+      <label class="tog" style="justify-self:center"><input type="checkbox" id="cv-${c}" ${vis.includes(c)?'checked':''} onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div></label>
+      <div style="display:flex;gap:5px;align-items:center">
+        <span style="color:var(--tx3);font-size:10px;width:38px;flex-shrink:0">${c}</span>
+        <input id="cn-${c}" value="${(m.nomes?.[c]||c).toUpperCase()}" style="flex:1;padding:3px 7px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:5px;font-size:11px" oninput="updPrev()"/>
+      </div>
+      <input id="ic-${c}" value="${m.icons?.[c]||''}" maxlength="6" placeholder="—" style="padding:3px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:5px;font-size:14px;text-align:center" oninput="updPrev()"/>
+      <button class="btn btn-r btn-sm" style="padding:3px 6px" onclick="rmCat('${c}')">✕</button>
+    </div>`).join('')
 }
-function openCatModal(){G('cat-id').value='';G('cat-nome').value='';G('cat-ico').value='';G('cat-modal').style.display='flex'}
-function saveCat(){
-  const id=G('cat-id').value.trim().toLowerCase().replace(/\W/g,''),nome=G('cat-nome').value.trim(),ico=G('cat-ico').value.trim()
-  if(!id||!nome){toast('Preencha ID e Nome','e');return}
-  if(!CATS.includes(id))CATS.push(id)
-  G('cat-modal').style.display='none'
-  const m=getMenuForm();m.icons[id]=ico;m.nomes[id]=nome
-  renderCatTable(m);updPrev()
-  toast(`Categoria "${nome}" criada! Salve para confirmar.`)
-}
-function rmCat(c){if(!confirm(`Remover "${c}"?`))return;CATS=CATS.filter(x=>x!==c);renderCatTable(getMenuForm());updPrev()}
-function updPrev(){
-  const m=getMenuForm(),p=G('cfg-prefixo')?.value||'!',nm=m.botNomeDisplay||G('cfg-nome')?.value||'Bot'
-  const boldNm=m.negrito?`*${nm}*`:nm
-  const TOP=m.borderTop?.trim()?m.borderTop:`┏━━━⪩ ${boldNm} ⪨━━━┓`
-  const BOT=m.borderBot?.trim()?m.borderBot:'┗━━━━━━━━━━━━━━━━━━┛'
-  const SID=m.borderSide||'│',ITM=m.itemPrefix||'├',LST=m.subPrefix||'└'
-  const foot=(m.footerTexto||'Powered by DevSquad').replace('{prefix}',p)
-  let txt=`${TOP}\n${SID}\n${SID} 📊 ${m.negrito?'*Estatísticas*':'Estatísticas'}\n${SID} ${ITM} Comandos: N\n${SID} ${LST} Mensagens: Nk\n${SID}\n${SID} ✦ ${m.negrito?'*MENUS*':'MENUS'}\n`
-  ;(menuLines||[]).forEach((l,i)=>{txt+=`${SID} ${i===menuLines.length-1?LST:ITM} ${l.label||''}\n`})
+function openCatModal(){const m=G('cat-modal');if(m)m.style.display='flex'}
+function saveCat(){const id=G('cat-id')?.value.trim().toLowerCase();if(!id||CATS.includes(id)){toast('ID inválido','e');return}CATS.push(id);renderCatTable();const m=G('cat-modal');if(m)m.style.display='none';toast('Categoria criada!')}
+function rmCat(c){if(!confirm(`Remover "${c}"?`))return;CATS=CATS.filter(x=>x!==c);renderCatTable()}
+function updPrev() {
+  const p=G('cfg-prefixo')?.value||'.',nm=G('m-botnome')?.value||G('cfg-nome')?.value||'Bot'
+  const b=G('m-bold')?.checked,it=G('m-italic')?.checked
+  const fmt=t=>b&&it?`_*${t}*_`:b?`*${t}*`:it?`_${t}_`:t
+  const TOP=(G('m-top')?.value||'').trim()||`┏━━━⪩ ${fmt(nm)} ⪨━━━┓`
+  const BOT=(G('m-bot')?.value||'').trim()||'┗━━━━━━━━━━━━━━━━━━┛'
+  const SID=G('m-side')?.value||'│',ITM=G('m-item')?.value||'├',LST=G('m-sub')?.value||'└'
+  const foot=(G('m-footer')?.value||'Powered by DevSquad').replace('{prefix}',p)
+  let txt=`${TOP}\n${SID}\n${SID} 📊 ${fmt('Estatísticas')}\n${SID} ${ITM} Mensagens: Nk\n${SID} ${LST} Comandos: N\n${SID}\n${SID} ✦ ${fmt('MENUS')}\n`
+  menuLines.forEach((l,i)=>{txt+=`${SID} ${i===menuLines.length-1?LST:ITM} ${l.label||''}\n`})
   txt+=`${SID}\n${BOT}\n\n_- ${foot}_`
-  const el=G('menu-prev');if(el)el.textContent=txt
+  const el=G('menu-prev'); if(el) el.textContent=txt
+}
+const THEMES={
+  default:{},
+  kaius:{borderTop:'┏━━━⪩ *KAIUS* ⪨━━━┓',borderBot:'┗━━━━━━━━━━━━━━━━━┛',borderSide:'┃',itemPrefix:'┣',subPrefix:'┗',negrito:true},
+  neon:{borderTop:'┌─────────────────────┐',borderBot:'└─────────────────────┘',borderSide:'│',itemPrefix:'⟡',subPrefix:'  ↳',negrito:true,italico:true},
+  minimal:{borderTop:'▸',borderBot:'◂',borderSide:'›',itemPrefix:'•',subPrefix:'  ·',negrito:false},
+  hacker:{borderTop:'┌[▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓]┐',borderBot:'└[▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓]┘',borderSide:'|',itemPrefix:'>>',subPrefix:'  |_',negrito:true},
+  stars:{borderTop:'✦═══════════════════✦',borderBot:'✦═══════════════════✦',borderSide:'✦',itemPrefix:'⋆',subPrefix:'  ✩',negrito:true},
+  sakura:{borderTop:'╭🌸━━━━━━━━━━━━━━━🌸╮',borderBot:'╰🌸━━━━━━━━━━━━━━━🌸╯',borderSide:'🌸',itemPrefix:'🌺',subPrefix:'  🌹',negrito:true,italico:true},
+  royal:{borderTop:'┌─꧁𓆩𓆪꧂────────────┐',borderBot:'└────────────꧁𓆩𓆪꧂─┘',borderSide:'│',itemPrefix:'◈',subPrefix:'  └◉',negrito:true}
+}
+function applyTheme(nome) {
+  const t=THEMES[nome]; if(!t) return
+  const mp={borderTop:'m-top',borderBot:'m-bot',borderSide:'m-side',itemPrefix:'m-item',subPrefix:'m-sub',footerTexto:'m-footer'}
+  Object.entries(mp).forEach(([k,id])=>{if(t[k]!==undefined&&G(id))G(id).value=t[k]})
+  if(G('m-bold')) G('m-bold').checked=t.negrito!==false
+  if(G('m-italic')) G('m-italic').checked=!!t.italico
+  updPrev(); toast(`Tema ${nome} aplicado!`)
 }
 function getMenuForm(){
-  const icons={},nomes={},vis=[]
-  CATS.forEach(c=>{icons[c]=(G(`ic-${c}`)?.value||'').trim();nomes[c]=G(`cn-${c}`)?.value||c.toUpperCase();if(G(`cv-${c}`)?.checked)vis.push(c)})
-  return{footerTexto:G('m-footer').value||'Powered by DevSquad',botFoto:G('m-foto').value||'',botNomeDisplay:G('m-botnome').value||'',negrito:G('m-bold').checked,italico:G('m-italic').checked,mostrarDescricao:G('m-desc').checked,borderTop:G('m-top').value||'',borderBot:G('m-bot').value||'',borderSide:G('m-side').value||'│',itemPrefix:G('m-item').value||'├',subPrefix:G('m-sub').value||'└',menuLines:[...menuLines],icons,nomes,categoriasVisiveis:vis}
+  return{footerTexto:G('m-footer')?.value||'',botFoto:G('m-foto')?.value||'',botNomeDisplay:G('m-botnome')?.value||'',negrito:G('m-bold')?.checked,italico:G('m-italic')?.checked,mostrarDescricao:G('m-desc')?.checked,borderTop:G('m-top')?.value||'',borderBot:G('m-bot')?.value||'',borderSide:G('m-side')?.value||'│',itemPrefix:G('m-item')?.value||'├',subPrefix:G('m-sub')?.value||'└',menuLines:[...menuLines]}
 }
-async function saveMenu(){const r=await post('/api/config/menu',getMenuForm());r.ok?toast('Menu salvo!'):toast('Erro: '+(r.error||''),'e')}
+async function saveMenu(){const r=await post('/api/config/menu',getMenuForm());r.ok?toast('✅ Menu salvo!'):toast('Erro: '+(r.error||''),'e')}
 
-const THEMES={
-  default:{borderTop:'',borderBot:'',borderSide:'│',itemPrefix:'├',subPrefix:'└',footerTexto:'Powered by DevSquad',negrito:true,italico:false},
-  redline:{borderTop:'╭════════════════════╮',borderBot:'╰════════════════════╯',borderSide:'│',itemPrefix:'🛞',subPrefix:'  ✧',footerTexto:'Velocidade é poder.',negrito:true,italico:false},
-  neon:{borderTop:'┌─────────────────────┐',borderBot:'└─────────────────────┘',borderSide:'│',itemPrefix:'⟡',subPrefix:'  ↳',footerTexto:'✦ NEON SYSTEM ✦',negrito:true,italico:true},
-  minimal:{borderTop:'▸',borderBot:'◂',borderSide:'›',itemPrefix:'•',subPrefix:'  ·',footerTexto:'',negrito:false,italico:false},
-  stars:{borderTop:'✦═══════════════════✦',borderBot:'✦═══════════════════✦',borderSide:'✦',itemPrefix:'⋆',subPrefix:'  ✩',footerTexto:'',negrito:true,italico:false},
-  sakura:{borderTop:'╭🌸━━━━━━━━━━━━━━━🌸╮',borderBot:'╰🌸━━━━━━━━━━━━━━━🌸╯',borderSide:'🌸',itemPrefix:'🌺',subPrefix:'  🌹',footerTexto:'',negrito:true,italico:true},
-  hacker:{borderTop:'┌[▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓]┐',borderBot:'└[▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓]┘',borderSide:'|',itemPrefix:'>>',subPrefix:'  |__',footerTexto:'SYS://COMMANDS',negrito:true,italico:false},
-  royal:{borderTop:'┌─꧁𓆩𓆪꧂─────────────┐',borderBot:'└─────────────꧁𓆩𓆪꧂─┘',borderSide:'│',itemPrefix:'◈',subPrefix:'  └◉',footerTexto:'',negrito:true,italico:false},
-}
-function applyTheme(nome){
-  const t=THEMES[nome];if(!t)return
-  if(G('m-top'))G('m-top').value=t.borderTop||''
-  if(G('m-bot'))G('m-bot').value=t.borderBot||''
-  if(G('m-side'))G('m-side').value=t.borderSide||'│'
-  if(G('m-item'))G('m-item').value=t.itemPrefix||'├'
-  if(G('m-sub'))G('m-sub').value=t.subPrefix||'└'
-  if(G('m-footer'))G('m-footer').value=t.footerTexto||''
-  if(G('m-bold'))G('m-bold').checked=!!t.negrito
-  if(G('m-italic'))G('m-italic').checked=!!t.italico
-  updPrev();toast(`Tema ${nome} aplicado! Salve para confirmar.`)
+// ── Automações ───────────────────────────────────────────────
+async function loadAutos() {
+  const d=await api('/api/automations'); if(!Array.isArray(d)) return
+  allAutos=d; renderAutos()
 }
 
-// ── Config ───────────────────────────────────────────────
-async function loadCfg(){
-  const d=await api('/api/config');if(d.error)return
-  G('cfg-nome').value=d.nome||'';G('cfg-prefixo').value=d.prefixo||'!';G('cfg-owner').value=d.owner||''
-  G('cfg-emoji').value=d.botEmoji||'';G('cfg-welc').value=d.welcomeMsg||''
-  G('cfg-msgban').value=d.msgBanido||'';G('cfg-msgcd').value=d.msgCooldown||'';G('cfg-msgnoperm').value=d.msgSemPerm||''
-  const gk=G('cfg-groq');gk.value=d.groqKey?.startsWith('***')?'':(d.groqKey||'');gk.placeholder=d.groqKey?.startsWith('***')?d.groqKey+' (salvo)':'gsk_...'
-  G('cfg-pers').value=d.personalidade||'';G('cfg-spam').checked=!!d.antiSpam
-  G('cfg-code').checked=d.autoCodeDetect!==false;G('cfg-codeowner').checked=d.codeOwnerOnly!==false
-  G('cfg-iadefault').checked=!!d.iaAtivaPadrao;G('cfg-modelo').value=d.modelo||'llama-3.3-70b-versatile'
+function renderAutos() {
+  const el=G('auto-list'); if(!el) return
+  if(!allAutos.length){el.innerHTML='<div class="empty">Nenhuma automação. Clique em "+ Nova" para criar.</div>';return}
+  const ic={text:'💬',audio:'🔊',image:'🖼️',video:'🎬',sticker:'🎭',mention:'📢'}
+  el.innerHTML=allAutos.map(a=>`
+    <div class="ci">
+      <div class="ci-info">
+        <div class="ci-name">${ic[a.type]||'💬'} <span style="color:var(--ac)">"${a.trigger}"</span>${a.multiResponse?' <span class="tag tb2">🎲 aleatório</span>':''}</div>
+        <div class="ci-desc">${(a.response||'').substring(0,60)||'(sem texto)'}${a.reactEmoji?' '+a.reactEmoji:''}</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <label class="tog" style="gap:0" onclick="event.stopPropagation()">
+          <input type="checkbox" ${a.enabled!==false?'checked':''} onchange="toggleAuto('${a.id}',this.checked)"/>
+          <div class="tog-t"><div class="tog-th"></div></div>
+        </label>
+        <button class="btn btn-b btn-sm" onclick="openAutoModal('${a.id}')"><i class="fas fa-edit"></i></button>
+        <button class="btn btn-r btn-sm" onclick="delAuto('${a.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`).join('')
 }
-function prevNome(){const nm=G('cfg-nome').value||'ElyraBot';G('sb-nm').textContent=nm;G('dash-title').textContent='✦ '+nm}
-async function saveCfg(){
-  const groq=G('cfg-groq').value
-  const body={nome:G('cfg-nome').value,prefixo:G('cfg-prefixo').value,owner:G('cfg-owner').value,botEmoji:G('cfg-emoji').value,welcomeMsg:G('cfg-welc').value,personalidade:G('cfg-pers').value,antiSpam:G('cfg-spam').checked,modelo:G('cfg-modelo').value,autoCodeDetect:G('cfg-code').checked,codeOwnerOnly:G('cfg-codeowner').checked,iaAtivaPadrao:G('cfg-iadefault').checked,msgBanido:G('cfg-msgban').value,msgCooldown:G('cfg-msgcd').value,msgSemPerm:G('cfg-msgnoperm').value}
-  if(groq&&!groq.startsWith('***'))body.groqKey=groq
-  const r=await post('/api/config',body)
-  if(r.ok){toast('Configurações salvas!');G('sb-nm').textContent=body.nome||'ElyraBot';G('dash-title').textContent='✦ '+(body.nome||'ElyraBot');G('page-title').textContent=(body.nome||'ElyraBot')+' Dashboard';if(body.botEmoji)G('sb-ico').textContent=body.botEmoji}
+
+function toggleAutoMedia() {
+  const t=G('auto-type')?.value, r=G('auto-media-row')
+  if(r) r.style.display=['audio','image','video','sticker'].includes(t)?'block':'none'
+}
+
+function openAutoModal(id) {
+  const a=id?allAutos.find(x=>x.id===id):null
+  if(G('auto-modal-tt')) G('auto-modal-tt').textContent=a?`Editar: "${a.trigger}"`:'Nova Automação'
+  const sv=(i,v)=>{const e=G(i);if(e)e.value=v??''}
+  const sc=(i,v)=>{const e=G(i);if(e)e.checked=!!v}
+  G('auto-id')&&(G('auto-id').value=id||'')
+  sv('auto-trigger',a?.trigger); sv('auto-resp',a?.response); sv('auto-media',a?.mediaUrl)
+  sv('auto-cd',a?.cooldown||0); sv('auto-react-emoji',a?.reactEmoji||'')
+  if(G('auto-match')) G('auto-match').value=a?.matchType||'exact'
+  if(G('auto-type'))  G('auto-type').value=a?.type||'text'
+  if(G('auto-scope')) G('auto-scope').value=a?.scope||'both'
+  sc('auto-stop',a?.stopPropagation!==false); sc('auto-multi',a?.multiResponse)
+  sc('auto-delete',a?.deleteMessage); sc('auto-noquote',a?.noQuote)
+  const s=G('auto-upload-status'); if(s) s.textContent=''
+  const f=G('auto-media-file'); if(f) f.value=''
+  toggleAutoMedia()
+  const m=G('auto-modal'); if(m) m.style.display='flex'; sfx('open')
+}
+function closeAutoModal(){const m=G('auto-modal');if(m)m.style.display='none'}
+
+async function saveAuto() {
+  const id=G('auto-id')?.value
+  const body={
+    trigger:G('auto-trigger')?.value.trim(),
+    matchType:G('auto-match')?.value,
+    response:G('auto-resp')?.value,
+    type:G('auto-type')?.value,
+    mediaUrl:G('auto-media')?.value.trim(),
+    scope:G('auto-scope')?.value,
+    cooldown:parseInt(G('auto-cd')?.value)||0,
+    stopPropagation:G('auto-stop')?.checked,
+    multiResponse:G('auto-multi')?.checked||false,
+    deleteMessage:G('auto-delete')?.checked||false,
+    noQuote:G('auto-noquote')?.checked||false,
+    reactEmoji:G('auto-react-emoji')?.value.trim()||'',
+    enabled:true
+  }
+  if(!body.trigger){toast('Informe o gatilho!','e');return}
+  const r=id?await put(`/api/automations/${id}`,body):await post('/api/automations',body)
+  if(r?.error){toast('Erro: '+r.error,'e');return}
+  toast('✅ Automação salva!'); closeAutoModal(); loadAutos()
+}
+async function toggleAuto(id,en){await put(`/api/automations/${id}`,{enabled:en});const a=allAutos.find(x=>x.id===id);if(a)a.enabled=en}
+async function delAuto(id){if(!confirm('Deletar?'))return;await del(`/api/automations/${id}`);toast('Deletada','i');sfx('delete');loadAutos()}
+
+async function uploadAutoMedia(input) {
+  const file=input.files[0]; if(!file) return
+  const s=G('auto-upload-status')
+  if(s){s.textContent='⏳ Enviando...';s.style.color='var(--yl)'}
+  try {
+    const buf=await file.arrayBuffer()
+    const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':file.type,'X-Filename':encodeURIComponent(file.name)},body:buf}).then(r=>r.json())
+    if(r.ok){
+      if(G('auto-media')) G('auto-media').value=r.url
+      if(s){s.textContent=r.warning?`⚠️ ${r.warning}`:`✅ ${r.filename}`;s.style.color=r.warning?'var(--yl)':'var(--ac)'}
+      sfx('success')
+    } else if(s){s.textContent='❌ '+(r.error||'Erro');s.style.color='var(--rd)'}
+  } catch(e){if(s){s.textContent='❌ '+e.message;s.style.color='var(--rd)'}}
+}
+
+// ── IA / Criar Cmd ───────────────────────────────────────────
+async function genCmd() {
+  const desc=G('ai-desc')?.value.trim()
+  if(!desc){toast('Descreva o comando!','e');return}
+  const btn=document.querySelector('#tab-ai .btn-g')
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Gerando...'}
+  try {
+    const r=await post('/api/ai/generate-command',{descricao:desc})
+    if(r.error){toast(r.error,'e');return}
+    if(G('ai-code')) G('ai-code').value=r.code
+    if(G('ai-res')) G('ai-res').style.display='block'
+    toast('✅ Gerado via '+(r.via||'IA')+'!'); sfx('install')
+  } finally { if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-bolt"></i> Gerar com IA'} }
+}
+function copyCode(){navigator.clipboard?.writeText(G('ai-code')?.value||'');toast('Copiado!')}
+async function installGen() {
+  const code=G('ai-code')?.value.trim(),cat=G('ai-cat')?.value
+  let name=G('ai-file')?.value.trim()
+  if(!code){toast('Nenhum código!','e');return}
+  if(!name){const m=code.match(/name:\s*['"]([^'"]+)['"]/);name=m?.[1]||'cmd_'+Date.now()}
+  const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
+  if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
+  else toast('Erro: '+(r.error||''),'e')
+}
+async function installManual() {
+  const name=G('man-name')?.value.trim(),code=G('man-code')?.value.trim(),cat=G('man-cat')?.value
+  if(!name||!code){toast('Preencha nome e código!','e');return}
+  const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
+  if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
   else toast('Erro: '+(r.error||''),'e')
 }
 
-// ── IA / Criar cmd ───────────────────────────────────────
-async function genCmd(){
-  const desc=G('ai-desc').value.trim();if(!desc){toast('Descreva o comando!','e');return}
-  const btn=event.target.closest('button');btn.textContent='⏳ Gerando...';btn.disabled=true
-  try{const r=await post('/api/ai/generate-command',{descricao:desc});if(r.error){toast(r.error,'e');return};G('ai-code').value=r.code;G('ai-res').style.display='block';toast('Código gerado!')}
-  finally{btn.innerHTML='<i class="fas fa-bolt"></i> Gerar com IA';btn.disabled=false}
+// ── Config ───────────────────────────────────────────────────
+async function loadCfg() {
+  const d=await api('/api/config'); if(d.error) return
+  const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
+  const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
+  sv('cfg-nome',d.nome);sv('cfg-prefixo',d.prefixo);sv('cfg-owner',d.owner)
+  sv('cfg-pers',d.personalidade);sv('cfg-modelo',d.modelo)
+  sv('cfg-msgban',d.msgBanido);sv('cfg-msgcd',d.msgCooldown);sv('cfg-msgnoperm',d.msgSemPerm)
+  const gk=G('cfg-groq');if(gk){gk.value='';gk.placeholder=d.groqKey?'(salvo)':'gsk_...'}
+  sc('cfg-spam',d.antiSpam);sc('cfg-code',d.autoCodeDetect);sc('cfg-codeowner',d.codeOwnerOnly)
+  sc('cfg-iadefault',d.iaAtivaPadrao);sc('cfg-fuzzy',d.fuzzyCommands!==false)
 }
-function copyCode(){navigator.clipboard.writeText(G('ai-code').value);toast('Copiado!')}
-async function installGen(){
-  const code=G('ai-code').value.trim(),cat=G('ai-cat').value;let name=G('ai-file').value.trim()
-  if(!code){toast('Nenhum código!','e');return}
-  if(!name){const m=code.match(/name:\s*['"]([^'"]+)['"]/);name=m?.[1]||'cmd_'+Date.now()}
-  const r=await post(`/api/commands/${name}/source`,{source:code,category:cat})
-  if(r.ok){toast(`✅ !${name} instalado!`);await loadCmds();openMtModal(name)}else toast('Erro: '+(r.error||''),'e')
-}
-async function installManual(){
-  const name=G('man-name').value.trim(),code=G('man-code').value.trim(),cat=G('man-cat').value
-  if(!name||!code){toast('Preencha nome e código!','e');return}
-  const r=await post(`/api/commands/${name}/source`,{source:code,category:cat})
-  if(r.ok){toast(`✅ !${name} instalado!`);await loadCmds();openMtModal(name)}else toast('Erro: '+(r.error||''),'e')
+async function saveCfg() {
+  const gv=id=>G(id)?.value, gb=id=>G(id)?.checked
+  const body={nome:gv('cfg-nome'),prefixo:gv('cfg-prefixo'),owner:gv('cfg-owner'),personalidade:gv('cfg-pers'),modelo:gv('cfg-modelo'),msgBanido:gv('cfg-msgban'),msgCooldown:gv('cfg-msgcd'),msgSemPerm:gv('cfg-msgnoperm'),antiSpam:gb('cfg-spam'),autoCodeDetect:gb('cfg-code'),codeOwnerOnly:gb('cfg-codeowner'),iaAtivaPadrao:gb('cfg-iadefault'),fuzzyCommands:gb('cfg-fuzzy')}
+  const groq=gv('cfg-groq'); if(groq&&groq!=='(salvo)'&&!groq.startsWith('***')) body.groqKey=groq
+  const r=await post('/api/config',body)
+  if(r.ok){
+    toast('✅ Config salva!');sfx('save')
+    if(G('sb-nm')) G('sb-nm').textContent=body.nome||'KaiusBot'
+    if(G('dash-title')) G('dash-title').textContent='✦ '+(body.nome||'KaiusBot')
+  } else toast('Erro: '+(r.error||''),'e')
 }
 
-// ── Menu target modal ────────────────────────────────────
-function openMtModal(name){_mtCmd=name;G('mt-cmd').textContent=`!${name}`;document.querySelectorAll('#mt-chips .mt-chip').forEach(b=>b.classList.remove('on'));G('mt-modal').style.display='flex'}
-function skipMt(){G('mt-modal').style.display='none';_mtCmd=null;go('cmds')}
-async function saveMt(){
-  const name=_mtCmd;if(!name)return
-  const menus=[...document.querySelectorAll('#mt-chips .mt-chip.on')].map(b=>b.dataset.id)
-  if(menus.length)await post(`/api/menutargets/${name}`,{menus})
-  allMenuTargets[name]=menus
-  G('mt-modal').style.display='none';_mtCmd=null
-  toast(`Menu de !${name} salvo!`)
-  await loadCmds();openEd(name);go('cmds')
-}
-document.querySelectorAll('#mt-chips .mt-chip').forEach(b=>{b.onclick=function(){this.classList.toggle('on')}})
-
-// ── Automações ───────────────────────────────────────────
-async function loadAutos(){
-  const d=await api('/api/automations');if(!Array.isArray(d))return
-  allAutos=d;renderAutos()
-}
-function renderAutos(){
-  const el=G('auto-list')
-  if(!allAutos.length){el.innerHTML='<div class="empty">Nenhuma automação. Clique em "+ Nova" para criar.</div>';return}
-  const ic={text:'💬',audio:'🔊',image:'🖼️',video:'🎬',sticker:'🎭'}
-  const sc={both:'📱',group:'👥',private:'🔒'}
-  const mc={exact:'',contains:'<span style="color:var(--tx3);font-size:10px">[contém]</span>',regex:'<span style="color:var(--tx3);font-size:10px">[regex]</span>'}
-  el.innerHTML=allAutos.map(a=>`<div class="ci">
-    <div class="ci-info">
-      <div class="ci-name">${ic[a.type]||'💬'} <span style="color:var(--ac)">"${a.trigger}"</span> ${sc[a.scope]||'📱'} ${mc[a.matchType]||''}</div>
-      <div class="ci-desc">${a.response?.substring(0,60)||''}</div>
-    </div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <label class="tog" style="gap:0"><input type="checkbox" ${a.enabled!==false?'checked':''} onchange="toggleAuto('${a.id}',this.checked)"/><div class="tog-t"><div class="tog-th"></div></div></label>
-      <button class="btn btn-b btn-sm" onclick="openAutoModal('${a.id}')"><i class="fas fa-edit"></i></button>
-      <button class="btn btn-r btn-sm" onclick="delAuto('${a.id}')"><i class="fas fa-trash"></i></button>
-    </div>
-  </div>`).join('')
-}
-function toggleAutoMedia(){const t=G('auto-type')?.value;if(G('auto-media-row'))G('auto-media-row').style.display=['audio','image','video','sticker'].includes(t)?'block':'none'}
-function openAutoModal(id){
-  const a=id?allAutos.find(x=>x.id===id):null
-  G('auto-modal-tt').textContent=a?`Editar: "${a.trigger}"`:'Nova Automação'
-  G('auto-id').value=id||'';G('auto-trigger').value=a?.trigger||'';G('auto-match').value=a?.matchType||'exact'
-  G('auto-resp').value=a?.response||'';G('auto-type').value=a?.type||'text';G('auto-scope').value=a?.scope||'both'
-  G('auto-media').value=a?.mediaUrl||'';G('auto-cd').value=a?.cooldown||0;G('auto-stop').checked=a?.stopPropagation!==false
-  toggleAutoMedia();G('auto-modal').style.display='flex'
-}
-function closeAutoModal(){G('auto-modal').style.display='none'}
-async function saveAuto(){
-  const id=G('auto-id').value
-  const body={trigger:G('auto-trigger').value.trim(),matchType:G('auto-match').value,response:G('auto-resp').value,type:G('auto-type').value,mediaUrl:G('auto-media').value.trim(),scope:G('auto-scope').value,cooldown:parseInt(G('auto-cd').value)||0,stopPropagation:G('auto-stop').checked,enabled:true}
-  if(!body.trigger){toast('Informe o gatilho!','e');return}
-  if(id)await put(`/api/automations/${id}`,body);else await post('/api/automations',body)
-  toast('Automação salva!');closeAutoModal();loadAutos()
-}
-async function toggleAuto(id,enabled){await put(`/api/automations/${id}`,{enabled});const a=allAutos.find(x=>x.id===id);if(a)a.enabled=enabled}
-async function delAuto(id){if(!confirm('Deletar?'))return;await del(`/api/automations/${id}`);toast('Deletada');loadAutos()}
-
-// ── Minions ──────────────────────────────────────────────
-async function loadMinions(){
-  const d=await api('/api/minions?filter='+curMF);if(!d.stats)return
-  G('m-total').textContent=d.stats.total;G('m-ativos').textContent=d.stats.ativos;G('m-subdons').textContent=d.stats.subdons;G('m-banidos').textContent=d.stats.banidos
-  const em={1:'👑',2:'🌟',3:'⭐',4:'💎',5:'👤',99:'🚫'}
-  const el=G('minion-list')
+// ── Minions ──────────────────────────────────────────────────
+async function loadMinions() {
+  const d=await api('/api/minions?filter='+curMF); if(!d.stats) return
+  animCount(G('m-total'), d.stats.total); animCount(G('m-ativos'), d.stats.ativos)
+  animCount(G('m-subdons'), d.stats.subdons); animCount(G('m-banidos'), d.stats.banidos)
+  const el=G('minion-list'); if(!el) return
   if(!d.items?.length){el.innerHTML='<div class="empty">Nenhum usuário</div>';return}
-  el.innerHTML=d.items.map(u=>{const ago=Math.floor((Date.now()-u.ultimoUso)/60000);const t=ago<60?`${ago}m`:ago<1440?`${Math.floor(ago/60)}h`:`${Math.floor(ago/1440)}d`
-  return`<div class="ci"><div class="ci-info"><div class="ci-name">${em[u.role]||'👤'} ${u.nome||'?'} <span style="color:var(--tx3);font-size:10px">+${u.num}</span></div><div class="ci-desc">💬 ${u.totalMsgs}msgs • ${t} atrás</div></div>
-  <div style="display:flex;gap:5px">${u.bloqueado?`<button class="btn btn-q btn-sm" onclick="unbanM('${u.num}')"><i class="fas fa-unlock"></i></button>`:`<button class="btn btn-o btn-sm" onclick="banM('${u.num}')"><i class="fas fa-ban"></i></button>`}<button class="btn btn-q btn-sm" onclick="promoM('${u.num}')"><i class="fas fa-star"></i></button></div></div>`}).join('')
+  const em={1:'👑',2:'🌟',3:'⭐',4:'💎',5:'👤',99:'🚫'}
+  el.innerHTML=d.items.map(u=>{
+    const ago=Math.floor((Date.now()-u.ultimoUso)/60000)
+    const t=ago<60?`${ago}m`:ago<1440?`${Math.floor(ago/60)}h`:`${Math.floor(ago/1440)}d`
+    return`<div class="ci"><div class="ci-info"><div class="ci-name">${em[u.role]||'👤'} ${u.nome||'?'} <span style="color:var(--tx3)">+${u.num}</span></div><div class="ci-desc">💬 ${u.totalMsgs}msgs · ${t}</div></div>
+      <div style="display:flex;gap:5px">${u.bloqueado?`<button class="btn btn-q btn-sm" onclick="unbanM('${u.num}')"><i class="fas fa-unlock"></i></button>`:`<button class="btn btn-o btn-sm" onclick="banM('${u.num}')"><i class="fas fa-ban"></i></button>`}
+      <button class="btn btn-q btn-sm" onclick="promoM('${u.num}')"><i class="fas fa-star"></i></button></div></div>`
+  }).join('')
 }
 function setMF(el){curMF=el.dataset.mf;document.querySelectorAll('.fb-btn[data-mf]').forEach(b=>b.classList.remove('on'));el.classList.add('on');loadMinions()}
 async function banM(num){if(!confirm(`Banir +${num}?`))return;await post(`/api/minions/${num}/ban`,{motivo:'via painel'});toast('Banido');loadMinions()}
 async function unbanM(num){await post(`/api/minions/${num}/unban`,{});toast('Desbanido');loadMinions()}
 async function promoM(num){const r=prompt('Cargo: 2=Sub-Dono, 4=VIP','4');if(!r)return;await post(`/api/minions/${num}/promote`,{role:parseInt(r)});toast('Promovido!');loadMinions()}
 
-// ── Sub-Donos ────────────────────────────────────────────
-async function loadSDs(){
-  const d=await api('/api/subdons');if(!d.items)return
-  const rn={1:'👑',2:'🌟',3:'⭐',4:'💎',99:'🚫'}
-  const el=G('sd-list')
+// ── Sub-donos ────────────────────────────────────────────────
+async function loadSDs() {
+  const d=await api('/api/subdons'); if(!d.items) return
+  const el=G('sd-list'); if(!el) return
   if(!d.items.length){el.innerHTML='<div class="empty">Nenhum cadastrado</div>';return}
-  el.innerHTML=d.items.map(u=>`<div class="ci"><div class="ci-info"><div class="ci-name">${rn[u.role]||'👤'} ${ROLE_NAMES[u.role]||'Usuário'} <span style="color:var(--tx2)">+${u.num}</span></div><div class="ci-desc">${u.label||''}</div></div><button class="btn btn-r btn-sm" onclick="rmSD('${u.num}')"><i class="fas fa-trash"></i></button></div>`).join('')
+  const rn={2:'🌟 Sub-Dono',4:'💎 VIP',99:'🚫 Banido'}
+  el.innerHTML=d.items.map(u=>`<div class="ci"><div class="ci-info"><div class="ci-name">${rn[u.role]||'👤'} <span style="color:var(--tx2)">+${u.num}</span></div><div class="ci-desc">${u.label||''}</div></div><button class="btn btn-r btn-sm" onclick="rmSD('${u.num}')"><i class="fas fa-trash"></i></button></div>`).join('')
 }
-const ROLE_NAMES={1:'Dono',2:'Sub-Dono',3:'Admin',4:'VIP',99:'Banido'}
-async function addSD(){const num=G('sd-num').value.replace(/\D/g,''),role=parseInt(G('sd-role').value),label=G('sd-label').value;if(!num){toast('Informe o número!','e');return};await post('/api/subdons',{num,role,label});toast('Adicionado!');loadSDs();G('sd-num').value='';G('sd-label').value=''}
-async function rmSD(num){if(!confirm(`Remover +${num}?`))return;await del(`/api/subdons/${num}`);toast('Removido');loadSDs()}
+async function addSD(){const num=G('sd-num')?.value.replace(/\D/g,''),role=parseInt(G('sd-role')?.value)||2,label=G('sd-label')?.value||'';if(!num){toast('Número!','e');return};await post('/api/subdons',{num,role,label});toast('✅ Adicionado!');loadSDs();[G('sd-num'),G('sd-label')].forEach(e=>{if(e)e.value=''})}
+async function rmSD(num){if(!confirm(`Remover +${num}?`))return;await del(`/api/subdons/${num}`);toast('Removido','i');loadSDs()}
 
-// ── Contribuições ────────────────────────────────────────
-async function loadContribs(){
-  const d=await api('/api/contributions');if(!d.stats)return
-  G('c-total').textContent=d.stats.total;G('c-pending').textContent=d.stats.pending;G('c-accepted').textContent=d.stats.accepted;G('c-rejected').textContent=d.stats.rejected
-  const allC=d.items||[];const f=curCF==='all'?allC:allC.filter(c=>c.status===curCF)
-  const el=G('contrib-list');const sc={pending:'to',accepted:'tg',rejected:'tr'}
-  el.innerHTML=f.length?f.map(c=>`<div class="ci"><div class="ci-info"><div class="ci-name">!${c.name} <span class="tag ${sc[c.status]||'to'}">${c.status}</span></div><div class="ci-desc">📦 ${c.category} • ${c.description||''}</div></div><div style="display:flex;gap:5px">${c.status==='pending'?`<button class="btn btn-g btn-sm" onclick="appC('${c.name}')"><i class="fas fa-check"></i></button><button class="btn btn-r btn-sm" onclick="rejC('${c.name}')"><i class="fas fa-times"></i></button>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma</div>'
+// ── Contribuições ────────────────────────────────────────────
+async function loadContribs() {
+  const d=await api('/api/contributions'); if(!d.stats) return
+  animCount(G('c-total'),d.stats.total);animCount(G('c-pending'),d.stats.pending)
+  animCount(G('c-accepted'),d.stats.accepted);animCount(G('c-rejected'),d.stats.rejected)
+  const all=d.items||[], f=curCF==='all'?all:all.filter(c=>c.status===curCF)
+  const el=G('contrib-list'); if(!el) return
+  const sc={pending:'to',accepted:'tg',rejected:'tr'}
+  el.innerHTML=f.length?f.map(c=>`<div class="ci"><div class="ci-info"><div class="ci-name">.${c.name} <span class="tag ${sc[c.status]||'to'}">${c.status}</span></div><div class="ci-desc">${c.category} · ${c.description||''}</div></div><div style="display:flex;gap:5px">${c.status==='pending'?`<button class="btn btn-g btn-sm" onclick="appC('${c.name}')">✓</button><button class="btn btn-r btn-sm" onclick="rejC('${c.name}')">✕</button>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma</div>'
 }
 function setCF(el){curCF=el.dataset.cf;document.querySelectorAll('.fb-btn[data-cf]').forEach(b=>b.classList.remove('on'));el.classList.add('on');loadContribs()}
-async function appC(n){const r=await post(`/api/contributions/${n}/approve`,{});toast(r.ok?r.message||'Enviado!':(r.reason||'Erro'),r.ok?'s':'e');loadContribs()}
-async function rejC(n){const m=prompt('Motivo:')||'';await post(`/api/contributions/${n}/reject`,{motivo:m});toast('Rejeitado');loadContribs()}
+async function appC(n){const r=await post(`/api/contributions/${n}/approve`,{});toast(r.ok?r.message||'✅ Enviado!':(r.reason||'Erro'),r.ok?'s':'e');loadContribs()}
+async function rejC(n){const m=prompt('Motivo:')||'';await post(`/api/contributions/${n}/reject`,{motivo:m});toast('Rejeitado','i');loadContribs()}
 
-// ── Grupos ───────────────────────────────────────────────
-async function loadGrupos(){
-  const d=await api('/api/allowedgroups');if(!d)return
-  G('grp-restriction').checked=!!d.enabled
-  const el=G('grp-list')
-  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo autorizado</div>';return}
-  el.innerHTML=d.groups.map(g=>`<div class="ci"><div class="ci-info"><div class="ci-name">${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-r btn-sm" onclick="rmGroup('${encodeURIComponent(g.jid)}')"><i class="fas fa-trash"></i></button></div>`).join('')
+// ── Grupos ───────────────────────────────────────────────────
+async function loadGrupos() {
+  const d=await api('/api/allowedgroups'); if(!d) return
+  if(G('grp-restriction')) G('grp-restriction').checked=!!d.enabled
+  const el=G('grp-list'); if(!el) return
+  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo</div>';return}
+  el.innerHTML=d.groups.map(g=>`<div class="ci"><div class="ci-info"><div class="ci-name">${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-r btn-sm" onclick="rmGroup('${encodeURIComponent(g.jid)}')">✕</button></div>`).join('')
 }
-async function toggleRestriction(){const enabled=G('grp-restriction').checked;await post('/api/allowedgroups/toggle',{enabled});toast(enabled?'Restrição ativada':'Restrição desativada')}
-async function addAllowedGroup(){const jid=G('grp-jid').value.trim(),nome=G('grp-nome').value.trim();if(!jid){toast('Informe o JID!','e');return};await post('/api/allowedgroups',{jid,nome});toast('Grupo autorizado!');G('grp-jid').value='';G('grp-nome').value='';loadGrupos()}
-async function rmGroup(jid){if(!confirm('Remover grupo?'))return;await del(`/api/allowedgroups/${jid}`);toast('Removido');loadGrupos()}
+async function toggleRestriction(){const en=G('grp-restriction')?.checked;await post('/api/allowedgroups/toggle',{enabled:en});toast(en?'🔒 Restrição ativada':'🔓 Desativada')}
+async function addAllowedGroup(){const jid=G('grp-jid')?.value.trim(),nome=G('grp-nome')?.value.trim();if(!jid){toast('Informe o JID!','e');return};await post('/api/allowedgroups',{jid,nome});toast('✅ Autorizado!');[G('grp-jid'),G('grp-nome')].forEach(e=>{if(e)e.value=''});loadGrupos()}
+async function rmGroup(jid){if(!confirm('Remover?'))return;await del(`/api/allowedgroups/${decodeURIComponent(jid)}`);toast('Removido','i');loadGrupos()}
 
-// ── Logs ─────────────────────────────────────────────────
-function addLog(e){
-  const el=G('log-term'),div=document.createElement('div');div.className='le';div.dataset.type=e.type
-  const msg=typeof e.data==='object'?JSON.stringify(e.data):String(e.data)
-  div.innerHTML=`<span class="lt">${e.time||''}</span><span class="lk ${e.type}">${e.type.toUpperCase()}</span><span class="lm">${msg.substring(0,380)}</span>`
-  el.appendChild(div);if(G('log-auto')?.checked)el.scrollTop=el.scrollHeight
-  if(curLF!=='all'&&e.type!==curLF)div.style.display='none'
+// ── Logs ─────────────────────────────────────────────────────
+function addLog(e) {
+  const el=G('log-term'); if(!el) return
+  if(el.children.length>500) el.removeChild(el.firstChild)
+  const div=document.createElement('div'); div.className='le'; div.dataset.type=e.type
+  if(curLF!=='all'&&e.type!==curLF) div.style.display='none'
+  const msg=typeof e.data==='object'?JSON.stringify(e.data):String(e.data||'')
+  div.innerHTML=`<span class="lt">${e.time||''}</span><span class="lk ${e.type||''}">${(e.type||'').toUpperCase()}</span><span class="lm">${msg.slice(0,380)}</span>`
+  el.appendChild(div)
+  if(G('log-auto')?.checked) el.scrollTop=el.scrollHeight
 }
-function clearLogs(){G('log-term').innerHTML=''}
+function clearLogs(){const el=G('log-term');if(el)el.innerHTML='';toast('Limpo','i')}
 function setLF(el){curLF=el.dataset.lt;document.querySelectorAll('.fb-btn[data-lt]').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.querySelectorAll('#log-term .le').forEach(e=>{e.style.display=curLF==='all'||e.dataset.type===curLF?'':'none'})}
 
-// ── Termux ───────────────────────────────────────────────
-async function runTerm(){const cmd=G('term-in').value.trim();if(!cmd)return;G('term-in').value='';tl(`$ ${cmd}`);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout);if(r.stderr)tl(r.stderr,'err');if(r.error&&!r.stdout)tl(r.error,'err')}
-function tl(t,cls=''){const el=G('term-out'),d=document.createElement('div');d.className='tl'+(cls?' '+cls:'');d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight}
+// ── Termux ───────────────────────────────────────────────────
+function tl(t,cls=''){const el=G('term-out');if(!el)return;const d=document.createElement('div');d.className='tl'+(cls?' '+cls:'');d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight}
+async function runTerm(){const cmd=G('term-in')?.value.trim();if(!cmd)return;if(G('term-in'))G('term-in').value='';tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout);if(r.stderr)tl(r.stderr,'err');if(r.error&&!r.stdout&&!r.stderr)tl(r.error,'err')}
 async function tq(cmd){tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout);if(r.stderr)tl(r.stderr,'err')}
-async function termNotif(){const t=prompt('Notificação:');if(t)tq(`termux-notification --title "Bot" --content "${t.replace(/"/g,"'")}"`) }
-async function termTTS(){const t=prompt('Texto TTS:');if(t)tq(`termux-tts-speak "${t.replace(/"/g,"'")}"`) }
-async function npmInst(){const p=G('npm-pkg').value.trim();if(!p)return;tl('$ npm install '+p);const r=await post('/api/npm',{pkg:p});if(r.stdout)tl(r.stdout.substring(0,400))}
-async function gitPush(){G('git-res').textContent='⏳...';const r=await post('/api/github/push',{});G('git-res').textContent=r.ok?(r.message||'✅ Enviado!'):('❌ '+r.reason)}
-async function gitUpd(){G('git-res').textContent='⏳...';const r=await post('/api/github/update',{});G('git-res').textContent=r.updated?`✅ ${r.commits} commit(s)`:('ℹ️ '+r.reason)}
+async function npmInst(){const p=G('npm-pkg')?.value.trim();if(!p)return;tq('npm install '+p)}
+async function quickNpm(pkg){if(G('npm-pkg'))G('npm-pkg').value=pkg;tq('npm install '+pkg)}
+async function gitPush(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/push',{});if(G('git-res'))G('git-res').textContent=r.ok?(r.message||'✅ Enviado!'):('❌ '+r.reason)}
+async function gitUpd(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/update',{});if(G('git-res'))G('git-res').textContent=r.updated?`✅ ${r.commits} commit(s)`:('ℹ️ '+r.reason)}
 
-// ── Conectar ─────────────────────────────────────────────
-async function reqPairing(){const phone=G('pair-phone').value.replace(/\D/g,'');if(!phone){toast('Número!','e');return};await post('/api/pairing',{phone});toast('Solicitado!')}
-
-// ── Socket.IO ────────────────────────────────────────────
-const socket=io()
-socket.on('init',({logs,commands})=>{
-  if(Array.isArray(commands)&&commands.length){
-    allCmds=commands
-    G('s-loaded').textContent=commands.length
-  }
-  ;(logs||[]).forEach(addLog)
-})
-socket.on('log',e=>addLog(e))
-socket.on('reload',({total})=>{loadCmds();toast(`${total} cmds recarregados`)})
-socket.on('status',({status,jid})=>{
-  const b=G('status-badge'),t=G('status-txt')
-  if(status==='open'){b.className='badge online';t.textContent=jid?'+'+jid.split('@')[0].split(':')[0].slice(-6):'Online'}
-  else{b.className='badge offline';t.textContent=status==='close'?'Desconectado':'Conectando...'}
-})
-socket.on('qr',({qr})=>{G('pair-code').textContent=qr;G('pair-res').style.display='block'})
-
-// ── Init ─────────────────────────────────────────────────
-
-// ── Editor de Comando (POPUP) — COMPLETO ─────────────────
-let _edDirty = false
-
-function markDirty() {
-  _edDirty = true
-  const b = G('ed-dirty-badge')
-  if (b) { b.style.display = 'inline-flex'; b.style.opacity = '1' }
+// ── Conectar ─────────────────────────────────────────────────
+async function reqPairing(){const phone=G('pair-phone')?.value.replace(/\D/g,'');if(!phone){toast('Informe o número!','e');return};await post('/api/pairing',{phone});toast('✅ Código solicitado!')}
+async function cleanAuth(mode){
+  if(!confirm(mode==='full'?'⚠️ Resetar sessão (novo QR)?':'Limpar cache mantendo sessão?'))return
+  const r=G('clean-res');if(r)r.style.display='block'
+  const res=await post('/api/clean-auth',{mode})
+  if(r){r.textContent=res.ok?res.message:'❌ '+(res.error||'Erro');r.style.color=res.ok?'var(--ac)':'var(--rd)'}
+  res.ok?toast(res.message||'✅ Feito!'):toast(res.error||'Erro','e')
 }
 
-function edSwitchTab(tab, triggerEl) {
-  // Switch tab content panels
-  const tabs = ['basic','perm','menu','alias']
-  tabs.forEach(t => {
-    const el = G('ed-tab-'+t)
-    if (el) el.style.display = (t === tab) ? 'block' : 'none'
-  })
-  // Switch tab button states - ONLY inside ed-modal
-  const modal = G('ed-modal')
-  if (modal) {
-    modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
-  }
-  if (triggerEl) triggerEl.classList.add('on')
-  else {
-    // Find tab button by data attribute and mark it
-    const modal2 = G('ed-modal')
-    if (modal2) {
-      const btn = modal2.querySelector(`.ed-tab[data-tab="${tab}"]`)
-      if (btn) btn.classList.add('on')
-      else modal2.querySelectorAll('.ed-tab')[0]?.classList.add('on')
-    }
-  }
-}
-
-function syncEd() {
-  // Sync role buttons
-  document.querySelectorAll('#ed-roles .rp-btn').forEach(b => {
-    b.classList.toggle('sel', b.dataset.role === edRole)
-  })
-  // Sync location buttons
-  document.querySelectorAll('#ed-locs .rp-btn').forEach(b => {
-    b.classList.toggle('sel', b.dataset.loc === edLoc)
-  })
-}
-
-function selR(el) { edRole = el.dataset.role; syncEd(); markDirty() }
-function selL(el) { edLoc  = el.dataset.loc;  syncEd(); markDirty() }
-
-function tryCloseEd() {
-  if (_edDirty) {
-    if (!confirm('Você tem alterações não salvas. Sair mesmo assim?')) return
-  }
-  closeEdModal()
-}
-
-function closeEdModal() {
-  edCmd = null; _edDirty = false
-  const m = G('ed-modal')
-  if (m) m.style.display = 'none'
-  renderCmds()
-}
-
-function openEd(name) {
-  const cmd = allCmds.find(c => c.name === name)
-  if (!cmd) { toast('Comando não encontrado', 'e'); return }
-  edCmd = cmd
-
-  // Load permissions
-  const perm = allPerms[name]
-  edRole = perm?.minRole ? String(perm.minRole) : ''
-  edLoc  = perm?.allowedIn || 'both'
-  edAliases    = [...(cmd.aliases || [])]
-  edMenuTargets = [...(allMenuTargets[name] || cmd.menuTargets || [])]
-  _edDirty = false
-
-  // Fill form fields
-  const setVal = (id, v) => { const el = G(id); if (el) el.value = v ?? '' }
-  setVal('ed-desc',  cmd.description || '')
-  setVal('ed-usage', cmd.usage || ('.' + name))
-  setVal('ed-cd',    cmd.cooldown || 0)
-
-  const titleEl = G('ed-title')
-  if (titleEl) titleEl.textContent = '.' + name
-
-  const enabledEl = G('ed-enabled')
-  if (enabledEl) enabledEl.checked = cmd.enabled !== false
-
-  const badge = G('ed-dirty-badge')
-  if (badge) badge.style.display = 'none'
-
-  // Sync all sub-editors
-  syncEd()
-  renderEdAliases()
-  renderEdMenus()
-
-  // Show modal first, then switch tab (so elements are visible/measurable)
-  const modal = G('ed-modal')
-  if (!modal) { toast('Modal não encontrado!', 'e'); return }
-  modal.style.display = 'flex'
-
-  // Switch to basic tab
-  edSwitchTab('basic')
-
-  // Mark first tab button as active
-  const firstTab = modal.querySelector('.ed-tab')
-  if (firstTab) {
-    modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
-    firstTab.classList.add('on')
-  }
-
-  renderCmds()
-}
-
-function closeEd() { tryCloseEd() }
-
-loadStatus();setInterval(loadStatus,30000)
-
-// ── Mobile Bottom Nav ────────────────────────────────────
-function goTab(id, el) {
-  // Call existing nav logic
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'))
-  document.querySelectorAll('.ni[data-tab]').forEach(x => x.classList.remove('on'))
-  document.querySelectorAll('.mob-ni[data-tab]').forEach(x => x.classList.remove('on'))
-  const tab = document.getElementById('tab-' + id)
-  if (tab) tab.classList.add('on')
-  document.querySelectorAll('[data-tab="' + id + '"]').forEach(x => x.classList.add('on'))
-  const L = {dash:loadStatus,cmds:loadCmds,menus:loadMenuCfg,auto:loadAutos,cfg:loadCfg,minions:loadMinions,subdons:loadSDs,contribs:loadContribs,grupos:loadGrupos,logs:()=>{},connect:()=>{}}
-  if (L[id]) L[id]()
-  // Close more menu
-  const mm = document.getElementById('mob-more-menu')
-  if (mm) mm.style.display = 'none'
-  const mb = document.getElementById('mob-more-btn')
-  if (mb) mb.classList.remove('on')
-  history.replaceState(null, '', '#' + id)
-}
-function toggleMobMore() {
-  const mm = document.getElementById('mob-more-menu')
-  const mb = document.getElementById('mob-more-btn')
-  if (!mm) return
-  const open = mm.style.display === 'flex'
-  mm.style.display = open ? 'none' : 'flex'
-  if (mb) mb.classList.toggle('on', !open)
-}
-// Close more menu on outside click
-document.addEventListener('click', e => {
-  const mm = document.getElementById('mob-more-menu')
-  const mb = document.getElementById('mob-more-btn')
-  if (mm && mb && !mm.contains(e.target) && !mb.contains(e.target)) {
-    mm.style.display = 'none'
-    if (mb) mb.classList.remove('on')
-  }
-})
-
-// Hook existing sidebar nav into goTab
-document.querySelectorAll('.ni[data-tab]').forEach(n => {
-  n.onclick = function() { goTab(this.dataset.tab, this) }
-})
-
-// ── PWA Install ──────────────────────────────────────────
+// ── PWA — OBRIGATÓRIO BAIXAR ─────────────────────────────────
 let _deferredPrompt = null
-let _pwaSkipped = localStorage.getItem('pwa-skipped') === '1'
-const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone
-
-function checkShowPWA() {
-  if (_isStandalone || _pwaSkipped) return
-  const screen = document.getElementById('pwa-screen')
-  if (screen) screen.style.display = 'flex'
-}
+const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone
 
 window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault()
-  _deferredPrompt = e
-  const btn = document.getElementById('pwa-install-btn')
-  if (btn) btn.style.display = 'flex'
+  e.preventDefault(); _deferredPrompt = e
+})
+
+window.addEventListener('appinstalled', () => {
+  const s=G('pwa-screen'); if(s) s.style.display='none'
+  toast('✅ App instalado com sucesso!')
 })
 
 async function installPWA() {
-  if (!_deferredPrompt) {
-    toast('Use o menu do navegador para instalar', 'i')
-    return
-  }
-  _deferredPrompt.prompt()
-  const { outcome } = await _deferredPrompt.userChoice
-  _deferredPrompt = null
-  if (outcome === 'accepted') {
-    const screen = document.getElementById('pwa-screen')
-    if (screen) screen.style.display = 'none'
-    toast('✅ App instalado!')
+  sfx('install')
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt()
+    const { outcome } = await _deferredPrompt.userChoice
+    _deferredPrompt = null
+    if (outcome === 'accepted') {
+      const s=G('pwa-screen'); if(s) s.style.display='none'
+    }
+  } else {
+    const ua = navigator.userAgent.toLowerCase()
+    if (/iphone|ipad|ipod/.test(ua)) {
+      alert('No iPhone:\n1. Toque em Compartilhar ⬆️\n2. "Adicionar à Tela de Início"\n3. Confirme!')
+    } else {
+      alert('No Android/Chrome:\n1. Toque nos 3 pontinhos ⋮\n2. "Adicionar à tela inicial"\n\nOu acesse pelo Chrome para melhor experiência!')
+    }
   }
 }
 
 function skipPWA() {
-  localStorage.setItem('pwa-skipped', '1')
-  const screen = document.getElementById('pwa-screen')
-  if (screen) screen.style.display = 'none'
+  const s=G('pwa-screen'); if(s) s.style.display='none'
 }
 
-window.addEventListener('appinstalled', () => {
-  const screen = document.getElementById('pwa-screen')
-  if (screen) screen.style.display = 'none'
-  toast('✅ App instalado com sucesso!')
-})
+// Mostra tela PWA obrigatória se não for standalone
+if (!_isStandalone) {
+  // Aguarda o app carregar antes de mostrar
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const s = G('pwa-screen')
+      if (s) s.style.display = 'flex'
+    }, 800)
+  })
+}
 
+// Registra service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {})
 }
 
-// Show PWA banner (NOT fullscreen) after 2s if not standalone and install prompt is available
-setTimeout(() => {
-  if (_isStandalone || _pwaSkipped) return
-  const banner = G('pwa-screen')
-  // Only show the install screen if we actually have a deferredPrompt
-  // (means browser supports PWA install)
-  if (_deferredPrompt && banner) {
-    banner.style.display = 'flex'
+// ── SFX Button ───────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const tb = document.querySelector('#tab-dash .tb')
+  if (tb) {
+    const btn = document.createElement('button')
+    btn.id='sfx-btn'; btn.className='btn btn-q btn-sm'
+    btn.style.cssText='padding:5px 9px;font-size:14px;margin-left:4px'
+    btn.title='Sons'; btn.textContent=sfxEnabled()?'🔊':'🔇'
+    btn.onclick=toggleSFX; tb.appendChild(btn)
   }
-  // If no deferredPrompt after 2s, skip PWA screen entirely (iOS or unsupported)
-}, 2000)
-
-// ── Reviver QR ───────────────────────────────────────────
-async function cleanAuth(mode) {
-  const msgs = { cache: 'Limpar cache (mantém sessão)?', full: '⚠️ RESETAR SESSÃO? O bot precisará de novo QR scan!' }
-  if (!confirm(msgs[mode] || 'Continuar?')) return
-  const res = document.getElementById('clean-res')
-  if (res) { res.style.display = 'block'; res.textContent = '⏳ Processando...' }
-  const r = await post('/api/clean-auth', { mode })
-  if (res) {
-    res.textContent = r.ok ? r.message : ('❌ ' + (r.error || 'Erro'))
-    res.style.color = r.ok ? 'var(--ac)' : 'var(--rd)'
-  }
-  if (r.ok) toast(r.message || '✅ Feito!')
-  else toast(r.error || 'Erro', 'e')
-}
-
-// ── Fix loadAutos (was missing) ──────────────────────────
-async function loadAutos() {
-  const d = await api('/api/automations')
-  if (!Array.isArray(d)) return
-  allAutos = d
-  renderAutos()
-}
-function renderAutos() {
-  const el = G('auto-list')
-  if (!el) return
-  if (!allAutos.length) { el.innerHTML = '<div class="empty">Nenhuma automação. Clique em "+ Nova" para criar.</div>'; return }
-  const ic = { text: '💬', audio: '🔊', image: '🖼️', video: '🎬', sticker: '🎭' }
-  el.innerHTML = allAutos.map(a => `<div class="ci">
-    <div class="ci-info">
-      <div class="ci-name">${ic[a.type]||'💬'} <span style="color:var(--ac)">"${a.trigger}"</span> ${a.matchType==='contains'?'<span style="background:rgba(79,195,247,.12);color:var(--bl);padding:1px 5px;border-radius:3px;font-size:10px">contém</span>':a.matchType==='regex'?'<span style="background:rgba(162,155,254,.12);color:var(--pu);padding:1px 5px;border-radius:3px;font-size:10px">regex</span>':''}</div>
-      <div class="ci-desc">${a.response?.substring(0,60)||''}${a.scope!=='both'?' ['+a.scope+']':''}</div>
-    </div>
-    <div style="display:flex;gap:5px;align-items:center">
-      <label class="tog" style="gap:0" onclick="event.stopPropagation()"><input type="checkbox" ${a.enabled!==false?'checked':''} onchange="toggleAuto('${a.id}',this.checked)"/><div class="tog-t"><div class="tog-th"></div></div></label>
-      <button class="btn btn-b btn-sm" onclick="openAutoModal('${a.id}')"><i class="fas fa-edit"></i></button>
-      <button class="btn btn-r btn-sm" onclick="delAuto('${a.id}')"><i class="fas fa-trash"></i></button>
-    </div>
-  </div>`).join('')
-}
-function toggleAutoMedia() {
-  const t = G('auto-type')?.value
-  const row = G('auto-media-row')
-  if (row) row.style.display = ['audio','image','video','sticker'].includes(t) ? 'block' : 'none'
-}
-function openAutoModal(id) {
-  const a = id ? allAutos.find(x => x.id === id) : null
-  G('auto-modal-tt').textContent = a ? `Editar: "${a.trigger}"` : 'Nova Automação'
-  G('auto-id').value = id || ''
-  G('auto-trigger').value = a?.trigger || ''
-  G('auto-match').value = a?.matchType || 'exact'
-  G('auto-resp').value = a?.response || ''
-  G('auto-type').value = a?.type || 'text'
-  G('auto-scope').value = a?.scope || 'both'
-  G('auto-media').value = a?.mediaUrl || ''
-  G('auto-cd').value = a?.cooldown || 0
-  G('auto-stop').checked = a?.stopPropagation !== false
-  toggleAutoMedia()
-  G('auto-modal').style.display = 'flex'
-}
-function closeAutoModal() { G('auto-modal').style.display = 'none' }
-async function saveAuto() {
-  const id = G('auto-id').value
-  const body = { trigger: G('auto-trigger').value.trim(), matchType: G('auto-match').value, response: G('auto-resp').value, type: G('auto-type').value, mediaUrl: G('auto-media').value.trim(), scope: G('auto-scope').value, cooldown: parseInt(G('auto-cd').value) || 0, stopPropagation: G('auto-stop').checked, enabled: true }
-  if (!body.trigger) { toast('Informe o gatilho!', 'e'); return }
-  if (id) await put(`/api/automations/${id}`, body); else await post('/api/automations', body)
-  toast('✅ Automação salva!'); closeAutoModal(); loadAutos()
-}
-async function toggleAuto(id, enabled) { await put(`/api/automations/${id}`, { enabled }); const a = allAutos.find(x => x.id === id); if (a) a.enabled = enabled }
-async function delAuto(id) { if (!confirm('Deletar?')) return; await del(`/api/automations/${id}`); toast('Deletada'); loadAutos() }
-
-// ── Grupos ───────────────────────────────────────────────
-async function loadGrupos() {
-  const d = await api('/api/allowedgroups'); if (!d) return
-  G('grp-restriction').checked = !!d.enabled
-  const el = G('grp-list')
-  if (!d.groups?.length) { el.innerHTML = '<div class="empty">Nenhum grupo autorizado</div>'; return }
-  el.innerHTML = d.groups.map(g => `<div class="ci"><div class="ci-info"><div class="ci-name">${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-r btn-sm" onclick="rmGroup('${encodeURIComponent(g.jid)}')"><i class="fas fa-trash"></i></button></div>`).join('')
-}
-async function toggleRestriction() { const enabled = G('grp-restriction').checked; await post('/api/allowedgroups/toggle', { enabled }); toast(enabled ? 'Restrição ativada' : 'Restrição desativada') }
-async function addAllowedGroup() { const jid = G('grp-jid').value.trim(), nome = G('grp-nome').value.trim(); if (!jid) { toast('Informe o JID!', 'e'); return }; await post('/api/allowedgroups', { jid, nome }); toast('Grupo autorizado!'); G('grp-jid').value = ''; G('grp-nome').value = ''; loadGrupos() }
-async function rmGroup(jid) { if (!confirm('Remover grupo?')) return; await del(`/api/allowedgroups/${jid}`); toast('Removido'); loadGrupos() }
-
-// ── Fix status badge with last status ───────────────────
-socket.on('status', ({ status, jid }) => {
-  const b = G('status-badge'), t = G('status-txt')
-  if (status === 'open') { b.className = 'badge online'; t.textContent = jid ? '+' + jid.split('@')[0].split(':')[0].slice(-6) : 'Online' }
-  else if (status === 'close') { b.className = 'badge offline'; t.textContent = 'Desconectado' }
-  else { b.className = 'badge offline'; t.textContent = 'Conectando...' }
 })
 
-// ── Hash navigation on load ──────────────────────────────
-;(function() {
-  const h = location.hash.replace('#', '')
-  if (h && document.getElementById('tab-' + h)) goTab(h)
-  else goTab('dash')
-})()
-
-// ════════════════════════════════════════════════════════
-// SFX — Sons de interface
-// ════════════════════════════════════════════════════════
-const _sfxCtx = window.AudioContext ? new AudioContext() : null
-const _sfxEnabled = () => localStorage.getItem('sfx') !== 'off'
-
-function sfx(type) {
-  if (!_sfxCtx || !_sfxEnabled()) return
-  try {
-    const o = _sfxCtx.createOscillator()
-    const g = _sfxCtx.createGain()
-    o.connect(g); g.connect(_sfxCtx.destination)
-    const t = _sfxCtx.currentTime
-    const configs = {
-      click:   { freq: 800,  type: 'sine',     dur: 0.06, vol: 0.12 },
-      success: { freq: 520,  type: 'sine',     dur: 0.18, vol: 0.15, freq2: 660 },
-      error:   { freq: 200,  type: 'sawtooth', dur: 0.22, vol: 0.13 },
-      save:    { freq: 440,  type: 'sine',     dur: 0.25, vol: 0.15, freq2: 550 },
-      open:    { freq: 600,  type: 'sine',     dur: 0.12, vol: 0.10 },
-      notify:  { freq: 880,  type: 'sine',     dur: 0.14, vol: 0.14, freq2: 1100 },
-      toggle:  { freq: 700,  type: 'sine',     dur: 0.08, vol: 0.10 },
-    }
-    const cfg = configs[type] || configs.click
-    o.type = cfg.type
-    o.frequency.setValueAtTime(cfg.freq, t)
-    if (cfg.freq2) o.frequency.linearRampToValueAtTime(cfg.freq2, t + cfg.dur * 0.6)
-    g.gain.setValueAtTime(cfg.vol, t)
-    g.gain.exponentialRampToValueAtTime(0.001, t + cfg.dur)
-    o.start(t); o.stop(t + cfg.dur)
-  } catch {}
-}
-
-// ── Override toast to play SFX ─────────────────────────
-const _origToast = window.toast
-window.toast = function(m, t='s', dur) {
-  if (typeof _origToast === 'function') _origToast(m, t, dur)
-  if (t === 's') sfx('success')
-  else if (t === 'e') sfx('error')
-  else sfx('notify')
-}
-
-// Play click SFX on all .btn and .ni elements
+// SFX em ações específicas
 document.addEventListener('click', e => {
-  const target = e.target.closest('.btn, .ni, .mob-ni, .fb-btn, .rp-btn, .mt-chip, .ed-tab')
-  if (target) sfx('click')
-}, { passive: true })
+  if (e.target.closest('.btn-r, [onclick*="del"],[onclick*="Del"]')) sfx('delete')
+  else if (e.target.closest('.tog-t')) sfx('toggle')
+}, {passive:true})
 
-// ── SFX Toggle button (adds to topbar of dash) ─────────
-function toggleSFX() {
-  const on = _sfxEnabled()
-  localStorage.setItem('sfx', on ? 'off' : 'on')
-  const btn = G('sfx-btn')
-  if (btn) {
-    btn.innerHTML = on ? '🔇' : '🔊'
-    btn.title = on ? 'SFX desligado' : 'SFX ligado'
-  }
-  if (!on) sfx('toggle')
-}
+// ── Animações CSS injetadas ──────────────────────────────────
+document.head.insertAdjacentHTML('beforeend', `<style>
+@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
+@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(-16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.35)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
+@keyframes tabLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
-// Initialize SFX button
-;(function() {
-  const dashTb = document.querySelector('#tab-dash .tb')
-  if (!dashTb) return
-  const btn = document.createElement('button')
-  btn.id = 'sfx-btn'
-  btn.className = 'btn btn-q btn-sm'
-  btn.style.cssText = 'padding:5px 9px;font-size:14px;border-radius:6px'
-  btn.innerHTML = _sfxEnabled() ? '🔊' : '🔇'
-  btn.title = 'Efeitos sonoros'
-  btn.onclick = toggleSFX
-  dashTb.appendChild(btn)
+.mo-box{animation:modalIn .25s cubic-bezier(.34,1.56,.64,1) both}
+.toast{animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both}
+.card{animation:cardIn .35s ease both;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.card:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 8px 32px rgba(0,255,136,.1)}
+.card::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .4s ease;pointer-events:none}
+.card:hover::after{left:140%}
+.le{animation:leIn .15s ease both}
+.badge.online{animation:pulse 2.5s ease-in-out infinite}
+.tab.on .card:nth-child(1){animation-delay:.04s}.tab.on .card:nth-child(2){animation-delay:.08s}.tab.on .card:nth-child(3){animation-delay:.12s}.tab.on .card:nth-child(4){animation-delay:.16s}
+.tab.on{animation:cardIn .3s ease both}
+.ci{transition:transform .12s,background .12s;cursor:pointer}
+.ci:hover{transform:translateX(3px)}
+.ed-tab.on{color:var(--ac)!important}
+.ed-tab.on::after{content:'';display:block;height:2px;background:var(--ac);border-radius:2px;animation:tabLine .18s ease}
+.fi input:focus,.fi textarea:focus,.fi select:focus{box-shadow:0 0 0 2px rgba(0,255,136,.2)!important}
+.btn{position:relative;overflow:hidden;transition:transform .1s,filter .1s}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:scale(.97)}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+.main{position:relative;z-index:1}
+.main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.05),transparent);animation:scan 10s linear infinite;pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+</style>`)
+
+// ── Init ─────────────────────────────────────────────────────
+;(function init() {
+  const h = location.hash.replace('#','')
+  if (h && G('tab-'+h)) goTab(h)
+  else goTab('dash')
+  loadStatus()
+  setInterval(loadStatus, 30000)
 })()
-
-// ════════════════════════════════════════════════════════
-// FIX: Override openEd to play SFX on open
-// ════════════════════════════════════════════════════════
-const _origOpenEd = window.openEd
-window.openEd = function(name) {
-  sfx('open')
-  if (typeof _origOpenEd === 'function') _origOpenEd(name)
-}
-
-// ── Fix saveCmd to play SFX ────────────────────────────
-const _origSaveCmd = window.saveCmd
-window.saveCmd = async function() {
-  if (typeof _origSaveCmd === 'function') await _origSaveCmd()
-  sfx('save')
-}
-
 </script>
 </body>
 </html>

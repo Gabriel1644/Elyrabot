@@ -1,12 +1,14 @@
 {
-  "name": "ElyraBot Dashboard",
-  "short_name": "ElyraBot",
+  "name": "Kaius Bot Dashboard",
+  "short_name": "Kaius",
   "description": "Painel de controle do WhatsApp Bot",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0b14",
-  "theme_color": "#00e676",
+  "background_color": "#07080f",
+  "theme_color": "#00ff88",
   "orientation": "any",
+  "lang": "pt-BR",
   "icons": [
     {
       "src": "/icon.svg",
@@ -15,11 +17,21 @@
       "purpose": "any"
     },
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["utilities", "productivity"]
+  "categories": ["utilities", "productivity"],
+  "shortcuts": [
+    { "name": "Comandos", "url": "/#cmds", "description": "Ver comandos do bot" },
+    { "name": "Logs", "url": "/#logs", "description": "Ver logs ao vivo" }
+  ]
 }
