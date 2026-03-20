@@ -131,11 +131,22 @@ export function getMentionedJids(msg) {
 
 // Retorna texto da mensagem (suporta quoted)
 export function getMessageText(msg) {
+  const m = msg?.message
+  if (!m) return ''
   return (
-    msg.message?.conversation ||
-    msg.message?.extendedTextMessage?.text ||
-    msg.message?.imageMessage?.caption ||
-    msg.message?.videoMessage?.caption ||
+    m.conversation                            ||
+    m.extendedTextMessage?.text               ||
+    m.imageMessage?.caption                   ||
+    m.videoMessage?.caption                   ||
+    m.documentMessage?.caption                ||
+    m.documentWithCaptionMessage?.message?.documentMessage?.caption ||
+    m.buttonsResponseMessage?.selectedDisplayText ||
+    m.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    m.templateButtonReplyMessage?.selectedDisplayText ||
+    m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson ||
+    m.ephemeralMessage?.message?.conversation ||
+    m.viewOnceMessage?.message?.imageMessage?.caption ||
+    m.viewOnceMessage?.message?.videoMessage?.caption ||
     ''
   )
 }

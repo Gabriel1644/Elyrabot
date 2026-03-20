@@ -1,138 +1,132 @@
 // ══════════════════════════════════════════════════════════
-//  grupo.js — Comandos de controle de grupos
-//  !allowbot !denybot !setprefixo !meugrupo
+//  grupo.js — Controle de grupos e restrições
 // ══════════════════════════════════════════════════════════
 import { allowedGroupsDB, configDB, groupsDB } from '../../database.js'
 import { CONFIG } from '../../config.js'
 
-// ── !allowbot — libera o bot neste grupo ──────────────────
+// ── !allowbot — autoriza um grupo ────────────────────────
 export const allowbot = {
   name: 'allowbot',
-  aliases: ['liberarbot', 'ativarbot', 'botativo'],
-  description: 'Libera o bot para funcionar neste grupo',
+  aliases: ['liberargrupo', 'allowgroup'],
+  description: 'Autoriza o bot neste grupo',
   category: 'owner',
-  usage: '!allowbot [jid]',
+  usage: '!allowbot',
   cooldown: 3,
-  async execute({ reply, args, isOwner, from, isGrupo, sock }) {
-    if (!isOwner) return reply('❌ Apenas o dono.')
-    const jid = args[0] || from
-    if (!jid.endsWith('@g.us')) return reply('❌ JID de grupo inválido! Use em um grupo ou passe o JID.')
-    let nome = jid
-    try { const m = await sock.groupMetadata(jid); nome = m.subject } catch {}
-    allowedGroupsDB.set(jid, { jid, nome, addedAt: new Date().toISOString() })
-    reply(`✅ Bot liberado no grupo *${nome}*!`)
+  async execute({ sock, from, reply, isGrupo, isOwner, isSubdono }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
+    if (!isGrupo) return reply('❌ Use em grupos!')
+    let nome = from
+    try { const m = await sock.groupMetadata(from); nome = m.subject } catch {}
+    allowedGroupsDB.set(from, { jid: from, nome, addedAt: new Date().toISOString() })
+    await reply(`✅ Grupo *${nome}* autorizado!\nO bot vai responder aqui.`)
   }
 }
 
-// ── !denybot — bloqueia o bot neste grupo ─────────────────
+// ── !denybot — bloqueia um grupo ─────────────────────────
 export const denybot = {
   name: 'denybot',
-  aliases: ['bloquearbot', 'desativarbot', 'botinatv'],
+  aliases: ['bloqueargrupo', 'denygroup'],
   description: 'Bloqueia o bot neste grupo',
   category: 'owner',
-  usage: '!denybot [jid]',
+  usage: '!denybot',
   cooldown: 3,
-  async execute({ reply, args, isOwner, from, isGrupo }) {
-    if (!isOwner) return reply('❌ Apenas o dono.')
-    const jid = args[0] || from
-    if (!jid.endsWith('@g.us')) return reply('❌ JID de grupo inválido!')
-    allowedGroupsDB.delete(jid)
-    reply(`✅ Bot bloqueado no grupo ${jid}`)
+  async execute({ from, reply, isGrupo, isOwner, isSubdono }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
+    if (!isGrupo) return reply('❌ Use em grupos!')
+    allowedGroupsDB.delete(from)
+    await reply('🔒 Grupo bloqueado. Bot não vai mais responder aqui.')
   }
 }
 
-// ── !restricaogrupos — ativa/desativa restrição global ────
+// ── !restricaogrupos — liga/desliga restrição global ──────
 export const restricaoGrupos = {
   name: 'restricaogrupos',
   aliases: ['grouprestriction', 'restricao'],
-  description: 'Ativa/desativa restrição de grupos',
+  description: 'Liga/desliga restrição de grupos',
   category: 'owner',
   usage: '!restricaogrupos on/off',
   cooldown: 3,
-  async execute({ reply, args, isOwner }) {
-    if (!isOwner) return reply('❌ Apenas o dono.')
-    const val = args[0]?.toLowerCase()
-    if (val === 'on') {
+  async execute({ args, reply, isOwner, isSubdono }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
+    const sub = args[0]?.toLowerCase()
+    if (sub === 'on' || sub === 'ativar') {
       configDB.set('groupRestriction', true)
-      return reply('🔒 Restrição de grupos *ATIVADA*.\nO bot só funcionará em grupos autorizados com *!allowbot*.')
+      return reply('🔒 Restrição ativada!\nO bot só responde em grupos autorizados.')
     }
-    if (val === 'off') {
+    if (sub === 'off' || sub === 'desativar') {
       configDB.set('groupRestriction', false)
-      return reply('🔓 Restrição de grupos *DESATIVADA*.\nO bot funciona em todos os grupos.')
+      return reply('🔓 Restrição desativada!\nO bot responde em todos os grupos.')
     }
     const atual = configDB.get('groupRestriction', false)
     const grupos = Object.values(allowedGroupsDB.all())
-    let txt = `🔒 *Restrição de Grupos*\n\nStatus: *${atual ? 'ATIVADA' : 'DESATIVADA'}*\n\n`
-    txt += `Use:\n!restricaogrupos on — ativar\n!restricaogrupos off — desativar\n\n`
-    if (grupos.length) {
-      txt += `*Grupos autorizados (${grupos.length}):*\n`
-      grupos.slice(0, 10).forEach(g => { txt += `• ${g.nome}\n` })
-      if (grupos.length > 10) txt += `_... e mais ${grupos.length - 10}_`
-    } else {
-      txt += '_Nenhum grupo autorizado ainda._\nUse !allowbot em um grupo para autorizar.'
-    }
-    reply(txt)
+    await reply(
+      `🔒 *Status da Restrição*\n\n` +
+      `Estado: *${atual ? 'ATIVA' : 'INATIVA'}*\n` +
+      `Grupos autorizados: *${grupos.length}*\n\n` +
+      `• !restricaogrupos on — ativar\n` +
+      `• !restricaogrupos off — desativar\n` +
+      `• !allowbot — autorizar este grupo\n` +
+      `• !denybot — bloquear este grupo`
+    )
   }
 }
 
-// ── !listargrupos — lista grupos permitidos ───────────────
+// ── !listargrupos ─────────────────────────────────────────
 export const listarGrupos = {
   name: 'listargrupos',
-  aliases: ['gruposbot', 'botgrupos'],
-  description: 'Lista grupos autorizados a usar o bot',
+  aliases: ['listgroups', 'grupos'],
+  description: 'Lista grupos autorizados',
   category: 'owner',
   usage: '!listargrupos',
   cooldown: 5,
-  async execute({ reply, isOwner }) {
-    if (!isOwner) return reply('❌ Apenas o dono.')
+  async execute({ reply, isOwner, isSubdono }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
     const grupos = Object.values(allowedGroupsDB.all())
-    const ativo  = configDB.get('groupRestriction', false)
-    if (!grupos.length) return reply(`🔒 Restrição: *${ativo ? 'ATIVA' : 'INATIVA'}*\n\nNenhum grupo autorizado.`)
-    let txt = `🔒 Restrição: *${ativo ? 'ATIVA' : 'INATIVA'}*\n\n*Grupos autorizados (${grupos.length}):*\n\n`
-    grupos.forEach((g, i) => { txt += `${i + 1}. *${g.nome}*\n   \`${g.jid}\`\n` })
-    reply(txt)
+    const restricao = configDB.get('groupRestriction', false)
+    if (!grupos.length) return reply(
+      `📋 *Grupos Autorizados*\n\nNenhum grupo cadastrado.\n` +
+      `Restrição: ${restricao ? '🔒 ATIVA' : '🔓 INATIVA'}`
+    )
+    const lista = grupos.map((g, i) => `${i + 1}. *${g.nome || g.jid}*\n   \`${g.jid}\``).join('\n')
+    await reply(`📋 *Grupos Autorizados*\nRestrição: ${restricao ? '🔒 ATIVA' : '🔓 INATIVA'}\n\n${lista}`)
   }
 }
 
-// ── !setprefixo — define prefixo personalizado do grupo ──
+// ── !setprefixo — define prefixo por grupo ────────────────
 export const setprefixoGrupo = {
   name: 'setprefixo',
-  aliases: ['prefixogrupo', 'setprefix'],
+  aliases: ['setprefix', 'prefixo'],
   description: 'Define o prefixo do bot neste grupo',
-  category: 'admin',
-  usage: '!setprefixo <símbolo>',
+  category: 'owner',
+  usage: '!setprefixo <prefixo>',
   cooldown: 5,
-  async execute({ reply, args, isAdmin, isOwner, isSubdono, isGrupo, from }) {
+  async execute({ from, args, reply, isOwner, isSubdono, isGrupo }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
     if (!isGrupo) return reply('❌ Use em grupos!')
-    if (!isAdmin && !isOwner && !isSubdono) return reply('❌ Apenas administradores.')
-    const novoPrefix = args[0]?.trim()
-    if (!novoPrefix || novoPrefix.length > 3) return reply('❌ Informe um símbolo válido (até 3 chars)!\nEx: !setprefixo /')
-    // Salva no mapa de prefixos por grupo
-    const prefixos = configDB.get('prefixosGrupo', {})
-    prefixos[from] = novoPrefix
-    configDB.set('prefixosGrupo', prefixos)
-    // Atualiza CONFIG também
-    CONFIG.prefixosGrupo = prefixos
-    reply(`✅ Prefixo deste grupo definido como: *${novoPrefix}*\n\nAgora use: ${novoPrefix}menu`)
+    const novo = args[0]
+    if (!novo || novo.length > 3) return reply('❌ Prefixo inválido! Max 3 caracteres.')
+    const prefixos = CONFIG.prefixosGrupo || {}
+    prefixos[from] = novo
+    CONFIG['prefixosGrupo'] = prefixos
+    await reply(`✅ Prefixo deste grupo: *${novo}*`)
   }
 }
 
-// ── !resetprefixo — reseta prefixo do grupo ──────────────
+// ── !resetprefixo ─────────────────────────────────────────
 export const resetprefixoGrupo = {
   name: 'resetprefixo',
-  aliases: ['resetprefix', 'prefixopadrao'],
+  aliases: ['resetprefix'],
   description: 'Reseta o prefixo deste grupo para o padrão',
-  category: 'admin',
+  category: 'owner',
   usage: '!resetprefixo',
   cooldown: 5,
-  async execute({ reply, isAdmin, isOwner, isSubdono, isGrupo, from }) {
+  async execute({ from, reply, isOwner, isSubdono, isGrupo }) {
+    if (!isOwner && !isSubdono) return reply('❌ Apenas dono ou sub-dono.')
     if (!isGrupo) return reply('❌ Use em grupos!')
-    if (!isAdmin && !isOwner && !isSubdono) return reply('❌ Apenas administradores.')
-    const prefixos = configDB.get('prefixosGrupo', {})
+    const prefixos = CONFIG.prefixosGrupo || {}
     delete prefixos[from]
-    configDB.set('prefixosGrupo', prefixos)
-    CONFIG.prefixosGrupo = prefixos
-    reply(`✅ Prefixo resetado para o padrão: *${CONFIG.prefixo}*`)
+    CONFIG['prefixosGrupo'] = prefixos
+    await reply(`✅ Prefixo resetado para o padrão: *${CONFIG.prefixo}*`)
   }
 }
 

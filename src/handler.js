@@ -140,7 +140,16 @@ export async function handleMessage(sock, msg) {
   // ── Restrição de grupos ────────────────────────────────
   if (isGrupo && configDB.get('groupRestriction', false)) {
     const allowed = allowedGroupsDB.has(from)
-    if (!allowed) return  // silenciosamente ignora grupos não autorizados
+    if (!allowed) {
+      // Log once every 30s per group so it shows in dashboard
+      const logKey = `restr_log:${from}`
+      const lastLog = cooldownDB.get(logKey, 0)
+      if (Date.now() - lastLog > 30000) {
+        cooldownDB.set(logKey, Date.now())
+        logInfo(`🔒 Grupo bloqueado (restrição ativa): ${from.split('@')[0]}`)
+      }
+      return
+    }
   }
 
   // ── Tracking ───────────────────────────────────────────
@@ -299,26 +308,28 @@ export async function handleMessage(sock, msg) {
     if (userRoleCheck > ROLES.SUBDONO) return
   }
 
-  // Parse do comando:
-  // ">>info resposta" → tenta ">>info" como alias, senão "info"
-  // "$ npm install" → tenta "$" como cmd, args = ["npm","install"]
-  // "!menu" → cmdNome = "menu"
+  // Parse do comando
+  // ">>info"    → effectivePrefix=">>" textoNorm="info" cmdNome=">>info" (tenta alias composto)
+  // "$ ls"      → effectivePrefix="$"  textoNorm="ls"   cmdNome="$" args=["ls"]
+  // ".menu"     → effectivePrefix="."  textoNorm="menu" cmdNome="menu"
   const textoNorm = textoClean.slice(effectivePrefix.length).trim()
   const partes    = textoNorm.split(/\s+/)
   let   cmdNome   = partes[0]?.toLowerCase()
   const args      = partes.slice(1)
   const argStr    = args.join(' ')
 
-  // Para ">>" extras: tenta ">>nomecmd" como alias composto primeiro
-  if (matchedExtra && cmdNome) {
-    const composto = (effectivePrefix + cmdNome).toLowerCase()
-    if (getCommand(composto)) {
-      cmdNome = composto
+  if (matchedExtra) {
+    // Para extras (>> e $): se não tem texto após, o próprio prefixo é o comando
+    if (!cmdNome) {
+      cmdNome = effectivePrefix.toLowerCase()
+    } else {
+      // Tenta ">>info" como alias composto primeiro
+      const composto = (effectivePrefix + cmdNome).toLowerCase()
+      if (getCommand(composto) || [...aliasMap.keys()].includes(composto)) {
+        cmdNome = composto
+      }
+      // Senão usa cmdNome normal (ex: "info" → busca por alias ou fuzzy)
     }
-    // Senão usa cmdNome normal (pode ser alias simples)
-  } else if (matchedExtra && !cmdNome) {
-    // ">>" ou "$" sozinhos
-    cmdNome = effectivePrefix.toLowerCase()
   }
   if (!cmdNome) return
 

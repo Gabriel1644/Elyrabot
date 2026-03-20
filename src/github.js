@@ -62,10 +62,12 @@ export async function initGit({ repoUrl, userName, userEmail, token }) {
     if (!await isGitRepo()) {
       try { await git('init -b main') } catch { await git('init') }
     }
-    await git('config user.name "' + (userName || 'ElyraBot') + '"')
-    await git('config user.email "' + (userEmail || 'bot@elyra.local') + '"')
-    await git('config core.pager ""')
-    await git('config push.default current')
+    try {
+      await git('config user.name "' + (userName || 'ElyraBot') + '"')
+      await git('config user.email "' + (userEmail || 'bot@elyra.local') + '"')
+      await git('config core.pager ""')
+      await git('config push.default current')
+    } catch { /* git pode não estar instalado ainda - pkg install git */ }
     const finalUrl = token
       ? repoUrl.replace(/https:\/\/([^@]*@)?/, 'https://' + token + '@')
       : repoUrl

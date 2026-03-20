@@ -2,15 +2,15 @@
 import './src/env.js'
 
 import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
-import { Boom } from '@hapi/boom'
-import pino from 'pino'
-import { CONFIG } from './src/config.js'
+import { Boom }    from '@hapi/boom'
+import pino        from 'pino'
+import { CONFIG }  from './src/config.js'
 import { printBanner, startPulse, stopPulse } from './src/utils.js'
 import { handleMessage, setBotJid, setSock as setHandlerSock } from './src/handler.js'
 import { loadCommands } from './src/loader.js'
 import { startDashboard } from './src/dashboard.js'
 import { logInfo, logOk, logWarn, logError, emitStatus, emitQR } from './src/logger.js'
-import { groupsDB } from './src/database.js'
+import { groupsDB, configDB, allowedGroupsDB } from './src/database.js'
 import { initErrorTracker, setTrackerSocket, setTrackerSock } from './src/errorTracker.js'
 import { initGit, pushFullBot, startAutoUpdateScheduler } from './src/github.js'
 import { cleanNum } from './src/permissions.js'
@@ -18,13 +18,11 @@ import { cleanNum } from './src/permissions.js'
 printBanner()
 initErrorTracker()
 
-// ── Dashboard — iniciado UMA SÓ VEZ (fora de conectar) ────
-// Bug anterior: estava dentro de conectar(), que reconecta.
-// Isso causava EADDRINUSE em toda reconexão.
+// ── Dashboard — iniciado UMA SÓ VEZ ──────────────────────
 const io = startDashboard()
 setTrackerSocket(io)
 
-// Listener de pairing code compartilhado
+// Listener de pairing code
 let _sock = null
 io.on('connection', (socket) => {
   socket.on('request_pairing', async ({ phone }) => {
@@ -33,39 +31,40 @@ io.on('connection', (socket) => {
       const code = await _sock.requestPairingCode(phone.trim())
       emitQR(code)
       logOk(`🔑 Código: ${code}`)
-    } catch (e) {
-      logError(`Pairing: ${e.message}`)
-    }
+    } catch (e) { logError(`Pairing: ${e.message}`) }
   })
 })
 
-// ── GitHub: inicializa e faz push do bot completo ─────────
+// ── Safety: reseta groupRestriction se não há grupos autorizados ──
+{
+  const restricted = configDB.get('groupRestriction', false)
+  const grupos     = Object.keys(allowedGroupsDB.all())
+  if (restricted && grupos.length === 0) {
+    configDB.set('groupRestriction', false)
+    logWarn('⚠️  groupRestriction ON sem grupos autorizados → desativado automaticamente')
+    logWarn('    Use .restricaogrupos on + .allowbot para reativar com grupos')
+  }
+}
+
+// ── GitHub (background, nunca bloqueia o boot) ────────────
 const repoUrl = CONFIG['github.repo'] || process.env.GITHUB_REPO_WITH_TOKEN || process.env.GITHUB_REPO || ''
 if (repoUrl) {
-  logInfo('Configurando GitHub...')
-  const gitOk = await initGit({
+  logInfo('GitHub: configurando...')
+  initGit({
     repoUrl,
-    userName:  CONFIG.nome || 'ElyraBot',
-    userEmail: `${CONFIG.owner || 'bot'}@elyrabot.local`
-  })
-  if (gitOk) {
-    // Push inicial do bot completo em background (não bloqueia o boot)
-    pushFullBot().then(r => {
-      if (r.ok) logOk(`GitHub: ${r.message}`)
-      else logWarn(`GitHub push: ${r.reason}`)
-    }).catch(() => {})
-
-    // Auto-update a cada 6h se habilitado
+    userName:  CONFIG.nome || 'KaiusBot',
+    userEmail: `${CONFIG.owner || 'bot'}@bot.local`
+  }).then(r => {
+    if (!r?.ok) return logWarn('GitHub: ' + (r?.reason || 'falhou'))
+    logOk('GitHub: pronto')
     if (CONFIG.autoUpdate || process.env.AUTO_UPDATE === 'true') {
       startAutoUpdateScheduler(6)
     }
-  }
+  }).catch(e => logWarn('GitHub init: ' + e.message))
 }
 
 logInfo('Carregando comandos...')
 await loadCommands()
-
-if (CONFIG.autoCodeDetect !== false) logInfo('Detector de código: ativo')
 
 let reconnectAttempts = 0
 
@@ -91,7 +90,7 @@ async function conectar() {
 
   // Autenticação via terminal
   if (!sock.authState.creds.registered) {
-    logWarn('Não autenticado! Use o Dashboard ou responda abaixo.')
+    logWarn('Não autenticado! Use o Dashboard (aba Conectar) para gerar o código.')
     const { default: readline } = await import('readline')
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
     rl.question('\n  📱 Conectar via Pairing Code? (s/n): ', async (choice) => {
@@ -101,39 +100,31 @@ async function conectar() {
             const code = await sock.requestPairingCode(phone.trim())
             logOk(`\n  ╔══════════════════════╗\n  ║  CÓDIGO: ${code}  ║\n  ╚══════════════════════╝\n`)
             emitQR(code)
-          } catch (e) {
-            logError(`Erro: ${e.message}`)
-          } finally { rl.close() }
+          } catch (e) { logError(`Erro: ${e.message}`) } finally { rl.close() }
         })
-      } else {
-        logInfo('Aguardando via Dashboard...')
-        rl.close()
-      }
+      } else { rl.close() }
     })
   }
 
   sock.ev.on('connection.update', ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
-      emitQR(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qr)}`)
-      logInfo('QR gerado — acesse o Dashboard.')
-    }
     if (connection === 'close') {
       stopPulse()
       emitStatus('close')
       const code = new Boom(lastDisconnect?.error)?.output?.statusCode
-      if (code !== DisconnectReason.loggedOut) {
+      if (code === DisconnectReason.loggedOut) {
+        logError('Sessão encerrada (logout). Delete auth/ e reinicie.')
+      } else {
         reconnectAttempts++
         const delay = Math.min(5000 * reconnectAttempts, 30000)
-        logWarn(`Desconectado (${code}). Reconectando em ${delay/1000}s...`)
+        logWarn(`Desconectado (${code}). Reconectando em ${delay / 1000}s...`)
         setTimeout(conectar, delay)
-      } else {
-        logError('Sessão encerrada (logout). Delete auth/ e reinicie.')
       }
     } else if (connection === 'open') {
       reconnectAttempts = 0
       setBotJid(sock.user?.id || null)
       emitStatus('open', { jid: sock.user?.id })
       logOk(`${CONFIG.nome} conectada! JID: ${sock.user?.id}`)
+      logOk(`Prefixo: "${CONFIG.prefixo}"  |  Dono: +${CONFIG.owner}`)
 
       // Self-bot: usa o número do próprio bot como dono
       if (CONFIG.selfBot && sock.user?.id) {
@@ -146,16 +137,26 @@ async function conectar() {
       startPulse(CONFIG.nome)
     } else if (connection === 'connecting') {
       logInfo('Conectando...')
+      emitStatus('connecting')
     }
   })
 
   sock.ev.on('creds.update', saveCreds)
 
+  // ── Mensagens recebidas ──────────────────────────────────
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return
-    for (const msg of messages) await handleMessage(sock, msg)
+    for (const msg of messages) {
+      try {
+        await handleMessage(sock, msg)
+      } catch (e) {
+        logError(`Erro no handleMessage: ${e.message}`)
+        // Não deixa o listener morrer — processa próximas mensagens
+      }
+    }
   })
 
+  // ── Entradas/saídas de grupo ─────────────────────────────
   sock.ev.on('group-participants.update', async ({ id, participants, action }) => {
     const gd   = groupsDB.get(id, {})
     const jids = (participants || []).map(p =>

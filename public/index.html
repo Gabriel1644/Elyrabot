@@ -215,6 +215,30 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
   .mob-ni span{display:none}
   .mob-ni{min-width:40px}
 }
+
+/* ── SFX Button ──────────────────────────────────────── */
+#sfx-btn { transition: transform .15s; user-select: none; }
+#sfx-btn:active { transform: scale(.88); }
+/* ── Subtle card glow on hover ──────────────────────── */
+.card:hover { box-shadow: 0 0 18px rgba(0,255,136,.08); }
+/* ── Command item click feedback ────────────────────── */
+.ci { user-select: none; }
+.ci:active { transform: scale(.99); }
+/* ── Modal slide-in ─────────────────────────────────── */
+#ed-modal .mo-box { animation: edModalIn .2s cubic-bezier(.34,1.56,.64,1); }
+@keyframes edModalIn { from { transform: scale(.92) translateY(-10px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
+/* ── Tab underline animation ─────────────────────────── */
+.ed-tab { position: relative; }
+.ed-tab.on::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--ac); border-radius:2px; animation: tabIn .18s ease; }
+@keyframes tabIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* ── Toast fade out ──────────────────────────────────── */
+.toast { animation: tin .3s ease, fadeout .3s ease 2.7s forwards; }
+@keyframes fadeout { to { opacity:0; transform: translateY(8px); } }
+/* ── Status badge pulse when online ─────────────────── */
+.badge.online { animation: badgePulse 3s ease-in-out infinite; }
+@keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); } 50% { box-shadow: 0 0 0 4px rgba(0,255,136,.12); } }
+/* ── Sidebar hover width smooth ────────────────────── */
+.sb { will-change: width; }
 </style>
 </head>
 <body>
@@ -665,10 +689,10 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
 
     <!-- Tabs -->
     <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--br)">
-      <button class="ed-tab on" onclick="edSwitchTab('basic',this)">⚙️ Geral</button>
-      <button class="ed-tab" onclick="edSwitchTab('perm',this)">🛡️ Permissão</button>
-      <button class="ed-tab" onclick="edSwitchTab('menu',this)">📋 Menus</button>
-      <button class="ed-tab" onclick="edSwitchTab('alias',this)">🔗 Aliases</button>
+      <button class="ed-tab on" data-tab="basic" onclick="edSwitchTab('basic',this)">⚙️ Geral</button>
+      <button class="ed-tab" data-tab="perm" onclick="edSwitchTab('perm',this)">🛡️ Permissão</button>
+      <button class="ed-tab" data-tab="menu" onclick="edSwitchTab('menu',this)">📋 Menus</button>
+      <button class="ed-tab" data-tab="alias" onclick="edSwitchTab('alias',this)">🔗 Aliases</button>
     </div>
 
     <!-- Tab: Geral -->
@@ -1238,7 +1262,13 @@ async function reqPairing(){const phone=G('pair-phone').value.replace(/\D/g,'');
 
 // ── Socket.IO ────────────────────────────────────────────
 const socket=io()
-socket.on('init',({logs,commands})=>{allCmds=commands||[];(logs||[]).forEach(addLog)})
+socket.on('init',({logs,commands})=>{
+  if(Array.isArray(commands)&&commands.length){
+    allCmds=commands
+    G('s-loaded').textContent=commands.length
+  }
+  ;(logs||[]).forEach(addLog)
+})
 socket.on('log',e=>addLog(e))
 socket.on('reload',({total})=>{loadCmds();toast(`${total} cmds recarregados`)})
 socket.on('status',({status,jid})=>{
@@ -1250,65 +1280,119 @@ socket.on('qr',({qr})=>{G('pair-code').textContent=qr;G('pair-res').style.displa
 
 // ── Init ─────────────────────────────────────────────────
 
-// ── Editor de Comando (POPUP) ────────────────────────────
+// ── Editor de Comando (POPUP) — COMPLETO ─────────────────
 let _edDirty = false
-let _edTab = 'basic'
 
 function markDirty() {
   _edDirty = true
   const b = G('ed-dirty-badge')
-  if (b) b.style.display = 'inline-flex'
+  if (b) { b.style.display = 'inline-flex'; b.style.opacity = '1' }
 }
-function edSwitchTab(tab, el) {
-  _edTab = tab
-  // Remove 'on' only from tabs inside the modal
-  const modal = G('ed-modal')
-  if (modal) modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
-  if (el) el.classList.add('on')
+
+function edSwitchTab(tab, triggerEl) {
+  // Switch tab content panels
   const tabs = ['basic','perm','menu','alias']
   tabs.forEach(t => {
-    const tabEl = G('ed-tab-'+t)
-    if (tabEl) tabEl.style.display = t === tab ? 'block' : 'none'
+    const el = G('ed-tab-'+t)
+    if (el) el.style.display = (t === tab) ? 'block' : 'none'
+  })
+  // Switch tab button states - ONLY inside ed-modal
+  const modal = G('ed-modal')
+  if (modal) {
+    modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
+  }
+  if (triggerEl) triggerEl.classList.add('on')
+  else {
+    // Find tab button by data attribute and mark it
+    const modal2 = G('ed-modal')
+    if (modal2) {
+      const btn = modal2.querySelector(`.ed-tab[data-tab="${tab}"]`)
+      if (btn) btn.classList.add('on')
+      else modal2.querySelectorAll('.ed-tab')[0]?.classList.add('on')
+    }
+  }
+}
+
+function syncEd() {
+  // Sync role buttons
+  document.querySelectorAll('#ed-roles .rp-btn').forEach(b => {
+    b.classList.toggle('sel', b.dataset.role === edRole)
+  })
+  // Sync location buttons
+  document.querySelectorAll('#ed-locs .rp-btn').forEach(b => {
+    b.classList.toggle('sel', b.dataset.loc === edLoc)
   })
 }
+
+function selR(el) { edRole = el.dataset.role; syncEd(); markDirty() }
+function selL(el) { edLoc  = el.dataset.loc;  syncEd(); markDirty() }
+
 function tryCloseEd() {
   if (_edDirty) {
-    if (!confirm('Você tem alterações não salvas. Sair sem salvar?')) return
+    if (!confirm('Você tem alterações não salvas. Sair mesmo assim?')) return
   }
   closeEdModal()
 }
+
 function closeEdModal() {
-  edCmd = null; _edDirty = false; _edTab = 'basic'
-  const m = G('ed-modal'); if (m) m.style.display = 'none'
+  edCmd = null; _edDirty = false
+  const m = G('ed-modal')
+  if (m) m.style.display = 'none'
   renderCmds()
 }
+
 function openEd(name) {
-  const cmd = allCmds.find(c => c.name === name); if (!cmd) return
+  const cmd = allCmds.find(c => c.name === name)
+  if (!cmd) { toast('Comando não encontrado', 'e'); return }
   edCmd = cmd
-  const p = allPerms[name]
-  edRole = p?.minRole ? String(p.minRole) : ''
-  edLoc = p?.allowedIn || 'both'
-  edAliases = [...(cmd.aliases || [])]
+
+  // Load permissions
+  const perm = allPerms[name]
+  edRole = perm?.minRole ? String(perm.minRole) : ''
+  edLoc  = perm?.allowedIn || 'both'
+  edAliases    = [...(cmd.aliases || [])]
   edMenuTargets = [...(allMenuTargets[name] || cmd.menuTargets || [])]
-  _edDirty = false; _edTab = 'basic'
+  _edDirty = false
 
-  // Fill fields
-  G('ed-title').textContent = '!' + name
-  G('ed-desc').value = cmd.description || ''
-  G('ed-usage').value = cmd.usage || '!' + name
-  G('ed-cd').value = cmd.cooldown || 0
-  G('ed-enabled').checked = cmd.enabled !== false
-  const db = G('ed-dirty-badge'); if (db) db.style.display = 'none'
+  // Fill form fields
+  const setVal = (id, v) => { const el = G(id); if (el) el.value = v ?? '' }
+  setVal('ed-desc',  cmd.description || '')
+  setVal('ed-usage', cmd.usage || ('.' + name))
+  setVal('ed-cd',    cmd.cooldown || 0)
 
-  syncEd(); renderEdAliases(); renderEdMenus()
-  edSwitchTab('basic', G('ed-modal')?.querySelector('.ed-tab'))
+  const titleEl = G('ed-title')
+  if (titleEl) titleEl.textContent = '.' + name
 
-  // Show modal
-  const m = G('ed-modal'); if (m) m.style.display = 'flex'
+  const enabledEl = G('ed-enabled')
+  if (enabledEl) enabledEl.checked = cmd.enabled !== false
+
+  const badge = G('ed-dirty-badge')
+  if (badge) badge.style.display = 'none'
+
+  // Sync all sub-editors
+  syncEd()
+  renderEdAliases()
+  renderEdMenus()
+
+  // Show modal first, then switch tab (so elements are visible/measurable)
+  const modal = G('ed-modal')
+  if (!modal) { toast('Modal não encontrado!', 'e'); return }
+  modal.style.display = 'flex'
+
+  // Switch to basic tab
+  edSwitchTab('basic')
+
+  // Mark first tab button as active
+  const firstTab = modal.querySelector('.ed-tab')
+  if (firstTab) {
+    modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
+    firstTab.classList.add('on')
+  }
+
   renderCmds()
 }
+
 function closeEd() { tryCloseEd() }
-function closeEdWithoutCheck() { closeEdModal() }
 
 loadStatus();setInterval(loadStatus,30000)
 
@@ -1402,8 +1486,17 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {})
 }
 
-// Show PWA screen after 1.5s if not standalone/skipped
-setTimeout(checkShowPWA, 1500)
+// Show PWA banner (NOT fullscreen) after 2s if not standalone and install prompt is available
+setTimeout(() => {
+  if (_isStandalone || _pwaSkipped) return
+  const banner = G('pwa-screen')
+  // Only show the install screen if we actually have a deferredPrompt
+  // (means browser supports PWA install)
+  if (_deferredPrompt && banner) {
+    banner.style.display = 'flex'
+  }
+  // If no deferredPrompt after 2s, skip PWA screen entirely (iOS or unsupported)
+}, 2000)
 
 // ── Reviver QR ───────────────────────────────────────────
 async function cleanAuth(mode) {
@@ -1501,6 +1594,95 @@ socket.on('status', ({ status, jid }) => {
   if (h && document.getElementById('tab-' + h)) goTab(h)
   else goTab('dash')
 })()
+
+// ════════════════════════════════════════════════════════
+// SFX — Sons de interface
+// ════════════════════════════════════════════════════════
+const _sfxCtx = window.AudioContext ? new AudioContext() : null
+const _sfxEnabled = () => localStorage.getItem('sfx') !== 'off'
+
+function sfx(type) {
+  if (!_sfxCtx || !_sfxEnabled()) return
+  try {
+    const o = _sfxCtx.createOscillator()
+    const g = _sfxCtx.createGain()
+    o.connect(g); g.connect(_sfxCtx.destination)
+    const t = _sfxCtx.currentTime
+    const configs = {
+      click:   { freq: 800,  type: 'sine',     dur: 0.06, vol: 0.12 },
+      success: { freq: 520,  type: 'sine',     dur: 0.18, vol: 0.15, freq2: 660 },
+      error:   { freq: 200,  type: 'sawtooth', dur: 0.22, vol: 0.13 },
+      save:    { freq: 440,  type: 'sine',     dur: 0.25, vol: 0.15, freq2: 550 },
+      open:    { freq: 600,  type: 'sine',     dur: 0.12, vol: 0.10 },
+      notify:  { freq: 880,  type: 'sine',     dur: 0.14, vol: 0.14, freq2: 1100 },
+      toggle:  { freq: 700,  type: 'sine',     dur: 0.08, vol: 0.10 },
+    }
+    const cfg = configs[type] || configs.click
+    o.type = cfg.type
+    o.frequency.setValueAtTime(cfg.freq, t)
+    if (cfg.freq2) o.frequency.linearRampToValueAtTime(cfg.freq2, t + cfg.dur * 0.6)
+    g.gain.setValueAtTime(cfg.vol, t)
+    g.gain.exponentialRampToValueAtTime(0.001, t + cfg.dur)
+    o.start(t); o.stop(t + cfg.dur)
+  } catch {}
+}
+
+// ── Override toast to play SFX ─────────────────────────
+const _origToast = window.toast
+window.toast = function(m, t='s', dur) {
+  if (typeof _origToast === 'function') _origToast(m, t, dur)
+  if (t === 's') sfx('success')
+  else if (t === 'e') sfx('error')
+  else sfx('notify')
+}
+
+// Play click SFX on all .btn and .ni elements
+document.addEventListener('click', e => {
+  const target = e.target.closest('.btn, .ni, .mob-ni, .fb-btn, .rp-btn, .mt-chip, .ed-tab')
+  if (target) sfx('click')
+}, { passive: true })
+
+// ── SFX Toggle button (adds to topbar of dash) ─────────
+function toggleSFX() {
+  const on = _sfxEnabled()
+  localStorage.setItem('sfx', on ? 'off' : 'on')
+  const btn = G('sfx-btn')
+  if (btn) {
+    btn.innerHTML = on ? '🔇' : '🔊'
+    btn.title = on ? 'SFX desligado' : 'SFX ligado'
+  }
+  if (!on) sfx('toggle')
+}
+
+// Initialize SFX button
+;(function() {
+  const dashTb = document.querySelector('#tab-dash .tb')
+  if (!dashTb) return
+  const btn = document.createElement('button')
+  btn.id = 'sfx-btn'
+  btn.className = 'btn btn-q btn-sm'
+  btn.style.cssText = 'padding:5px 9px;font-size:14px;border-radius:6px'
+  btn.innerHTML = _sfxEnabled() ? '🔊' : '🔇'
+  btn.title = 'Efeitos sonoros'
+  btn.onclick = toggleSFX
+  dashTb.appendChild(btn)
+})()
+
+// ════════════════════════════════════════════════════════
+// FIX: Override openEd to play SFX on open
+// ════════════════════════════════════════════════════════
+const _origOpenEd = window.openEd
+window.openEd = function(name) {
+  sfx('open')
+  if (typeof _origOpenEd === 'function') _origOpenEd(name)
+}
+
+// ── Fix saveCmd to play SFX ────────────────────────────
+const _origSaveCmd = window.saveCmd
+window.saveCmd = async function() {
+  if (typeof _origSaveCmd === 'function') await _origSaveCmd()
+  sfx('save')
+}
 
 </script>
 </body>

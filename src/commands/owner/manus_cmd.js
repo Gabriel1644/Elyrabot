@@ -4,7 +4,7 @@ import { CONFIG } from '../../config.js'
 
 export const agente = {
   name: 'agente',
-  aliases: ['manus', 'agent', 'tarefa', 'fazer', 'ia'],
+  aliases: ['manus', 'agent', 'tarefa', 'fazer'],
   description: 'Agente IA autônomo — pesquisa, shell, cria comandos, corrige erros',
   category: 'owner',
   usage: '!agente <descreva a tarefa>',

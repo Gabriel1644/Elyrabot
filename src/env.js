@@ -16,8 +16,8 @@ if (fs.existsSync(envPath)) {
     if (idx === -1) continue
     const key = trimmed.slice(0, idx).trim()
     const val = trimmed.slice(idx + 1).trim()
-    if (key && !(key in process.env)) {
-      process.env[key] = val
+    if (key) {
+      process.env[key] = val  // .env sempre tem prioridade sobre vars do sistema
     }
   }
 }

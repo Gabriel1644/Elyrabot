@@ -82,10 +82,13 @@ function deepMerge(base, override) {
 
 // Keys that should ALWAYS come from env (never stored in DB)
 const ENV_ONLY_KEYS = new Set([
+  // These ALWAYS come from .env - never stored in DB
   'dashboardPort', 'dashboardPass', 'dashboardAI',
   'groqKey', 'owner', 'prefixo',
   'autoUpdate', 'autoUpload', 'selfBot',
   'github.repo',
+  // Behavior flags - must come from .env to respect user's config
+  'antiSpam', 'autoCodeDetect', 'codeOwnerOnly', 'fuzzyCommands',
 ])
 
 function init() {

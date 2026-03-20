@@ -501,10 +501,16 @@ export function startDashboard() {
   // Mantém: creds.json (pareamento)
   // Remove: pre-keys antigas, sender-keys, app-state-sync, sessions temporárias
   app.post('/api/clean-auth', auth, async (req, res) => {
-    const { mode } = req.body  // 'cache' = só limpeza | 'full' = reset completo (novo QR)
+    const { mode } = req.body  // 'cache' = limpeza inteligente | 'full' = reset total
     try {
-      const authDir = path.join(__dirname, '..', 'auth_info_multi')
-      if (!fs.existsSync(authDir)) return res.json({ ok: true, removed: 0, message: 'Pasta auth não encontrada' })
+      // Try both folder names (some versions use auth_info_multi, others auth)
+      let authDir = path.join(__dirname, '..', 'auth')
+      if (!fs.existsSync(authDir)) {
+        authDir = path.join(__dirname, '..', 'auth_info_multi')
+      }
+      if (!fs.existsSync(authDir)) {
+        return res.json({ ok: true, removed: 0, message: '⚠️ Pasta auth/ não encontrada. O bot ainda não foi conectado?' })
+      }
 
       const files = fs.readdirSync(authDir)
       let removed = 0
