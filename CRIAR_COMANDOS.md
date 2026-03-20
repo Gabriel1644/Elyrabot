@@ -3030,3 +3030,120 @@ try {
 
 *Kaius Bot — DevSquad © 2025 | Documentação v2.x*  
 *Comandos: `src/commands/` | Banco: `data/` | Config: `.env`*
+
+---
+
+## 23. Sistema de Hooks — Interceptar Mensagens
+
+O sistema de hooks permite que qualquer comando "ouça" mensagens sem modificar o `handler.js`.
+
+```javascript
+// src/commands/fun/meu_hook.js
+import { registerHook, removeHook } from '../../hooks.js'
+
+// Registra ao carregar o comando
+registerHook({
+  id:       'detector-banana',     // ID único
+  name:     'Detector de Banana',  // Nome legível
+  priority: 10,                    // Menor = roda primeiro (0-100)
+  
+  // filter: opcional — quando rodar o hook
+  filter: ({ isGrupo, from }) => isGrupo,
+  
+  // handle: a lógica do hook
+  handle: async ({ sock, msg, from, userId, usuario, texto, reply, react }) => {
+    if (!texto.toLowerCase().includes('banana')) return false  // continua
+    
+    await reply('🍌 Detectei banana!')
+    return true  // Para a propagação — comando não é processado depois
+  }
+})
+
+export default {
+  name: 'banana',
+  category: 'fun',
+  cooldown: 0,
+  async execute({ reply }) {
+    removeHook('detector-banana')
+    await reply('Hook removido!')
+  }
+}
+```
+
+### Hooks incluídos
+
+| Comando | Descrição |
+|---------|-----------|
+| `.antiword on/off` | Filtra palavras proibidas, deleta mensagem |
+| `.antiword add <palavra>` | Adiciona palavra ao filtro |
+| `.autoreact on ❤️` | Reage com emoji a todas as mensagens |
+| `.hooks` | Lista hooks ativos |
+| `.removehook <id>` | Remove hook pelo ID |
+
+### Prioridades recomendadas
+
+| Prioridade | Uso |
+|-----------|-----|
+| 0-10 | Segurança, moderação (roda primeiro) |
+| 20-40 | Análise de conteúdo |
+| 50 | Padrão |
+| 60-80 | Enriquecimento de dados |
+| 90-100 | Logging, analytics (roda por último) |
+
+---
+
+## 24. Upload de Mídia no Dashboard
+
+Na aba **Automações**, ao criar uma automação de áudio/imagem/vídeo:
+
+1. Escolha o tipo de mídia
+2. Cole uma URL — **ou** —
+3. Clique em **Upload** e selecione o arquivo
+   - MP3, WAV, AAC → convertidos automaticamente para **Opus** (formato nativo do WhatsApp PTT)
+   - JPG, PNG, GIF → enviados como imagem
+   - MP4, MOV → enviados como vídeo
+
+O arquivo fica salvo em `data/uploads/` e a URL é preenchida automaticamente.
+
+**Para converter MP3 manualmente:**
+```bash
+ffmpeg -i entrada.mp3 -c:a libopus -b:a 64k -ar 48000 saida.ogg
+```
+
+---
+
+## 25. Criar Comandos via Manus (Agente IA)
+
+O gerador de comandos no painel agora usa o **Manus** (agente autônomo com tools) como primeira opção. Se falhar, usa o Groq direto.
+
+**Via painel:** Criar Comando → descreva → **Gerar com IA**
+
+**Via WhatsApp:**
+```
+.agente crie um comando que sorteie um número secreto e deixe as pessoas tentarem adivinhar
+
+.agente crie um sistema de enquete - .enquete "Pergunta" Opção1 Opção2 Opção3
+
+.agente faça um comando que busca a letra de uma música no Genius API
+```
+
+O Manus pode:
+- Pesquisar na web para criar comandos mais precisos
+- Testar o código antes de instalar
+- Corrigir erros automaticamente
+- Publicar no GitHub após criar
+
+---
+
+## 26. Otimizações de Performance
+
+O bot v26 tem estas otimizações:
+
+- **Cache de groupMetadata** — metadata do grupo fica em cache por 30 segundos, evitando requests repetidos a cada mensagem
+- **Tracking assíncrono** — rastreamento de usuários roda em background, não bloqueia o processamento
+- **Importação inteligente** — comandos só são reimportados quando o arquivo for modificado (mtime check)
+- **try/catch por mensagem** — erro em uma mensagem não derruba o listener inteiro
+
+---
+
+*Kaius Bot — DevSquad © 2025 | v26*
