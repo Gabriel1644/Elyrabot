@@ -627,18 +627,29 @@ body::before{
       <div class="fi"><label>Mensagem de boas-vindas (sub-dono/VIP)</label><textarea id="cfg-welc" rows="2" placeholder="🎉 Você foi promovido a {cargo} do bot {nome}!"></textarea></div>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA & APIs</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Chave Groq API</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
-      <div class="fi"><label>Modelo</label>
+      <div class="fi"><label>Provider para criar comandos</label>
+        <select id="cfg-ai-provider" onchange="updateProviderUI()">
+          <option value="manus">🤖 Manus (Agente autônomo) — recomendado</option>
+          <option value="groq">⚡ Groq direto (rápido)</option>
+          <option value="gemini">🔷 Google Gemini</option>
+        </select>
+      </div>
+      <div class="row2">
+        <div class="fi"><label>Groq API Key</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
+        <div class="fi" id="fi-gemini"><label>Gemini API Key</label><input id="cfg-gemini" type="password" placeholder="AIza..."/></div>
+      </div>
+      <div class="fi"><label>Modelo Groq</label>
         <select id="cfg-modelo">
           <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (recomendado)</option>
+          <option value="llama-3.1-70b-versatile">llama-3.1-70b-versatile</option>
           <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (rápido)</option>
           <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
           <option value="gemma2-9b-it">gemma2-9b-it</option>
         </select>
       </div>
-      <div class="fi"><label>Personalidade</label><textarea id="cfg-pers" rows="3" placeholder="Você é {nome}, uma assistente..."></textarea></div>
+      <div class="fi"><label>Personalidade da IA</label><textarea id="cfg-pers" rows="3" placeholder="Você é {nome}, uma assistente..."></textarea></div>
     </div>
   </div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-shield-alt"></i>Comportamento</div></div>
@@ -663,12 +674,20 @@ body::before{
   <div class="tb"><div class="tb-title">Criar Comando com IA</div></div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-magic"></i>Gerar com IA</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Descreva o comando</label><textarea id="ai-desc" rows="4" placeholder="Ex: !clima que busca o tempo de qualquer cidade com emojis bonitos"></textarea></div>
+      <div class="fi"><label>Descreva o comando</label><textarea id="ai-desc" rows="4" placeholder="Ex: um comando que busca o clima de qualquer cidade com emojis bonitos e previsão de 3 dias"></textarea></div>
       <div class="row2">
         <div class="fi"><label>Categoria</label><select id="ai-cat"><option value="fun">fun</option><option value="games">games</option><option value="media">media</option><option value="info">info</option><option value="tools">tools</option><option value="admin">admin</option><option value="misc">misc</option></select></div>
         <div class="fi"><label>Nome (opcional)</label><input id="ai-file" placeholder="(automático)"/></div>
       </div>
-      <button class="btn btn-g" onclick="genCmd()"><i class="fas fa-bolt"></i> Gerar com IA</button>
+      <div class="fi"><label>Provider IA</label>
+        <select id="ai-gen-provider">
+          <option value="auto">🤖 Auto (Manus → Groq)</option>
+          <option value="manus">🤖 Manus (agente)</option>
+          <option value="groq">⚡ Groq direto</option>
+          <option value="gemini">🔷 Gemini</option>
+        </select>
+      </div>
+      <button class="btn btn-g" onclick="genCmd()" style="margin-top:8px"><i class="fas fa-bolt"></i> Gerar com IA</button>
     </div>
   </div>
   <div id="ai-res" style="display:none">
@@ -691,6 +710,21 @@ body::before{
       </div>
       <div class="fi"><label>Código JS</label><textarea class="ce" id="man-code" rows="14" placeholder="export default { name: 'test', ... }"></textarea></div>
       <button class="btn btn-g" onclick="installManual()"><i class="fas fa-save"></i> Salvar & Instalar</button>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd">
+    <div class="pnl-tt"><i class="fas fa-plug"></i>Hooks Ativos</div>
+    <button class="btn btn-q btn-sm" onclick="loadHooks()"><i class="fas fa-sync"></i></button>
+  </div>
+    <div class="pnl-bd">
+      <div id="hooks-list"><div class="empty">Nenhum hook ativo</div></div>
+      <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--br2)">
+        <div style="color:var(--tx3);font-size:11px;line-height:1.7">
+          <b style="color:var(--ac)">O que são hooks?</b> Interceptors que ouvem mensagens sem tocar no handler.js.<br>
+          <b>Comandos:</b> <code>.antiword on</code> · <code>.autoreact on ❤️</code> · <code>.hooks</code> · <code>.removehook &lt;id&gt;</code><br>
+          <b>No código:</b> <code>import { registerHook } from '../../hooks.js'</code>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -923,7 +957,7 @@ body::before{
     <div id="ed-tab-alias" style="display:none">
       <div id="ed-aliases" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:32px"></div>
       <div style="display:flex;gap:7px">
-        <input id="new-alias" placeholder="+ novo alias..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none" onkeydown="if(event.key='Enter'){event.preventDefault();addAlias()}"/>
+        <input id="new-alias" placeholder="+ novo alias..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();addAlias()}"/>
         <button class="btn btn-b btn-sm" onclick="addAlias()"><i class="fas fa-plus"></i></button>
       </div>
     </div>
@@ -1920,6 +1954,87 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 ::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px}
 ::-webkit-scrollbar-track{background:transparent}
 </style>`)
+
+// ── Provider UI ───────────────────────────────────────────
+function updateProviderUI() {
+  const p = G('cfg-ai-provider')?.value
+  const fi = G('fi-gemini')
+  if (fi) fi.style.display = (p === 'gemini') ? 'block' : 'block' // always show both
+}
+
+// ── Load Config with new fields ────────────────────────────
+// Patch loadCfg to also load gemini key + provider
+const _origLoadCfg = loadCfg
+loadCfg = async function() {
+  await _origLoadCfg()
+  const d = await api('/api/config'); if(d.error) return
+  const gk = G('cfg-gemini')
+  if (gk) { gk.value = ''; gk.placeholder = d.geminiKey ? '(salvo)' : 'AIza...' }
+  if (G('cfg-ai-provider') && d.aiProvider) G('cfg-ai-provider').value = d.aiProvider
+  if (G('ai-gen-provider') && d.aiProvider) G('ai-gen-provider').value = d.aiProvider
+}
+
+// ── Patch saveCfg to include gemini key + provider ─────────
+const _origSaveCfg = saveCfg
+saveCfg = async function() {
+  // Add gemini + provider to the config save
+  const body2 = {}
+  const gm = G('cfg-gemini')?.value
+  if (gm && gm !== '(salvo)' && !gm.startsWith('***')) body2.geminiKey = gm
+  const prov = G('cfg-ai-provider')?.value
+  if (prov) body2.aiProvider = prov
+  if (Object.keys(body2).length) await post('/api/config', body2)
+  await _origSaveCfg()
+}
+
+// ── Patch genCmd to send provider ──────────────────────────
+const _origGenCmd = genCmd
+genCmd = async function() {
+  const provider = G('ai-gen-provider')?.value || 'auto'
+  const desc = G('ai-desc')?.value.trim()
+  if (!desc) { toast('Descreva o comando!', 'e'); return }
+  const btn = document.querySelector('#tab-ai .btn-g')
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando via ' + provider + '...' }
+  try {
+    const cat = G('ai-cat')?.value || 'fun'
+    const r = await post('/api/ai/generate-command', { descricao: desc, provider, category: cat })
+    if (r.error) { toast(r.error, 'e'); return }
+    if (G('ai-code')) G('ai-code').value = r.code
+    if (G('ai-res')) G('ai-res').style.display = 'block'
+    toast(`✅ Gerado via ${r.via || provider}!`); sfx('install')
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> Gerar com IA' }
+  }
+}
+
+// ── Hooks panel ────────────────────────────────────────────
+async function loadHooks() {
+  // Chama o bot via !hooks equivalent — busca via API exec
+  const r = await post('/api/exec', { cmd: 'echo hooks_loaded' })
+  const el = G('hooks-list'); if (!el) return
+  // Try to get hooks from a dedicated endpoint
+  const hr = await api('/api/hooks').catch(() => null)
+  if (hr && Array.isArray(hr)) {
+    if (!hr.length) { el.innerHTML = '<div class="empty">Nenhum hook ativo</div>'; return }
+    el.innerHTML = hr.map(h => `
+      <div class="ci">
+        <div class="ci-info">
+          <div class="ci-name">🔌 <span style="color:var(--ac)">${h.name}</span> <span class="tag tb2">p${h.priority}</span></div>
+          <div class="ci-desc">ID: <code>${h.id}</code></div>
+        </div>
+        <button class="btn btn-r btn-sm" onclick="removeHookById('${h.id}')"><i class="fas fa-trash"></i></button>
+      </div>`).join('')
+  } else {
+    el.innerHTML = '<div class="empty">Use <code>.hooks</code> no WhatsApp para listar ou <code>.antiword on</code> para criar um hook</div>'
+  }
+}
+
+async function removeHookById(id) {
+  if (!confirm(`Remover hook "${id}"?`)) return
+  const r = await post('/api/hooks/remove', { id })
+  toast(r.ok ? '✅ Hook removido!' : ('❌ ' + (r.error || 'Erro')))
+  loadHooks()
+}
 
 // ── Init ─────────────────────────────────────────────────────
 ;(function init() {
