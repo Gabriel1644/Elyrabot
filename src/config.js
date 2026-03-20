@@ -8,6 +8,8 @@ const DEFAULTS = {
   personalidade:  process.env.BOT_PERSONALITY || 'Você é Elyra, uma assistente inteligente, mística e elegante. Responda sempre em português, com leveza e carisma.',
   modelo:         process.env.GROQ_MODEL    || 'llama-3.3-70b-versatile',
   groqKey:        process.env.GROQ_API_KEY  || '',
+  geminiKey:      process.env.GEMINI_API_KEY || '',
+  aiProvider:     process.env.AI_PROVIDER    || 'auto',
   dashboardPort:  parseInt(process.env.DASHBOARD_PORT) || 3000,
   dashboardPass:  process.env.DASHBOARD_PASS || '',
   dashboardAI:    process.env.DASHBOARD_AI !== 'false',
@@ -84,7 +86,7 @@ function deepMerge(base, override) {
 const ENV_ONLY_KEYS = new Set([
   // These ALWAYS come from .env - never stored in DB
   'dashboardPort', 'dashboardPass', 'dashboardAI',
-  'groqKey', 'owner', 'prefixo',
+  'groqKey', 'geminiKey', 'aiProvider', 'owner', 'prefixo',
   'autoUpdate', 'autoUpload', 'selfBot',
   'github.repo',
   // Behavior flags - must come from .env to respect user's config
