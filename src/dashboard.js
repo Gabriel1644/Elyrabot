@@ -21,17 +21,6 @@ import { getAllContribs, getContribStats, approveContrib, rejectContrib } from '
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 
-// ── Gemini support ────────────────────────────────────
-async function callGemini(prompt, key) {
-  const { default: axios } = await import('axios')
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`
-  const { data } = await axios.post(url, {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.25, maxOutputTokens: 3000 }
-  }, { timeout: 30000 })
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || ''
-}
-
 const SYSTEM_CMD_GENERATOR = `Você é um especialista em criar comandos para o ElyraBot (WhatsApp bot, @whiskeysockets/baileys, Node.js ES Modules).
 Responda APENAS com código JavaScript válido. Sem explicações, sem markdown.
 
@@ -190,8 +179,6 @@ export function startDashboard() {
       dashboardPort: CONFIG.dashboardPort,
       owner:         CONFIG.owner,
       groqKey:       CONFIG.groqKey ? '***' + CONFIG.groqKey.slice(-4) : '',
-      geminiKey:     CONFIG.geminiKey ? '***' + CONFIG.geminiKey.slice(-4) : '',
-      aiProvider:    CONFIG.aiProvider || 'auto',
       menu:          CONFIG.menu,
       autoCodeDetect: CONFIG.autoCodeDetect,
       codeOwnerOnly:  CONFIG.codeOwnerOnly,
@@ -212,11 +199,8 @@ export function startDashboard() {
     for (const k of allowed) {
       if (k in req.body) CONFIG[k] = req.body[k]
     }
-    if (req.body.groqKey && !req.body.groqKey.startsWith('***') && req.body.groqKey !== '(salvo)') {
+    if (req.body.groqKey && !req.body.groqKey.startsWith('***')) {
       CONFIG.groqKey = req.body.groqKey
-    }
-    if (req.body.geminiKey && !req.body.geminiKey.startsWith('***') && req.body.geminiKey !== '(salvo)') {
-      CONFIG.geminiKey = req.body.geminiKey
     }
     res.json({ ok: true })
   })
@@ -290,68 +274,40 @@ export function startDashboard() {
     const key = CONFIG.groqKey || process.env.GROQ_API_KEY
     if (!key) return res.status(400).json({ error: 'GROQ_API_KEY não configurada' })
 
-    const provider = req.body.provider || 'auto'  // auto | manus | groq | gemini
-    const geminiKey = CONFIG.geminiKey || process.env.GEMINI_API_KEY || ''
-
-    // Lê o README para passar como contexto ao gerador
-    let readmeCtx = ''
+    // Tenta primeiro com Manus (agente com tools), fallback para Groq direto
     try {
-      const readmePath = path.join(__dirname, '../CRIAR_COMANDOS.md')
-      if (fs.existsSync(readmePath)) {
-        // Pega apenas as primeiras 3000 chars (estrutura e exemplos básicos)
-        readmeCtx = '\n\nCONTEXTO DO BOT (estrutura de comandos):\n' + 
-          fs.readFileSync(readmePath, 'utf-8').slice(0, 3000)
+      const { runAgent } = await import('./manus.js')
+      const result = await runAgent(
+        `Crie um comando de WhatsApp para o bot Kaius: ${descricao}\n\nUse a ferramenta create_command. O código deve ser ES Module válido com export default.`,
+        'dashboard_gen',
+        null
+      )
+      if (result?.commandResult?.code) {
+        return res.json({ ok: true, code: result.commandResult.code, via: 'manus' })
       }
-    } catch {}
-
-    const prompt = `Crie um comando de WhatsApp para: ${descricao}${readmeCtx}`
-
-    // ── Manus (agente autônomo) ──────────────────────────────
-    if (provider === 'manus' || provider === 'auto') {
-      try {
-        const { runAgent } = await import('./manus.js')
-        const result = await runAgent(
-          `Crie um comando de WhatsApp para o bot Kaius: ${descricao}\nUse a ferramenta create_command. ES Module com export default.`,
-          'dashboard_gen', null
-        )
-        if (result?.commandResult?.code)
-          return res.json({ ok: true, code: result.commandResult.code, via: 'manus' })
-        if (result?.text) {
-          let code = result.text.replace(/^\`\`\`(?:javascript|js)?\n?/gm,'').replace(/\n?\`\`\`/gm,'').trim()
-          if (code.includes('export default')) return res.json({ ok: true, code, via: 'manus' })
-        }
-      } catch (e) {
-        logWarn('Manus falhou: ' + e.message)
-        if (provider === 'manus') return res.status(500).json({ ok: false, error: 'Manus: ' + e.message })
+      // Manus respondeu sem criar código — extrai o código da resposta de texto
+      if (result?.text) {
+        let code = result.text.replace(/^```(?:javascript|js)?\n?/gm, '').replace(/\n?```/gm, '').trim()
+        if (code.includes('export default')) return res.json({ ok: true, code, via: 'manus-text' })
       }
+    } catch (e) {
+      logWarn('Manus geração falhou, usando Groq direto: ' + e.message)
     }
 
-    // ── Gemini ───────────────────────────────────────────────
-    if (provider === 'gemini' || (provider === 'auto' && !key && geminiKey)) {
-      if (!geminiKey) return res.status(400).json({ error: 'GEMINI_API_KEY não configurada' })
-      try {
-        let code = await callGemini(SYSTEM_CMD_GENERATOR + '\n\nUsuário: ' + prompt, geminiKey)
-        code = code.replace(/^\`\`\`(?:javascript|js)?\n?/gm,'').replace(/\n?\`\`\`/gm,'').trim()
-        if (code.includes('export default')) return res.json({ ok: true, code, via: 'gemini' })
-      } catch (e) {
-        if (provider === 'gemini') return res.status(500).json({ ok: false, error: 'Gemini: ' + e.message })
-      }
-    }
-
-    // ── Groq direto (fallback final) ─────────────────────────
-    if (!key) return res.status(400).json({ error: 'Nenhuma API key configurada. Configure Groq ou Gemini nas Configurações.' })
+    // Fallback: Groq direto
     try {
       const groq = new Groq({ apiKey: key })
       const resp = await groq.chat.completions.create({
         model: CONFIG.modelo || 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_CMD_GENERATOR },
-          { role: 'user', content: prompt }
+          { role: 'user', content: `Crie um comando de WhatsApp para: ${descricao}` }
         ],
-        max_tokens: 2500, temperature: 0.25,
+        max_tokens: 2500,
+        temperature: 0.25,
       })
       let code = resp.choices[0].message.content.trim()
-      code = code.replace(/^\`\`\`(?:javascript|js)?\n?/m,'').replace(/\n?\`\`\`$/m,'').trim()
+      code = code.replace(/^```(?:javascript|js)?\n?/m, '').replace(/\n?```$/m, '').trim()
       res.json({ ok: true, code, via: 'groq' })
     } catch (e) {
       res.status(500).json({ ok: false, error: e.message })
@@ -642,23 +598,6 @@ export function startDashboard() {
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
 
-
-
-  // ── Hooks API ────────────────────────────────────────────
-  app.get('/api/hooks', auth, async (req, res) => {
-    try {
-      const { listHooks } = await import('./hooks.js')
-      res.json(listHooks().map(h => ({ id: h.id, name: h.name, priority: h.priority })))
-    } catch { res.json([]) }
-  })
-
-  app.post('/api/hooks/remove', auth, async (req, res) => {
-    try {
-      const { removeHook } = await import('./hooks.js')
-      const ok = removeHook(req.body.id)
-      res.json({ ok })
-    } catch (e) { res.status(500).json({ error: e.message }) }
-  })
 
   // ── Reviver QR / Limpar Auth ──────────────────────────────
   // Limpa arquivos desnecessários da pasta auth sem desconectar
