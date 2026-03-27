@@ -105,6 +105,10 @@ export async function handleMessage(sock, msg) {
   const texto   = getMessageText(msg) || ''
   const p       = CONFIG.prefixosGrupo?.[from] || CONFIG.prefixo || '!'
 
+  // Declarar cedo — usados em automações e hooks antes do metadata fetch
+  let nomeGrupo = null
+  let membros   = []
+
   // ── Handler de botões interativos (carrossel, quick_reply) ─
   const nativeFlow = msg.message?.nativeFlowResponseMessage
   const btnReply   = msg.message?.buttonsResponseMessage
@@ -418,7 +422,7 @@ export async function handleMessage(sock, msg) {
   }
 
   // Metadata do grupo (cache 30s por grupo para evitar requests desnecessários)
-  let nomeGrupo = null, membros = []
+  // (nomeGrupo e membros já declarados no topo da função)
   if (isGrupo) {
     const cacheKey = `gmeta:${from}`
     const cached = _groupMetaCache.get(cacheKey)
