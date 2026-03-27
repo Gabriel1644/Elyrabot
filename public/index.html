@@ -42,7 +42,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
 .sb:hover .nl{opacity:1}
 .sb-hr{width:80%;height:1px;background:var(--br);margin:6px 0}
 /* main */
-.main{margin-left:62px;flex:1;padding:22px;overflow-y:auto;min-height:100vh}
+.main{margin-left:62px;flex:1;padding:22px;overflow-y:auto;min-height:100vh;position:relative;z-index:1}
 .tab{display:none}.tab.on{display:block}
 /* topbar */
 .tb{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--br)}
@@ -61,7 +61,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;mi
 .card-val.g{color:var(--ac)}.card-val.o{color:var(--or)}.card-val.b{color:var(--bl)}
 .card-ico{float:right;font-size:26px;opacity:.13}
 /* panel */
-.pnl{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);margin-bottom:18px;overflow:hidden}
+.pnl{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);margin-bottom:18px;overflow:hidden;animation:cardIn .35s ease both}
 .pnl-hd{padding:13px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
 .pnl-tt{font-family:var(--f2);font-size:14px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:8px}
 .pnl-tt i{color:var(--ac)}
@@ -252,7 +252,6 @@ body::before{
     radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.05) 0%,transparent 60%);
   pointer-events:none;z-index:0;
 }
-.main{position:relative;z-index:1;}
 
 /* Page load stagger */
 .tab.on{animation:pageIn .35s cubic-bezier(.2,.8,.2,1) both}
@@ -306,10 +305,7 @@ body::before{
 .btn:active::after{width:200px;height:200px;opacity:1;transition:0s}
 
 /* Panels — fade in on load */
-.pnl{
-  animation:pnlIn .4s cubic-bezier(.2,.8,.2,1) both;
-  animation-delay:calc(var(--i,0) * 60ms);
-}
+/* pnl animation merged into base */
 @keyframes pnlIn{
   from{opacity:0;transform:translateY(10px)}
   to{opacity:1;transform:translateY(0)}
@@ -384,7 +380,6 @@ body::before{
 }
 
 /* Tab transition */
-.tab{position:relative}
 .tab.on .pnl:nth-child(1){--i:0}
 .tab.on .pnl:nth-child(2){--i:1}
 .tab.on .pnl:nth-child(3){--i:2}
@@ -425,6 +420,44 @@ body::before{
   animation:hintBar 2s ease-in-out infinite;
 }
 @keyframes hintBar{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── Animações & VFX ── */
+
+@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
+@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(-16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scan{0%{top:-5%}100%{top:105%}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.35)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
+@keyframes tabLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+.mo-box{animation:modalIn .25s cubic-bezier(.34,1.56,.64,1) both}
+.toast{animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both}
+.card{animation:cardIn .35s ease both;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
+.card:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 8px 32px rgba(0,255,136,.1)}
+.card::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .4s ease;pointer-events:none}
+.card:hover::after{left:140%}
+.le{animation:leIn .15s ease both}
+.badge.online{animation:pulse 2.5s ease-in-out infinite}
+.tab.on .card:nth-child(1){animation-delay:.04s}.tab.on .card:nth-child(2){animation-delay:.08s}.tab.on .card:nth-child(3){animation-delay:.12s}.tab.on .card:nth-child(4){animation-delay:.16s}
+.tab.on{animation:cardIn .3s ease both}
+.ci{transition:transform .12s,background .12s;cursor:pointer}
+.ci:hover{transform:translateX(3px)}
+.ed-tab.on{color:var(--ac)!important}
+.ed-tab.on::after{content:'';display:block;height:2px;background:var(--ac);border-radius:2px;animation:tabLine .18s ease}
+.fi input:focus,.fi textarea:focus,.fi select:focus{box-shadow:0 0 0 2px rgba(0,255,136,.2)!important}
+.btn{position:relative;overflow:hidden;transition:transform .1s,filter .1s}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:scale(.97)}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+.main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.05),transparent);animation:scan 10s linear infinite;pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
 
 </style>
 </head>
@@ -627,18 +660,34 @@ body::before{
       <div class="fi"><label>Mensagem de boas-vindas (sub-dono/VIP)</label><textarea id="cfg-welc" rows="2" placeholder="🎉 Você foi promovido a {cargo} do bot {nome}!"></textarea></div>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA & APIs</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Chave Groq API</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
-      <div class="fi"><label>Modelo</label>
+      <div class="fi"><label>Provider para criar comandos</label>
+        <select id="cfg-ai-provider" onchange="updateProviderUI()">
+          <option value="manus">🤖 Manus (Agente autônomo) — recomendado</option>
+          <option value="groq">⚡ Groq direto (rápido)</option>
+          <option value="gemini">🔷 Google Gemini</option>
+        </select>
+      </div>
+      <div class="row2">
+        <div class="fi"><label>Groq API Key</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
+        <div class="fi" id="fi-gemini"><label>Gemini API Key</label><input id="cfg-gemini" type="password" placeholder="AIza..."/></div>
+      </div>
+      <div class="fi"><label>Modelo Groq</label>
         <select id="cfg-modelo">
           <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (recomendado)</option>
+          <option value="llama-3.1-70b-versatile">llama-3.1-70b-versatile</option>
           <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (rápido)</option>
           <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
           <option value="gemma2-9b-it">gemma2-9b-it</option>
         </select>
       </div>
-      <div class="fi"><label>Personalidade</label><textarea id="cfg-pers" rows="3" placeholder="Você é {nome}, uma assistente..."></textarea></div>
+      <div class="fi"><label>Personalidade da IA</label><textarea id="cfg-pers" rows="3" placeholder="Você é {nome}, uma assistente..."></textarea></div>
+      <div style="padding:8px 12px;background:rgba(0,255,136,.06);border-radius:var(--r);border:1px solid rgba(0,255,136,.15);font-size:11px;color:var(--tx2)">
+        🤖 <b style="color:var(--ac)">Manus</b> — agente autônomo que usa a <b>Groq Key</b> acima para criar/corrigir comandos com tools reais.<br>
+        🔷 <b style="color:#4fc3f7">Gemini</b> — provider alternativo para geração de código.<br>
+        <span id="cfg-manus-note" style="color:var(--tx3);font-size:10px">carregando...</span>
+      </div>
     </div>
   </div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-shield-alt"></i>Comportamento</div></div>
@@ -663,12 +712,20 @@ body::before{
   <div class="tb"><div class="tb-title">Criar Comando com IA</div></div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-magic"></i>Gerar com IA</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Descreva o comando</label><textarea id="ai-desc" rows="4" placeholder="Ex: !clima que busca o tempo de qualquer cidade com emojis bonitos"></textarea></div>
+      <div class="fi"><label>Descreva o comando</label><textarea id="ai-desc" rows="4" placeholder="Ex: um comando que busca o clima de qualquer cidade com emojis bonitos e previsão de 3 dias"></textarea></div>
       <div class="row2">
         <div class="fi"><label>Categoria</label><select id="ai-cat"><option value="fun">fun</option><option value="games">games</option><option value="media">media</option><option value="info">info</option><option value="tools">tools</option><option value="admin">admin</option><option value="misc">misc</option></select></div>
         <div class="fi"><label>Nome (opcional)</label><input id="ai-file" placeholder="(automático)"/></div>
       </div>
-      <button class="btn btn-g" onclick="genCmd()"><i class="fas fa-bolt"></i> Gerar com IA</button>
+      <div class="fi"><label>Provider IA</label>
+        <select id="ai-gen-provider">
+          <option value="auto">🤖 Auto (Manus → Groq)</option>
+          <option value="manus">🤖 Manus (agente)</option>
+          <option value="groq">⚡ Groq direto</option>
+          <option value="gemini">🔷 Gemini</option>
+        </select>
+      </div>
+      <button class="btn btn-g" onclick="genCmd()" style="margin-top:8px"><i class="fas fa-bolt"></i> Gerar com IA</button>
     </div>
   </div>
   <div id="ai-res" style="display:none">
@@ -691,6 +748,21 @@ body::before{
       </div>
       <div class="fi"><label>Código JS</label><textarea class="ce" id="man-code" rows="14" placeholder="export default { name: 'test', ... }"></textarea></div>
       <button class="btn btn-g" onclick="installManual()"><i class="fas fa-save"></i> Salvar & Instalar</button>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd">
+    <div class="pnl-tt"><i class="fas fa-plug"></i>Hooks Ativos</div>
+    <button class="btn btn-q btn-sm" onclick="loadHooks()"><i class="fas fa-sync"></i></button>
+  </div>
+    <div class="pnl-bd">
+      <div id="hooks-list"><div class="empty">Nenhum hook ativo</div></div>
+      <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--br2)">
+        <div style="color:var(--tx3);font-size:11px;line-height:1.7">
+          <b style="color:var(--ac)">O que são hooks?</b> Interceptors que ouvem mensagens sem tocar no handler.js.<br>
+          <b>Comandos:</b> <code>.antiword on</code> · <code>.autoreact on ❤️</code> · <code>.hooks</code> · <code>.removehook &lt;id&gt;</code><br>
+          <b>No código:</b> <code>import { registerHook } from '../../hooks.js'</code>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -923,7 +995,7 @@ body::before{
     <div id="ed-tab-alias" style="display:none">
       <div id="ed-aliases" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:32px"></div>
       <div style="display:flex;gap:7px">
-        <input id="new-alias" placeholder="+ novo alias..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none" onkeydown="if(event.key='Enter'){event.preventDefault();addAlias()}"/>
+        <input id="new-alias" placeholder="+ novo alias..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();addAlias()}"/>
         <button class="btn btn-b btn-sm" onclick="addAlias()"><i class="fas fa-plus"></i></button>
       </div>
     </div>
@@ -1701,22 +1773,51 @@ async function loadCfg() {
   const d=await api('/api/config'); if(d.error) return
   const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
   const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
-  sv('cfg-nome',d.nome);sv('cfg-prefixo',d.prefixo);sv('cfg-owner',d.owner)
-  sv('cfg-pers',d.personalidade);sv('cfg-modelo',d.modelo)
-  sv('cfg-msgban',d.msgBanido);sv('cfg-msgcd',d.msgCooldown);sv('cfg-msgnoperm',d.msgSemPerm)
-  const gk=G('cfg-groq');if(gk){gk.value='';gk.placeholder=d.groqKey?'(salvo)':'gsk_...'}
-  sc('cfg-spam',d.antiSpam);sc('cfg-code',d.autoCodeDetect);sc('cfg-codeowner',d.codeOwnerOnly)
-  sc('cfg-iadefault',d.iaAtivaPadrao);sc('cfg-fuzzy',d.fuzzyCommands!==false)
+  sv('cfg-nome',d.nome); sv('cfg-prefixo',d.prefixo); sv('cfg-owner',d.owner)
+  sv('cfg-pers',d.personalidade); sv('cfg-modelo',d.modelo)
+  sv('cfg-msgban',d.msgBanido); sv('cfg-msgcd',d.msgCooldown); sv('cfg-msgnoperm',d.msgSemPerm)
+  // Groq key
+  const gk=G('cfg-groq')
+  if(gk){gk.value=''; gk.placeholder=d.groqKey?'✓ (salvo)':'gsk_...'}
+  // Gemini key
+  const gmk=G('cfg-gemini')
+  if(gmk){gmk.value=''; gmk.placeholder=d.geminiKey?'✓ (salvo)':'AIza...'}
+  // AI Provider
+  if(G('cfg-ai-provider')&&d.aiProvider) G('cfg-ai-provider').value=d.aiProvider
+  if(G('ai-gen-provider')&&d.aiProvider) G('ai-gen-provider').value=d.aiProvider
+  // Note: Manus uses the Groq key — no separate key needed
+  const mn=G('cfg-manus-note')
+  if(mn) mn.textContent=d.groqKey?'✓ Manus usa a Groq Key acima':'⚠️ Configure a Groq Key para usar o Manus'
+  sc('cfg-spam',d.antiSpam); sc('cfg-code',d.autoCodeDetect); sc('cfg-codeowner',d.codeOwnerOnly)
+  sc('cfg-iadefault',d.iaAtivaPadrao); sc('cfg-fuzzy',d.fuzzyCommands!==false)
 }
 async function saveCfg() {
   const gv=id=>G(id)?.value, gb=id=>G(id)?.checked
-  const body={nome:gv('cfg-nome'),prefixo:gv('cfg-prefixo'),owner:gv('cfg-owner'),personalidade:gv('cfg-pers'),modelo:gv('cfg-modelo'),msgBanido:gv('cfg-msgban'),msgCooldown:gv('cfg-msgcd'),msgSemPerm:gv('cfg-msgnoperm'),antiSpam:gb('cfg-spam'),autoCodeDetect:gb('cfg-code'),codeOwnerOnly:gb('cfg-codeowner'),iaAtivaPadrao:gb('cfg-iadefault'),fuzzyCommands:gb('cfg-fuzzy')}
-  const groq=gv('cfg-groq'); if(groq&&groq!=='(salvo)'&&!groq.startsWith('***')) body.groqKey=groq
+  const body={
+    nome:gv('cfg-nome'), prefixo:gv('cfg-prefixo'), owner:gv('cfg-owner'),
+    personalidade:gv('cfg-pers'), modelo:gv('cfg-modelo'),
+    msgBanido:gv('cfg-msgban'), msgCooldown:gv('cfg-msgcd'), msgSemPerm:gv('cfg-msgnoperm'),
+    antiSpam:gb('cfg-spam'), autoCodeDetect:gb('cfg-code'), codeOwnerOnly:gb('cfg-codeowner'),
+    iaAtivaPadrao:gb('cfg-iadefault'), fuzzyCommands:gb('cfg-fuzzy')
+  }
+  // Groq key — só envia se não for placeholder
+  const groq=gv('cfg-groq')
+  if(groq&&groq!=='✓ (salvo)'&&!groq.startsWith('***')&&groq!=='gsk_...') body.groqKey=groq
+  // Gemini key
+  const gemini=gv('cfg-gemini')
+  if(gemini&&gemini!=='✓ (salvo)'&&!gemini.startsWith('***')&&gemini!=='AIza...') body.geminiKey=gemini
+  // AI Provider
+  const prov=gv('cfg-ai-provider')
+  if(prov) body.aiProvider=prov
+
   const r=await post('/api/config',body)
   if(r.ok){
-    toast('✅ Config salva!');sfx('save')
+    toast('✅ Config salva!'); sfx('save')
     if(G('sb-nm')) G('sb-nm').textContent=body.nome||'KaiusBot'
     if(G('dash-title')) G('dash-title').textContent='✦ '+(body.nome||'KaiusBot')
+    // Refresh placeholders
+    if(body.groqKey){const e=G('cfg-groq');if(e){e.value='';e.placeholder='✓ (salvo)'}}
+    if(body.geminiKey){const e=G('cfg-gemini');if(e){e.value='';e.placeholder='✓ (salvo)'}}
   } else toast('Erro: '+(r.error||''),'e')
 }
 
@@ -1800,6 +1901,7 @@ async function npmInst(){const p=G('npm-pkg')?.value.trim();if(!p)return;tq('npm
 async function quickNpm(pkg){if(G('npm-pkg'))G('npm-pkg').value=pkg;tq('npm install '+pkg)}
 async function gitPush(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/push',{});if(G('git-res'))G('git-res').textContent=r.ok?(r.message||'✅ Enviado!'):('❌ '+r.reason)}
 async function gitUpd(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/update',{});if(G('git-res'))G('git-res').textContent=r.updated?`✅ ${r.commits} commit(s)`:('ℹ️ '+r.reason)}
+async function gitPull(){if(G('git-res'))G('git-res').textContent='⏳ Puxando tudo...';const r=await post('/api/github/pull',{});if(G('git-res'))G('git-res').textContent=r.ok?'✅ Bot atualizado do GitHub!':('❌ '+r.reason);if(r.ok){toast('✅ Atualizado!');sfx('install')}}
 
 // ── Conectar ─────────────────────────────────────────────────
 async function reqPairing(){const phone=G('pair-phone')?.value.replace(/\D/g,'');if(!phone){toast('Informe o número!','e');return};await post('/api/pairing',{phone});toast('✅ Código solicitado!')}
@@ -1882,44 +1984,113 @@ document.addEventListener('click', e => {
 }, {passive:true})
 
 // ── Animações CSS injetadas ──────────────────────────────────
-document.head.insertAdjacentHTML('beforeend', `<style>
-@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
-@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
-@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(-16px)}to{opacity:1;transform:scale(1) translateY(0)}}
-@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
-@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-@keyframes scan{0%{top:-5%}100%{top:105%}}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.35)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
-@keyframes tabLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+document.head.insertAdjacentHTML('beforeend', ``)
 
-.mo-box{animation:modalIn .25s cubic-bezier(.34,1.56,.64,1) both}
-.toast{animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both}
-.card{animation:cardIn .35s ease both;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
-.card:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 8px 32px rgba(0,255,136,.1)}
-.card::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .4s ease;pointer-events:none}
-.card:hover::after{left:140%}
-.le{animation:leIn .15s ease both}
-.badge.online{animation:pulse 2.5s ease-in-out infinite}
-.tab.on .card:nth-child(1){animation-delay:.04s}.tab.on .card:nth-child(2){animation-delay:.08s}.tab.on .card:nth-child(3){animation-delay:.12s}.tab.on .card:nth-child(4){animation-delay:.16s}
-.tab.on{animation:cardIn .3s ease both}
-.ci{transition:transform .12s,background .12s;cursor:pointer}
-.ci:hover{transform:translateX(3px)}
-.ed-tab.on{color:var(--ac)!important}
-.ed-tab.on::after{content:'';display:block;height:2px;background:var(--ac);border-radius:2px;animation:tabLine .18s ease}
-.fi input:focus,.fi textarea:focus,.fi select:focus{box-shadow:0 0 0 2px rgba(0,255,136,.2)!important}
-.btn{position:relative;overflow:hidden;transition:transform .1s,filter .1s}
-.btn:hover{filter:brightness(1.1)}
-.btn:active{transform:scale(.97)}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
-.main{position:relative;z-index:1}
-.main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.05),transparent);animation:scan 10s linear infinite;pointer-events:none;z-index:0}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px}
-::-webkit-scrollbar-track{background:transparent}
-</style>`)
+// ── Provider UI ───────────────────────────────────────────
+function updateProviderUI() { /* provider selector — both fields always visible */ }
+
+// ── Hooks panel ────────────────────────────────────────────
+async function loadHooks() {
+  // Chama o bot via !hooks equivalent — busca via API exec
+  const r = await post('/api/exec', { cmd: 'echo hooks_loaded' })
+  const el = G('hooks-list'); if (!el) return
+  // Try to get hooks from a dedicated endpoint
+  const hr = await api('/api/hooks').catch(() => null)
+  if (hr && Array.isArray(hr)) {
+    if (!hr.length) { el.innerHTML = '<div class="empty">Nenhum hook ativo</div>'; return }
+    el.innerHTML = hr.map(h => `
+      <div class="ci">
+        <div class="ci-info">
+          <div class="ci-name">🔌 <span style="color:var(--ac)">${h.name}</span> <span class="tag tb2">p${h.priority}</span></div>
+          <div class="ci-desc">ID: <code>${h.id}</code></div>
+        </div>
+        <button class="btn btn-r btn-sm" onclick="removeHookById('${h.id}')"><i class="fas fa-trash"></i></button>
+      </div>`).join('')
+  } else {
+    el.innerHTML = '<div class="empty">Use <code>.hooks</code> no WhatsApp para listar ou <code>.antiword on</code> para criar um hook</div>'
+  }
+}
+
+async function removeHookById(id) {
+  if (!confirm(`Remover hook "${id}"?`)) return
+  const r = await post('/api/hooks/remove', { id })
+  toast(r.ok ? '✅ Hook removido!' : ('❌ ' + (r.error || 'Erro')))
+  loadHooks()
+}
+
+// ════════════════════════════════════════════════════════
+// VFX EXTRAS — Efeitos visuais avançados
+// ════════════════════════════════════════════════════════
+
+// ── Cursor trail ─────────────────────────────────────────
+;(function cursorTrail() {
+  const trail = []
+  const MAX = 8
+  document.addEventListener('mousemove', e => {
+    const dot = document.createElement('div')
+    dot.style.cssText = `position:fixed;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:9998;left:${e.clientX-2}px;top:${e.clientY-2}px;background:var(--ac);opacity:.5;transition:opacity .4s,transform .4s`
+    document.body.appendChild(dot)
+    trail.push(dot)
+    requestAnimationFrame(() => { dot.style.opacity='0'; dot.style.transform='scale(0)' })
+    if (trail.length > MAX) { trail[0].remove(); trail.shift() }
+    setTimeout(() => { dot.remove(); const i=trail.indexOf(dot); if(i>-1)trail.splice(i,1) }, 400)
+  }, { passive: true })
+})()
+
+// ── Glitch text effect ────────────────────────────────────
+function glitchText(el, duration=400) {
+  if (!el) return
+  const orig = el.textContent
+  const chars = '!<>-_\/[]{}—=+*^?#______'
+  let frame = 0
+  const id = setInterval(() => {
+    el.textContent = orig.split('').map((c, i) => {
+      if (i < frame / 3) return orig[i]
+      return chars[Math.floor(Math.random() * chars.length)]
+    }).join('')
+    if (frame++ > orig.length * 3) { el.textContent = orig; clearInterval(id) }
+  }, 30)
+}
+
+// ── Neon flash on status change ───────────────────────────
+const _origSocket_status = socket.listeners ? null : null
+socket.on('status', ({status}) => {
+  const main = document.querySelector('.main')
+  if (!main) return
+  if (status === 'open') {
+    main.style.transition = 'box-shadow .15s'
+    main.style.boxShadow = '0 0 80px rgba(0,255,136,.18), inset 0 0 80px rgba(0,255,136,.04)'
+    setTimeout(() => { main.style.boxShadow = '' }, 800)
+    // Glitch on bot name
+    setTimeout(() => glitchText(G('dash-title'), 500), 400)
+  }
+})
+
+// ── Log entry color pulse ─────────────────────────────────
+// SFX on logs handled by socket.on log event
+
+// ── Card shimmer on click ─────────────────────────────────
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card')
+  if (!card) return
+  card.style.transition = 'box-shadow .05s'
+  card.style.boxShadow = '0 0 24px rgba(0,255,136,.2)'
+  setTimeout(() => { card.style.boxShadow='' }, 200)
+}, {passive:true})
+
+// ── Online badge — matrix digits ─────────────────────────
+;(function matrixBadge() {
+  const el = G('status-badge')
+  if (!el) return
+  socket.on('status', ({status}) => {
+    if (status !== 'open') return
+    const digits = '01'
+    let i = 0
+    const id = setInterval(() => {
+      if (i++ > 15) return clearInterval(id)
+    }, 60)
+  })
+})()
 
 // ── Init ─────────────────────────────────────────────────────
 ;(function init() {
