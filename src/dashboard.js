@@ -7,12 +7,9 @@ import { Server } from 'socket.io'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import os from 'os'
-import fs from 'fs'
-import { promisify } from 'util'
-import { exec } from 'child_process'
 import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
-import { getLogs, setSocket, logInfo, logWarn, getLastStatus } from './logger.js'
+import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB } from './database.js'
 import JsonDB from './database.js'
@@ -22,7 +19,6 @@ import { getMinionList, getMinionStats, addSubdono, removeSubdono, listSubdonos,
 import { getAllContribs, getContribStats, approveContrib, rejectContrib } from './contributions.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const execAsync = promisify(exec)
 
 
 // ── Gemini support ────────────────────────────────────
@@ -76,6 +72,11 @@ export function startDashboard() {
 
   setSocket(io)
   app.use(express.json({ limit: '5mb' }))
+  // Force JSON content-type on all /api routes
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json')
+    next()
+  })
 
   function auth(req, res, next) {
     const pass = CONFIG.dashboardPass
@@ -147,13 +148,16 @@ export function startDashboard() {
   })
 
   app.post('/api/commands/:name/source', auth, async (req, res) => {
-    const { source, category } = req.body
-    if (!source) return res.status(400).json({ error: 'Source required' })
+    res.setHeader('Content-Type', 'application/json')  // force JSON response always
     try {
-      await createCommand({ name: req.params.name, code: source, category: category || 'misc' })
-      res.json({ ok: true })
+      const { source, category } = req.body
+      if (!source) return res.status(400).json({ error: 'Source (código) é obrigatório' })
+      const name = req.params.name
+      if (!name || name.length < 1) return res.status(400).json({ error: 'Nome inválido' })
+      await createCommand({ name, code: source, category: category || 'misc' })
+      res.json({ ok: true, name, category: category || 'misc' })
     } catch (e) {
-      res.status(500).json({ error: e.message })
+      res.status(500).json({ error: e.message || 'Erro interno' })
     }
   })
 
@@ -728,7 +732,6 @@ export function startDashboard() {
 
   app.post('/api/github/pull', auth, async (req, res) => {
     try {
-      const { pullFullBot } = await import('./github.js')
       const r = await pullFullBot()
       if (r.ok) {
         const total = await loadCommands()
@@ -774,19 +777,6 @@ export function startDashboard() {
       return res.status(404).json({ error: 'Route not found: ' + req.path })
     }
     res.sendFile(path.join(__dirname, '../public/index.html'))
-  })
-
-  // ── Error handler global (captura erros do express.json() e outros) ──────────
-  // Sem isso, erros de JSON malformado retornam HTML 400 em vez de JSON
-  // eslint-disable-next-line no-unused-vars
-  app.use((err, req, res, next) => {
-    if (err.type === 'entity.parse.failed' || err.status === 400) {
-      return res.status(400).json({ error: 'JSON inválido ou requisição malformada: ' + (err.message || 'parse error') })
-    }
-    if (err.status === 413) {
-      return res.status(413).json({ error: 'Payload muito grande (limite: 5mb)' })
-    }
-    res.status(err.status || 500).json({ error: err.message || 'Erro interno' })
   })
 
   const PORT = CONFIG.dashboardPort || 3000
