@@ -72,8 +72,6 @@ export function startDashboard() {
 
   setSocket(io)
   app.use(express.json({ limit: '5mb' }))
-  app.use('/data/uploads', express.static(path.join(__dirname, '../data/uploads')))
-  app.use(express.static(path.join(__dirname, '../public')))
 
   function auth(req, res, next) {
     const pass = CONFIG.dashboardPass
@@ -761,9 +759,16 @@ export function startDashboard() {
     if (lastStatus) socket.emit('status', lastStatus)
   })
 
+  // Static files AFTER API routes so APIs always take priority
+  app.use('/data/uploads', express.static(path.join(__dirname, '../data/uploads')))
+  app.use(express.static(path.join(__dirname, '../public')))
+
+  // SPA fallback — only for non-API routes
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api'))
-      res.sendFile(path.join(__dirname, '../public/index.html'))
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'Route not found: ' + req.path })
+    }
+    res.sendFile(path.join(__dirname, '../public/index.html'))
   })
 
   const PORT = CONFIG.dashboardPort || 3000
