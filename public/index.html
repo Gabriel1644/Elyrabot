@@ -2,630 +2,356 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="theme-color" content="#00ff88"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="ElyraBot"/>
-<link rel="manifest" href="/manifest.json"/>
-<link rel="icon" type="image/svg+xml" href="/icon.svg"/>
-<link rel="apple-touch-icon" href="/icon.svg"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title id="page-title">Bot Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<title>Kaius Dashboard</title>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="icon" href="/icon.svg" type="image/svg+xml"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 <style>
 :root{
   --bg:#07080f;--bg2:#0e0f1a;--bg3:#14162a;--bg4:#1c1e35;
-  --ac:#00ff88;--ac2:#00cc6a;--or:#ff6b35;--bl:#4fc3f7;
-  --rd:#ff4757;--yl:#ffd32a;--pu:#a29bfe;--pk:#fd79a8;
+  --ac:#00ff88;--ac2:#00cc6a;--bl:#4fc3f7;--or:#ff6b35;
+  --rd:#ff4757;--yl:#ffd32a;--pu:#a29bfe;
   --tx:#e2e8f0;--tx2:#94a3b8;--tx3:#64748b;
   --br:#1e2235;--br2:#2a2d4a;
-  --f:'JetBrains Mono',monospace;--f2:'Rajdhani',sans-serif;
-  --r:8px;
+  --f:'JetBrains Mono',monospace;--f2:'Rajdhani',sans-serif;--r:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;min-height:100vh;display:flex}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--br2);border-radius:2px}
-/* sidebar */
-.sb{width:62px;background:var(--bg2);border-right:1px solid var(--br);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:2px;position:fixed;top:0;left:0;height:100vh;transition:width .22s;z-index:100;overflow:hidden}
-.sb:hover{width:212px}
-.sb-logo{font-size:22px;margin-bottom:2px;flex-shrink:0}
-.sb-name{opacity:0;font-family:var(--f2);font-size:13px;font-weight:700;color:var(--ac);white-space:nowrap;transition:opacity .18s;margin-bottom:8px;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;display:flex}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--ac2);border-radius:99px;opacity:.4}
+::-webkit-scrollbar-track{background:transparent}
+
+/* Sidebar */
+.sb{width:60px;background:var(--bg2);border-right:1px solid var(--br);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;position:fixed;top:0;left:0;height:100vh;transition:width .2s cubic-bezier(.34,1.56,.64,1);z-index:100;overflow:hidden;flex-shrink:0}
+.sb:hover{width:210px}
+.sb-logo{font-size:24px;margin-bottom:4px;flex-shrink:0;transition:transform .3s}
+.sb:hover .sb-logo{transform:rotate(15deg) scale(1.1)}
+.sb-name{opacity:0;font-family:var(--f2);font-size:14px;font-weight:700;color:var(--ac);white-space:nowrap;transition:opacity .15s;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;max-width:170px}
 .sb:hover .sb-name{opacity:1}
-.ni{width:100%;display:flex;align-items:center;gap:11px;padding:9px 18px;cursor:pointer;color:var(--tx3);transition:all .18s;border-left:3px solid transparent;white-space:nowrap}
+.ni{width:100%;display:flex;align-items:center;gap:11px;padding:9px 18px;cursor:pointer;color:var(--tx3);transition:all .15s;border-left:3px solid transparent;white-space:nowrap;user-select:none}
 .ni:hover{background:var(--bg3);color:var(--tx)}
 .ni.on{background:rgba(0,255,136,.08);color:var(--ac);border-left-color:var(--ac)}
-.ni i{font-size:14px;width:20px;text-align:center;flex-shrink:0}
-.nl{font-family:var(--f2);font-size:13px;font-weight:500;opacity:0;transition:opacity .18s}
-.sb:hover .nl{opacity:1}
-.sb-hr{width:80%;height:1px;background:var(--br);margin:6px 0}
-/* main */
-.main{margin-left:62px;flex:1;padding:22px;overflow-y:auto;min-height:100vh;position:relative;z-index:1}
-.tab{display:none}.tab.on{display:block}
-/* topbar */
-.tb{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--br)}
-.tb-title{font-family:var(--f2);font-size:21px;font-weight:700;color:var(--ac);text-shadow:0 0 28px rgba(0,255,136,.35)}
-.badge{display:flex;align-items:center;gap:8px;padding:5px 13px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--f2)}
-.badge.online{background:rgba(0,255,136,.1);color:var(--ac);border:1px solid rgba(0,255,136,.3)}
-.badge.offline{background:rgba(255,71,87,.1);color:var(--rd);border:1px solid rgba(255,71,87,.3)}
-.sdot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-/* grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px}
-.card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:18px;transition:all .18s}
-.card:hover{border-color:var(--br2);transform:translateY(-2px)}
-.card-lbl{color:var(--tx3);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;font-family:var(--f2)}
-.card-val{font-size:26px;font-weight:700;font-family:var(--f2)}
-.card-val.g{color:var(--ac)}.card-val.o{color:var(--or)}.card-val.b{color:var(--bl)}
-.card-ico{float:right;font-size:26px;opacity:.13}
-/* panel */
-.pnl{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);margin-bottom:18px;overflow:hidden;animation:cardIn .35s ease both}
-.pnl-hd{padding:13px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
-.pnl-tt{font-family:var(--f2);font-size:14px;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:8px}
-.pnl-tt i{color:var(--ac)}
-.pnl-bd{padding:18px}
-/* buttons */
-.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);border:none;cursor:pointer;font-family:var(--f);font-size:12px;font-weight:500;transition:all .18s;white-space:nowrap}
-.btn-g{background:var(--ac);color:#000}.btn-g:hover{background:var(--ac2);box-shadow:0 0 16px rgba(0,255,136,.3)}
-.btn-r{background:rgba(255,71,87,.14);color:var(--rd);border:1px solid rgba(255,71,87,.3)}.btn-r:hover{background:var(--rd);color:#fff}
-.btn-q{background:transparent;color:var(--tx2);border:1px solid var(--br2)}.btn-q:hover{background:var(--bg3);color:var(--tx)}
-.btn-o{background:rgba(255,107,53,.14);color:var(--or);border:1px solid rgba(255,107,53,.3)}.btn-o:hover{background:var(--or);color:#000}
-.btn-p{background:rgba(162,155,254,.14);color:var(--pu);border:1px solid rgba(162,155,254,.3)}.btn-p:hover{background:var(--pu);color:#000}
-.btn-b{background:rgba(79,195,247,.14);color:var(--bl);border:1px solid rgba(79,195,247,.3)}.btn-b:hover{background:var(--bl);color:#000}
-.btn-sm{padding:4px 9px;font-size:11px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
-/* forms */
-.fi{margin-bottom:14px}
-.fi label{display:block;color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-family:var(--f2)}
-.fi input,.fi textarea,.fi select{width:100%;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);padding:8px 11px;border-radius:var(--r);font-family:var(--f);font-size:12px;transition:border-color .18s;outline:none}
-.fi input:focus,.fi textarea:focus,.fi select:focus{border-color:var(--ac)}
-.fi textarea{min-height:80px;resize:vertical}
-.tog{display:flex;align-items:center;gap:9px;cursor:pointer}
-.tog input{display:none}
-.tog-t{width:38px;height:21px;background:var(--bg3);border:1px solid var(--br2);border-radius:11px;position:relative;transition:all .18s}
-.tog input:checked+.tog-t{background:rgba(0,255,136,.2);border-color:var(--ac)}
-.tog-th{width:15px;height:15px;background:var(--tx3);border-radius:50%;position:absolute;top:2px;left:2px;transition:all .18s}
-.tog input:checked+.tog-t .tog-th{left:19px;background:var(--ac)}
-.tog-lbl{font-family:var(--f2);font-size:13px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
-/* cmd list */
-.cl{display:flex;flex-direction:column;gap:3px}
-.ci{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:6px;border:1px solid var(--br);background:var(--bg3);transition:all .18s;cursor:pointer}
-.ci:hover{border-color:var(--br2);background:var(--bg4)}
-.ci.sel{border-color:var(--ac)!important;background:rgba(0,255,136,.05)!important}
-.ci-info{flex:1;min-width:0}
-.ci-name{color:var(--ac);font-weight:500;font-size:12px}
-.ci-desc{color:var(--tx3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ci-cat{background:var(--bg4);border:1px solid var(--br2);padding:2px 7px;border-radius:4px;font-size:10px;color:var(--tx3);flex-shrink:0;font-family:var(--f2)}
-.fb{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap}
-.fb-btn{padding:3px 11px;border-radius:20px;border:1px solid var(--br2);background:transparent;color:var(--tx3);font-family:var(--f);font-size:11px;cursor:pointer;transition:all .18s}
-.fb-btn.on{background:rgba(0,255,136,.1);color:var(--ac);border-color:rgba(0,255,136,.3)}
-.si{flex:1;min-width:170px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);padding:6px 11px;border-radius:20px;font-family:var(--f);font-size:12px;outline:none}
-.si:focus{border-color:var(--ac)}
-/* badges */
-.pb{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;font-family:var(--f2);border:1px solid;white-space:nowrap;flex-shrink:0}
-.pb-dn{color:#ffd32a;border-color:rgba(255,211,42,.3);background:rgba(255,211,42,.07)}
-.pb-sd{color:var(--pu);border-color:rgba(162,155,254,.3);background:rgba(162,155,254,.07)}
-.pb-ad{color:var(--bl);border-color:rgba(79,195,247,.3);background:rgba(79,195,247,.07)}
-.pb-vp{color:var(--pk);border-color:rgba(253,121,168,.3);background:rgba(253,121,168,.07)}
-.pb-us{color:var(--ac);border-color:rgba(0,255,136,.28);background:rgba(0,255,136,.06)}
-.pb-gr{color:var(--or);border-color:rgba(255,107,53,.28);background:rgba(255,107,53,.07)}
-.pb-pv{color:var(--bl);border-color:rgba(79,195,247,.28);background:rgba(79,195,247,.07)}
-.pb-def{color:var(--tx3);border-color:var(--br2)}
-.mt-chip{padding:5px 11px;border-radius:14px;border:1px solid var(--br2);background:var(--bg3);color:var(--tx2);cursor:pointer;font-family:var(--f2);font-size:11px;transition:all .18s;white-space:nowrap}
-.mt-chip.on{border-color:var(--pu);color:var(--pu);background:rgba(162,155,254,.1)}
-/* editor */
-.split{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
-.cmd-ed{background:var(--bg2);border:1px solid var(--br2);border-radius:var(--r);position:sticky;top:22px}
-.cmd-ed-hd{padding:13px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border-radius:var(--r) var(--r) 0 0}
+.ni i{width:16px;text-align:center;flex-shrink:0}
+.ni-label{opacity:0;transition:opacity .15s}
+.sb:hover .ni-label{opacity:1}
 
-.ed-tab{padding:8px 14px;background:transparent;border:none;color:var(--tx3);cursor:pointer;font-family:var(--f2);font-size:12px;font-weight:500;border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap}
-.ed-tab:hover{color:var(--tx)}
-.ed-tab.on{color:var(--ac);border-bottom-color:var(--ac)}
-.rp-btn{padding:8px;border-radius:var(--r);border:1px solid var(--br2);background:var(--bg3);color:var(--tx2);cursor:pointer;font-family:var(--f2);font-size:12px;text-align:center;transition:all .18s}
-.rp-btn.sel{border-color:var(--ac);color:var(--ac);background:rgba(0,255,136,.08)}
-.alias-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--bg3);border:1px solid var(--br2);border-radius:14px;font-size:11px;color:var(--tx2)}
-.alias-tag .rm{cursor:pointer;color:var(--tx3);font-size:10px}.alias-tag .rm:hover{color:var(--rd)}
-/* modal */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
-.mo-box{background:var(--bg2);border:1px solid var(--br2);border-radius:12px;padding:22px;width:480px;max-width:96vw;max-height:92vh;overflow-y:auto}
-.mo-tt{font-family:var(--f2);font-size:15px;font-weight:700;color:var(--ac);margin-bottom:18px;display:flex;align-items:center;gap:8px}
-.mo-act{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
-/* logs/terminal */
-.logterm{background:#050508;border:1px solid var(--br);border-radius:var(--r);padding:14px;height:440px;overflow-y:auto;font-size:11px;line-height:1.7}
-.le{display:flex;gap:7px;padding:1px 0}
-.lt{color:var(--tx3);flex-shrink:0;font-size:10px;padding-top:2px}
-.lk{flex-shrink:0;width:50px;text-align:center;border-radius:3px;padding:1px 4px;font-size:10px;font-weight:700}
-.lk.ok{color:#000;background:var(--ac)}.lk.info{color:var(--bl);background:rgba(79,195,247,.12)}
-.lk.warn{color:#000;background:var(--yl)}.lk.error{color:#fff;background:var(--rd)}
-.lk.message{color:var(--pu);background:rgba(162,155,254,.12)}
-.lm{color:var(--tx2);word-break:break-all}
-.ce{background:#050508;border:1px solid var(--br2);border-radius:var(--r);padding:14px;font-family:var(--f);font-size:12px;color:#a8ff78;min-height:280px;resize:vertical;width:100%;outline:none}
-.ce:focus{border-color:var(--ac)}
-.term{background:#050508;border:1px solid var(--br);border-radius:var(--r);padding:14px;height:320px;overflow-y:auto;font-size:12px;line-height:1.6}
-.tl{color:var(--ac);padding:1px 0}.tl.err{color:var(--or)}
-.tin-bar{display:flex;gap:7px;margin-top:7px}
-.tin{flex:1;background:var(--bg3);border:1px solid var(--br2);color:var(--ac);padding:7px 11px;border-radius:var(--r);font-family:var(--f);font-size:12px;outline:none}
-.tin:focus{border-color:var(--ac)}
-/* misc */
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--f2)}
-.tg{background:rgba(0,255,136,.1);color:var(--ac);border:1px solid rgba(0,255,136,.2)}
-.to{background:rgba(255,107,53,.1);color:var(--or);border:1px solid rgba(255,107,53,.2)}
-.tr{background:rgba(255,71,87,.1);color:var(--rd);border:1px solid rgba(255,71,87,.2)}
-.tb2{background:rgba(79,195,247,.1);color:var(--bl);border:1px solid rgba(79,195,247,.2)}
-.dv{height:1px;background:var(--br);margin:14px 0}
-.empty{text-align:center;padding:34px;color:var(--tx3)}
-.hint{color:var(--tx3);font-size:11px;padding:8px 11px;background:var(--bg3);border-radius:6px;border-left:3px solid var(--ac);margin-bottom:14px;line-height:1.6}
-.menu-prev{background:#1a1a2e;border:2px solid var(--br2);border-radius:10px;padding:18px;font-family:var(--f);color:#e2e8f0;font-size:13px;line-height:1.8;white-space:pre-wrap;max-height:480px;overflow-y:auto}
-.toast{position:fixed;bottom:22px;right:22px;padding:11px 18px;border-radius:var(--r);font-size:12px;z-index:9999;font-family:var(--f2);animation:tin .3s ease;max-width:300px;border:1px solid;pointer-events:none}
-.toast.s{background:rgba(0,255,136,.1);color:var(--ac);border-color:rgba(0,255,136,.3)}
-.toast.e{background:rgba(255,71,87,.1);color:var(--rd);border-color:rgba(255,71,87,.3)}
-@keyframes tin{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
-@media(max-width:900px){.split{grid-template-columns:1fr}.cmd-ed{position:static}}
-@media(max-width:600px){.row2,.row3{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
-/* ── MOBILE BOTTOM NAV ─────────────────────────────────── */
-.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--br);z-index:150;padding:6px 0 env(safe-area-inset-bottom);flex-direction:row;justify-content:space-around}
-.mob-ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;color:var(--tx3);cursor:pointer;border-radius:8px;transition:all .15s;min-width:48px;font-size:10px;font-family:var(--f2);font-weight:500}
-.mob-ni.on{color:var(--ac)}
-.mob-ni i{font-size:18px}
-.mob-more-menu{display:none;position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--br2);border-radius:16px;padding:12px;z-index:160;width:92vw;max-width:420px;flex-wrap:wrap;gap:6px;justify-content:center}
-.mob-more-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;color:var(--tx2);cursor:pointer;border-radius:10px;background:var(--bg3);font-size:11px;font-family:var(--f2);min-width:70px;transition:all .15s}
-.mob-more-item:hover,.mob-more-item.on{background:rgba(0,255,136,.1);color:var(--ac)}
-.mob-more-item i{font-size:20px}
-/* ── PWA INSTALL SCREEN ─────────────────────────────────── */
-#pwa-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
-#pwa-screen .pwa-icon{width:100px;height:100px;margin-bottom:20px;border-radius:24px;box-shadow:0 0 40px rgba(0,255,136,.3)}
-#pwa-screen h1{font-family:var(--f2);font-size:28px;font-weight:700;color:var(--ac);margin-bottom:8px}
-#pwa-screen p{color:var(--tx2);font-size:14px;line-height:1.6;max-width:320px;margin-bottom:28px}
-.pwa-steps{display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px;margin-bottom:24px}
-.pwa-step{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border:1px solid var(--br2);border-radius:12px;text-align:left}
-.pwa-step-num{width:28px;height:28px;border-radius:50%;background:rgba(0,255,136,.15);border:1px solid var(--ac);color:var(--ac);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
-.pwa-step-txt{font-size:13px;color:var(--tx2);line-height:1.4}
-.pwa-skip{color:var(--tx3);font-size:12px;cursor:pointer;text-decoration:underline;margin-top:8px}
-/* ── CARD IMPROVEMENTS ──────────────────────────────────── */
-.card{position:relative;overflow:hidden}
-.card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:2px 2px 0 0;opacity:.6}
-.card:nth-child(1)::after{background:var(--ac)}
-.card:nth-child(2)::after{background:var(--or)}
-.card:nth-child(3)::after{background:var(--bl)}
-.card:nth-child(4)::after{background:var(--pu)}
-/* ── STATUS BADGE IMPROVED ──────────────────────────────── */
-.badge.online .sdot{animation:pulse 1.5s infinite}
-.badge{transition:all .3s}
-/* ── CONNECT TAB IMPROVED ───────────────────────────────── */
-.revive-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
-/* ── MOBILE RESPONSIVE ──────────────────────────────────── */
-@media(max-width:700px){
-  body{flex-direction:column}
-  .sb{display:none}
-  .main{margin-left:0;padding:14px;padding-bottom:80px}
-  .mob-nav{display:flex}
-  .tb{flex-direction:column;align-items:flex-start;gap:10px}
-  .split{grid-template-columns:1fr}
-  .row2,.row3{grid-template-columns:1fr}
-  .grid{grid-template-columns:1fr 1fr}
-  .cmd-ed{position:static}
-  .card-val{font-size:22px}
-}
-@media(max-width:380px){
-  .grid{grid-template-columns:1fr}
-  .mob-ni span{display:none}
-  .mob-ni{min-width:40px}
-}
+/* Main */
+.main{margin-left:60px;flex:1;padding:20px;overflow-y:auto;min-height:100vh;position:relative;z-index:1}
+@media(max-width:600px){.main{margin-left:0;padding:12px;padding-bottom:70px}}
 
-/* ── SFX Button ──────────────────────────────────────── */
-#sfx-btn { transition: transform .15s; user-select: none; }
-#sfx-btn:active { transform: scale(.88); }
-/* ── Subtle card glow on hover ──────────────────────── */
-.card:hover { box-shadow: 0 0 18px rgba(0,255,136,.08); }
-/* ── Command item click feedback ────────────────────── */
-.ci { user-select: none; }
-.ci:active { transform: scale(.99); }
-/* ── Modal slide-in ─────────────────────────────────── */
-#ed-modal .mo-box { animation: edModalIn .2s cubic-bezier(.34,1.56,.64,1); }
-@keyframes edModalIn { from { transform: scale(.92) translateY(-10px); opacity:0; } to { transform: scale(1) translateY(0); opacity:1; } }
-/* ── Tab underline animation ─────────────────────────── */
-.ed-tab { position: relative; }
-.ed-tab.on::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--ac); border-radius:2px; animation: tabIn .18s ease; }
-@keyframes tabIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-/* ── Toast fade out ──────────────────────────────────── */
-.toast { animation: tin .3s ease, fadeout .3s ease 2.7s forwards; }
-@keyframes fadeout { to { opacity:0; transform: translateY(8px); } }
-/* ── Status badge pulse when online ─────────────────── */
-.badge.online { animation: badgePulse 3s ease-in-out infinite; }
-@keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); } 50% { box-shadow: 0 0 0 4px rgba(0,255,136,.12); } }
-/* ── Sidebar hover width smooth ────────────────────── */
-.sb { will-change: width; }
+/* Toolbar */
+.tb{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--br)}
+.tb-title{font-family:var(--f2);font-size:20px;font-weight:700;color:var(--ac)}
+.tb-right{display:flex;align-items:center;gap:6px}
 
-/* ════════════════════════════════════════════════════════
-   ANIMAÇÕES & EFEITOS VISUAIS
-   ════════════════════════════════════════════════════════ */
+/* Tab */
+.tab{display:none}.tab.on{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Partícula de fundo */
-body::before{
-  content:'';position:fixed;inset:0;
-  background:
-    radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.06) 0%,transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.05) 0%,transparent 60%);
-  pointer-events:none;z-index:0;
-}
+/* Panel */
+.pnl{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);margin-bottom:16px;overflow:hidden;transition:border-color .2s}
+.pnl:hover{border-color:var(--br2)}
+.pnl-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--br);background:var(--bg3)}
+.pnl-tt{display:flex;align-items:center;gap:7px;font-family:var(--f2);font-size:14px;font-weight:600;color:var(--tx)}
+.pnl-tt i{color:var(--ac);font-size:12px}
+.pnl-bd{padding:16px}
 
-/* Page load stagger */
-.tab.on{animation:pageIn .35s cubic-bezier(.2,.8,.2,1) both}
-@keyframes pageIn{
-  from{opacity:0;transform:translateY(14px) scale(.99)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-
-/* Cards — hover lift + glow */
-.card{
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,border-color .2s;
-  position:relative;overflow:hidden;
-}
-.card::before{
-  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
-  transition:left .4s ease;
-}
-.card:hover::before{left:140%}
-.card:hover{
-  transform:translateY(-4px) scale(1.01);
-  box-shadow:0 12px 40px rgba(0,255,136,.12),0 4px 16px rgba(0,0,0,.4);
-  border-color:rgba(0,255,136,.25)!important;
-}
-
-/* Nav items — smooth slide */
-.ni{position:relative;overflow:hidden}
-.ni::after{
-  content:'';position:absolute;left:0;top:0;width:3px;height:100%;
-  background:var(--ac);transform:scaleY(0);transform-origin:bottom;
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1);
-}
-.ni.on::after{transform:scaleY(1)}
-.ni.on{animation:navGlow .4s ease forwards}
-@keyframes navGlow{
-  0%{background:transparent}
-  50%{background:rgba(0,255,136,.15)}
-  100%{background:rgba(0,255,136,.08)}
-}
-
-/* Buttons — ripple effect */
-.btn{position:relative;overflow:hidden;}
-.btn::after{
-  content:'';position:absolute;top:50%;left:50%;
-  width:0;height:0;border-radius:50%;
-  background:rgba(255,255,255,.15);
-  transform:translate(-50%,-50%);
-  transition:width .4s ease,height .4s ease,opacity .4s ease;
-  opacity:0;pointer-events:none;
-}
-.btn:active::after{width:200px;height:200px;opacity:1;transition:0s}
-
-/* Panels — fade in on load */
-/* pnl animation merged into base */
-@keyframes pnlIn{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-/* Command items — fast hover */
-.ci{transition:all .15s;position:relative}
-.ci::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:0;
-  background:linear-gradient(90deg,rgba(0,255,136,.08),transparent);
-  transition:width .2s ease;border-radius:6px;pointer-events:none;
-}
-.ci:hover::before{width:100%}
-.ci:hover{transform:translateX(3px)}
-
-/* Modal — spring animation */
-.mo-box{
-  animation:modalSpring .28s cubic-bezier(.34,1.56,.64,1) both !important;
-}
-@keyframes modalSpring{
-  from{opacity:0;transform:scale(.88) translateY(-20px)}
-  to{opacity:1;transform:scale(1) translateY(0)}
-}
-
-/* Toast — bounce in */
-.toast{animation:toastBounce .4s cubic-bezier(.34,1.56,.64,1) both!important}
-@keyframes toastBounce{
-  from{opacity:0;transform:translateY(24px) scale(.8)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-
-/* Status badge — pulse verde quando online */
-.badge.online{
-  animation:onlinePulse 2.5s ease-in-out infinite;
-  box-shadow:0 0 0 0 rgba(0,255,136,.4);
-}
-@keyframes onlinePulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}
-  50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}
-}
-
-/* Sidebar logo giro suave */
-.sb-logo{display:inline-block;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
-.sb:hover .sb-logo{transform:rotate(15deg) scale(1.1)}
-
-/* Input focus glow */
-.fi input:focus,.fi textarea:focus,.fi select:focus{
-  box-shadow:0 0 0 3px rgba(0,255,136,.15),0 0 16px rgba(0,255,136,.08)!important;
-}
-
-/* Log entries — slide in */
-.le{animation:leIn .2s ease both}
-@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-
-/* Toggle — spring */
-.tog-th{transition:all .25s cubic-bezier(.34,1.56,.64,1)!important}
-
-/* Grid cards stagger */
-.grid .card:nth-child(1){animation-delay:.05s}
-.grid .card:nth-child(2){animation-delay:.1s}
-.grid .card:nth-child(3){animation-delay:.15s}
-.grid .card:nth-child(4){animation-delay:.2s}
-.card{animation:cardIn .4s cubic-bezier(.2,.8,.2,1) both}
-@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-
-/* Scanning line no fundo */
-@keyframes scan{0%{top:-5%}100%{top:105%}}
-.main::after{
-  content:'';position:fixed;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent 0%,rgba(0,255,136,.06) 50%,transparent 100%);
-  animation:scan 8s linear infinite;pointer-events:none;z-index:0;
-}
-
-/* Tab transition */
-.tab.on .pnl:nth-child(1){--i:0}
-.tab.on .pnl:nth-child(2){--i:1}
-.tab.on .pnl:nth-child(3){--i:2}
-.tab.on .pnl:nth-child(4){--i:3}
-.tab.on .pnl:nth-child(5){--i:4}
-
-/* Scrollbar mais bonita */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px;opacity:.4}
-
-/* Editor tabs underline */
-.ed-tab.on{
-  color:var(--ac)!important;
-  text-shadow:0 0 12px rgba(0,255,136,.4);
-}
-.ed-tab.on::after{
-  content:'';display:block;height:2px;
-  background:linear-gradient(90deg,transparent,var(--ac),transparent);
-  border-radius:2px;
-  animation:tabUnderline .2s ease forwards;
-}
-@keyframes tabUnderline{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
-/* Número dos cards animado */
-.card-val{
-  transition:all .3s cubic-bezier(.34,1.56,.64,1);
-}
-
-/* Hint boxes */
-.hint{
-  border-left:3px solid var(--ac);
-  position:relative;overflow:hidden;
-}
-.hint::after{
-  content:'';position:absolute;top:0;left:0;width:2px;height:100%;
-  background:var(--ac);
-  animation:hintBar 2s ease-in-out infinite;
-}
-@keyframes hintBar{0%,100%{opacity:.4}50%{opacity:1}}
-
-/* ── Animações & VFX ── */
-
-@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
-@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
-@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(-16px)}to{opacity:1;transform:scale(1) translateY(0)}}
-@keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes fadeOut{to{opacity:0;transform:translateY(8px)}}
-@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes leIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-@keyframes scan{0%{top:-5%}100%{top:105%}}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.35)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
-@keyframes tabLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
-.mo-box{animation:modalIn .25s cubic-bezier(.34,1.56,.64,1) both}
-.toast{animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both}
-.card{animation:cardIn .35s ease both;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .18s}
-.card:hover{transform:translateY(-3px) scale(1.01);box-shadow:0 8px 32px rgba(0,255,136,.1)}
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--r);padding:16px;text-align:center;transition:all .2s;position:relative;overflow:hidden}
+.card:hover{border-color:rgba(0,255,136,.3);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,255,136,.1)}
 .card::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);transition:left .4s ease;pointer-events:none}
 .card:hover::after{left:140%}
-.le{animation:leIn .15s ease both}
-.badge.online{animation:pulse 2.5s ease-in-out infinite}
-.tab.on .card:nth-child(1){animation-delay:.04s}.tab.on .card:nth-child(2){animation-delay:.08s}.tab.on .card:nth-child(3){animation-delay:.12s}.tab.on .card:nth-child(4){animation-delay:.16s}
-.tab.on{animation:cardIn .3s ease both}
-.ci{transition:transform .12s,background .12s;cursor:pointer}
-.ci:hover{transform:translateX(3px)}
-.ed-tab.on{color:var(--ac)!important}
-.ed-tab.on::after{content:'';display:block;height:2px;background:var(--ac);border-radius:2px;animation:tabLine .18s ease}
-.fi input:focus,.fi textarea:focus,.fi select:focus{box-shadow:0 0 0 2px rgba(0,255,136,.2)!important}
-.btn{position:relative;overflow:hidden;transition:transform .1s,filter .1s}
-.btn:hover{filter:brightness(1.1)}
-.btn:active{transform:scale(.97)}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,255,136,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(79,195,247,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
-.main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.05),transparent);animation:scan 10s linear infinite;pointer-events:none;z-index:0}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:linear-gradient(var(--ac2),var(--bl));border-radius:99px}
-::-webkit-scrollbar-track{background:transparent}
+.card-val{font-family:var(--f2);font-size:28px;font-weight:700;color:var(--ac);display:block}
+.card-lbl{font-size:11px;color:var(--tx3);margin-top:2px}
 
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:none;cursor:pointer;font-family:var(--f);font-size:12px;font-weight:500;transition:all .15s;position:relative;overflow:hidden;user-select:none}
+.btn:active{transform:scale(.97)}
+.btn-g{background:var(--ac);color:#000}
+.btn-g:hover{background:var(--ac2)}
+.btn-b{background:rgba(79,195,247,.15);color:var(--bl);border:1px solid rgba(79,195,247,.25)}
+.btn-b:hover{background:rgba(79,195,247,.25)}
+.btn-o{background:rgba(255,107,53,.15);color:var(--or);border:1px solid rgba(255,107,53,.25)}
+.btn-o:hover{background:rgba(255,107,53,.25)}
+.btn-r{background:rgba(255,71,87,.15);color:var(--rd);border:1px solid rgba(255,71,87,.25)}
+.btn-r:hover{background:rgba(255,71,87,.25)}
+.btn-q{background:var(--bg3);color:var(--tx2);border:1px solid var(--br2)}
+.btn-q:hover{color:var(--tx);background:var(--bg4)}
+.btn-sm{padding:5px 9px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* Form */
+.fi{margin-bottom:12px}
+.fi label{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.fi input,.fi textarea,.fi select{width:100%;padding:8px 11px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-family:var(--f);font-size:12px;outline:none;transition:border-color .15s,box-shadow .15s}
+.fi input:focus,.fi textarea:focus,.fi select:focus{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,255,136,.15)}
+.fi select{cursor:pointer}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Toggle */
+.tog{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.tog-t{width:36px;height:20px;background:var(--bg4);border-radius:10px;border:1px solid var(--br2);position:relative;transition:all .2s;flex-shrink:0}
+input:checked+.tog-t{background:var(--ac);border-color:var(--ac)}
+.tog-th{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+input:checked+.tog-t .tog-th{transform:translateX(16px)}
+.tog input{display:none}
+.tog-lbl{font-size:12px;color:var(--tx2)}
+
+/* Command items */
+.ci{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--r);cursor:pointer;transition:all .12s;border:1px solid transparent}
+.ci:hover{background:var(--bg3);border-color:var(--br2);transform:translateX(3px)}
+.ci.sel{background:rgba(0,255,136,.06);border-color:rgba(0,255,136,.2)}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:12px;font-weight:600;color:var(--ac);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-desc{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.ci-cat{font-size:10px;color:var(--tx3);padding:2px 6px;background:var(--bg3);border-radius:4px;border:1px solid var(--br);white-space:nowrap}
+
+/* Tags */
+.tag{display:inline-block;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:600}
+.tg{background:rgba(0,255,136,.1);color:var(--ac);border:1px solid rgba(0,255,136,.2)}
+.to{background:rgba(255,107,53,.1);color:var(--or);border:1px solid rgba(255,107,53,.2)}
+.tb2{background:rgba(79,195,247,.1);color:var(--bl);border:1px solid rgba(79,195,247,.2)}
+.tr{background:rgba(255,71,87,.1);color:var(--rd);border:1px solid rgba(255,71,87,.2)}
+.ti{background:rgba(162,155,254,.1);color:var(--pu);border:1px solid rgba(162,155,254,.2)}
+
+/* Filter bar */
+.fb{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.fb-btn{padding:4px 10px;border-radius:12px;border:1px solid var(--br2);background:var(--bg3);color:var(--tx3);font-size:11px;cursor:pointer;transition:all .12s;font-family:var(--f)}
+.fb-btn:hover,.fb-btn.on{background:rgba(0,255,136,.1);color:var(--ac);border-color:rgba(0,255,136,.25)}
+
+/* Status badge */
+.badge{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.badge.online{background:var(--ac);animation:pulse 2.5s ease-in-out infinite}
+.badge.offline{background:var(--rd)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{box-shadow:0 0 0 8px rgba(0,255,136,0)}}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;right:16px;z-index:9999;padding:10px 16px;border-radius:var(--r);font-size:12px;font-weight:500;max-width:320px;animation:toastIn .3s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(8px);border:1px solid}
+.toast.s{background:rgba(0,255,136,.15);color:var(--ac);border-color:rgba(0,255,136,.3)}
+.toast.e{background:rgba(255,71,87,.15);color:var(--rd);border-color:rgba(255,71,87,.3)}
+.toast.i{background:rgba(79,195,247,.15);color:var(--bl);border-color:rgba(79,195,247,.3)}
+.toast.w{background:rgba(255,211,42,.15);color:var(--yl);border-color:rgba(255,211,42,.3)}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* Modal */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.mo-box{background:var(--bg2);border:1px solid var(--br2);border-radius:12px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:modalIn .25s cubic-bezier(.34,1.56,.64,1)}
+@keyframes modalIn{from{opacity:0;transform:scale(.88) translateY(-16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mo-tt{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--br);font-family:var(--f2);font-size:15px;font-weight:700;color:var(--ac)}
+.mo-bd{padding:18px}
+.mo-act{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--br)}
+
+/* Editor tabs */
+.ed-tabs{display:flex;gap:0;border-bottom:1px solid var(--br);margin-bottom:16px}
+.ed-tab{padding:8px 14px;cursor:pointer;color:var(--tx3);font-size:12px;border:none;background:none;font-family:var(--f);transition:color .15s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ed-tab:hover{color:var(--tx)}
+.ed-tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+/* Role/Loc picker */
+.picker{display:flex;flex-wrap:wrap;gap:5px}
+.pk-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--br2);background:var(--bg3);color:var(--tx2);font-size:11px;cursor:pointer;transition:all .12s;font-family:var(--f)}
+.pk-btn:hover{border-color:var(--ac);color:var(--ac)}
+.pk-btn.on{background:rgba(0,255,136,.1);border-color:var(--ac);color:var(--ac)}
+
+/* Alias tags */
+.alias-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:var(--bg3);border:1px solid var(--br2);border-radius:12px;font-size:11px;color:var(--tx2)}
+.alias-rm{cursor:pointer;color:var(--tx3);font-size:10px;margin-left:2px}
+.alias-rm:hover{color:var(--rd)}
+
+/* Menu chips */
+.mt-chip{padding:5px 10px;border-radius:12px;border:1px solid var(--br2);background:var(--bg3);color:var(--tx3);font-size:11px;cursor:pointer;transition:all .12s}
+.mt-chip:hover{color:var(--tx)}
+.mt-chip.on{background:rgba(0,255,136,.1);border-color:rgba(0,255,136,.3);color:var(--ac)}
+
+/* Hint box */
+.hint{padding:10px 12px;background:rgba(0,255,136,.04);border-left:3px solid var(--ac);border-radius:0 var(--r) var(--r) 0;font-size:11px;color:var(--tx2);line-height:1.7;margin-top:8px}
+
+/* Code editor */
+.ce{font-family:var(--f);font-size:12px;line-height:1.6;background:var(--bg);border-color:var(--br);resize:vertical}
+
+/* Log terminal */
+.log-term{background:var(--bg);border:1px solid var(--br);border-radius:var(--r);padding:10px;height:380px;overflow-y:auto;font-size:11px;line-height:1.8}
+.le{display:flex;gap:8px;padding:1px 0;animation:leIn .15s ease}
+@keyframes leIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+.lt{color:var(--tx3);flex-shrink:0;min-width:52px}
+.lk{padding:1px 6px;border-radius:4px;font-size:10px;flex-shrink:0;min-width:36px;text-align:center}
+.lk.ok{background:rgba(0,255,136,.1);color:var(--ac)}
+.lk.err{background:rgba(255,71,87,.1);color:var(--rd)}
+.lk.warn{background:rgba(255,211,42,.1);color:var(--yl)}
+.lk.info{background:rgba(79,195,247,.1);color:var(--bl)}
+.lm{color:var(--tx2);flex:1;word-break:break-all}
+
+/* Terminal */
+.term-out{background:var(--bg);border:1px solid var(--br);border-radius:var(--r);padding:10px;height:280px;overflow-y:auto;font-size:11px;line-height:1.7}
+.tl{padding:1px 0;color:var(--tx2);word-break:break-all}
+.tl.err{color:var(--rd)}
+.tin-bar{display:flex;align-items:center;gap:6px;margin-top:8px;background:var(--bg);border:1px solid var(--br2);border-radius:var(--r);overflow:hidden}
+.tin{flex:1;padding:8px;background:none;border:none;color:var(--tx);font-family:var(--f);font-size:12px;outline:none}
+
+/* Empty state */
+.empty{text-align:center;color:var(--tx3);padding:32px 16px;font-size:12px}
+
+/* PWA screen */
+#pwa-screen{position:fixed;inset:0;background:rgba(7,8,15,.96);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;backdrop-filter:blur(8px)}
+#pwa-screen h2{font-family:var(--f2);font-size:26px;color:var(--ac);margin:16px 0 8px}
+#pwa-screen p{color:var(--tx2);font-size:14px;line-height:1.6;max-width:300px;margin-bottom:24px}
+
+/* Mobile nav */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--br);z-index:200;padding:6px 0 env(safe-area-inset-bottom)}
+.mob-items{display:flex;justify-content:space-around}
+.mob-ni{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;color:var(--tx3);cursor:pointer;border-radius:8px;font-size:9px;transition:color .12s;min-width:52px}
+.mob-ni i{font-size:18px}
+.mob-ni.on{color:var(--ac)}
+@media(max-width:600px){.mob-nav{display:block}.sb{display:none}}
+
+/* Dirty badge */
+.dirty{display:none;padding:3px 8px;background:rgba(255,107,53,.15);color:var(--or);border-radius:4px;font-size:11px;border:1px solid rgba(255,107,53,.3)}
+
+/* Divider */
+.dv{height:1px;background:var(--br);margin:16px 0}
+
+/* Scan line animation */
+@keyframes scan{0%{top:-2%}100%{top:102%}}
+.main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.04),transparent);animation:scan 12s linear infinite;pointer-events:none;z-index:0}
 </style>
 </head>
 <body>
 
-
-<!-- PWA INSTALL SCREEN -->
+<!-- PWA SCREEN -->
 <div id="pwa-screen" style="display:none">
-  <img src="/icon.svg" class="pwa-icon" alt="ElyraBot"/>
-  <h1>ElyraBot</h1>
-  <p>Instale o app para ter acesso rápido ao painel, mesmo sem internet.</p>
-  <div class="pwa-steps">
-    <div class="pwa-step"><div class="pwa-step-num">1</div><div class="pwa-step-txt">Clique em <b>Instalar App</b> abaixo quando aparecer o botão</div></div>
-    <div class="pwa-step"><div class="pwa-step-num">2</div><div class="pwa-step-txt">No iPhone: toque em <b>Compartilhar ⬆</b> → <b>Adicionar à Tela de Início</b></div></div>
-    <div class="pwa-step"><div class="pwa-step-num">3</div><div class="pwa-step-txt">Abra pelo ícone na tela inicial para usar como app nativo</div></div>
-  </div>
-  <button class="btn btn-g" id="pwa-install-btn" onclick="installPWA()" style="width:100%;max-width:320px;padding:14px;font-size:15px;border-radius:14px;display:none"><i class="fas fa-download"></i> Instalar App</button>
-  <div class="pwa-skip" onclick="skipPWA()">Continuar no navegador mesmo assim</div>
+  <div style="font-size:64px;margin-bottom:8px">🤖</div>
+  <h2>Instale o App</h2>
+  <p>Adicione o Kaius Dashboard à sua tela inicial para acesso rápido e experiência de app nativo.</p>
+  <button class="btn btn-g" style="padding:12px 28px;font-size:14px;margin-bottom:12px" onclick="installPWA()"><i class="fas fa-download"></i> Instalar App</button>
+  <button class="btn btn-q btn-sm" onclick="skipPWA()">Continuar no navegador</button>
 </div>
 
-<!-- MOBILE BOTTOM NAV -->
-<nav class="mob-nav">
-  <div class="mob-ni on" data-tab="dash" onclick="goTab('dash',this)"><i class="fas fa-chart-line"></i><span>Home</span></div>
-  <div class="mob-ni" data-tab="cmds" onclick="goTab('cmds',this)"><i class="fas fa-terminal"></i><span>Cmds</span></div>
-  <div class="mob-ni" data-tab="auto" onclick="goTab('auto',this)"><i class="fas fa-bolt"></i><span>Auto</span></div>
-  <div class="mob-ni" data-tab="logs" onclick="goTab('logs',this)"><i class="fas fa-stream"></i><span>Logs</span></div>
-  <div class="mob-ni" id="mob-more-btn" onclick="toggleMobMore()"><i class="fas fa-grid"></i><span>Mais</span></div>
-</nav>
-
-<!-- MOBILE MORE MENU -->
-<div id="mob-more-menu" class="mob-more-menu">
-  <div class="mob-more-item" onclick="goTab('menus',this)"><i class="fas fa-list-alt"></i>Menus</div>
-  <div class="mob-more-item" onclick="goTab('cfg',this)"><i class="fas fa-cog"></i>Config</div>
-  <div class="mob-more-item" onclick="goTab('ai',this)"><i class="fas fa-magic"></i>Criar Cmd</div>
-  <div class="mob-more-item" onclick="goTab('minions',this)"><i class="fas fa-users"></i>Minions</div>
-  <div class="mob-more-item" onclick="goTab('subdons',this)"><i class="fas fa-star"></i>Sub-Donos</div>
-  <div class="mob-more-item" onclick="goTab('grupos',this)"><i class="fas fa-lock"></i>Grupos</div>
-  <div class="mob-more-item" onclick="goTab('termux',this)"><i class="fas fa-mobile-alt"></i>Termux</div>
-  <div class="mob-more-item" onclick="goTab('connect',this)"><i class="fas fa-qrcode"></i>Conectar</div>
-  <div class="mob-more-item" onclick="goTab('contribs',this)"><i class="fas fa-code-branch"></i>Contribs</div>
-</div>
-
+<!-- SIDEBAR (desktop) -->
 <nav class="sb">
-  <div class="sb-logo" id="sb-ico">🤖</div>
-  <div class="sb-name" id="sb-nm">ElyraBot</div>
-  <div class="ni on" data-tab="dash"><i class="fas fa-chart-line"></i><span class="nl">Dashboard</span></div>
-  <div class="ni" data-tab="cmds"><i class="fas fa-terminal"></i><span class="nl">Comandos</span></div>
-  <div class="ni" data-tab="menus"><i class="fas fa-list-alt"></i><span class="nl">Menus</span></div>
-  <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="nl">Automações</span></div>
-  <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="nl">Configurações</span></div>
-  <div class="ni" data-tab="ai"><i class="fas fa-robot"></i><span class="nl">IA / Criar Cmd</span></div>
-  <div class="ni" data-tab="minions"><i class="fas fa-users"></i><span class="nl">Minions</span></div>
-  <div class="ni" data-tab="subdons"><i class="fas fa-star"></i><span class="nl">Sub-Donos</span></div>
-  <div class="ni" data-tab="contribs"><i class="fas fa-code-branch"></i><span class="nl">Contribuições</span></div>
-  <div class="ni" data-tab="grupos"><i class="fas fa-lock"></i><span class="nl">Grupos</span></div>
-  <div class="ni" data-tab="logs"><i class="fas fa-stream"></i><span class="nl">Logs</span></div>
-  <div class="ni" data-tab="termux"><i class="fas fa-mobile-alt"></i><span class="nl">Termux</span></div>
-  <div class="sb-hr"></div>
-  <div class="ni" data-tab="connect"><i class="fas fa-qrcode"></i><span class="nl">Conectar</span></div>
+  <span class="sb-logo" id="sb-ico">🤖</span>
+  <span class="sb-name" id="sb-nm">KaiusBot</span>
+  <div class="ni on" data-tab="dash"><i class="fas fa-chart-line"></i><span class="ni-label">Dashboard</span></div>
+  <div class="ni" data-tab="cmds"><i class="fas fa-terminal"></i><span class="ni-label">Comandos</span></div>
+  <div class="ni" data-tab="menus"><i class="fas fa-list"></i><span class="ni-label">Menus</span></div>
+  <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div>
+  <div class="ni" data-tab="ai"><i class="fas fa-magic"></i><span class="ni-label">Criar Cmd</span></div>
+  <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>
+  <div class="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
+  <div class="ni" data-tab="subdons"><i class="fas fa-star"></i><span class="ni-label">Sub-donos</span></div>
+  <div class="ni" data-tab="grupos"><i class="fas fa-shield-alt"></i><span class="ni-label">Grupos</span></div>
+  <div class="ni" data-tab="logs"><i class="fas fa-stream"></i><span class="ni-label">Logs</span></div>
+  <div class="ni" data-tab="termux"><i class="fas fa-code"></i><span class="ni-label">Termux</span></div>
+  <div class="ni" data-tab="connect"><i class="fas fa-qrcode"></i><span class="ni-label">Conectar</span></div>
 </nav>
 
+<!-- MAIN -->
 <main class="main">
 
 <!-- DASHBOARD -->
 <div id="tab-dash" class="tab on">
   <div class="tb">
-    <div class="tb-title" id="dash-title">✦ ElyraBot</div>
-    <div id="status-badge" class="badge offline"><div class="sdot"></div><span id="status-txt">Desconectado</span></div>
+    <div class="tb-title" id="dash-title">✦ KaiusBot</div>
+    <div class="tb-right">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="badge offline" id="status-badge"></span>
+        <span style="font-size:11px;color:var(--tx3)" id="status-txt">Conectando...</span>
+      </div>
+      <button class="btn btn-q btn-sm" id="sfx-btn" onclick="toggleSFX()" title="Sons">🔊</button>
+    </div>
   </div>
   <div class="grid">
-    <div class="card"><div class="card-ico">💬</div><div class="card-lbl">Mensagens</div><div class="card-val g" id="s-msgs">—</div></div>
-    <div class="card"><div class="card-ico">⚡</div><div class="card-lbl">Cmds Usados</div><div class="card-val o" id="s-cmds">—</div></div>
-    <div class="card"><div class="card-ico">📦</div><div class="card-lbl">Cmds Ativos</div><div class="card-val b" id="s-loaded">—</div></div>
-    <div class="card"><div class="card-ico">⏱️</div><div class="card-lbl">Uptime</div><div class="card-val" id="s-uptime">—</div></div>
+    <div class="card"><span class="card-val" id="s-msgs">—</span><div class="card-lbl">💬 Mensagens</div></div>
+    <div class="card"><span class="card-val" id="s-cmds">—</span><div class="card-lbl">⚡ Comandos totais</div></div>
+    <div class="card"><span class="card-val" id="s-loaded">—</span><div class="card-lbl">📦 Carregados</div></div>
+    <div class="card"><span class="card-val" id="s-uptime" style="font-size:18px">—</span><div class="card-lbl">⏱️ Uptime</div></div>
   </div>
   <div class="pnl">
-    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-trophy"></i>Top Comandos</div></div>
-    <div class="pnl-bd cl" id="top-cmds"><div class="empty">Carregando...</div></div>
+    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-fire"></i>Top comandos</div></div>
+    <div class="pnl-bd"><div id="top-cmds"><div class="empty">Carregando...</div></div></div>
   </div>
 </div>
 
 <!-- COMANDOS -->
 <div id="tab-cmds" class="tab">
-  <div class="tb"><div class="tb-title">Comandos</div>
-    <button class="btn btn-q btn-sm" onclick="reloadCmds()"><i class="fas fa-sync"></i> Reload</button>
+  <div class="tb">
+    <div class="tb-title">Comandos</div>
+    <div class="tb-right">
+      <button class="btn btn-q btn-sm" onclick="reloadCmds()"><i class="fas fa-sync"></i> Reload</button>
+    </div>
   </div>
-  <div class="hint">💡 Clique em um comando para editar permissões, aliases, cooldown e em qual menu aparece.</div>
-  <div style="max-width:860px">
-      <div class="fb">
-        <input class="si" id="cmd-search" placeholder="🔍 Buscar..." oninput="renderCmds()"/>
+  <div class="pnl">
+    <div class="pnl-bd" style="padding:12px">
+      <input id="cmd-search" placeholder="🔍  buscar comando..." style="width:100%;margin-bottom:10px" oninput="renderCmds()" class="fi" style="margin:0"/>
+      <div class="fb" id="cat-filters">
         <button class="fb-btn on" data-cat="all" onclick="setCat(this)">Todos</button>
         <button class="fb-btn" data-cat="core" onclick="setCat(this)">core</button>
         <button class="fb-btn" data-cat="fun" onclick="setCat(this)">fun</button>
         <button class="fb-btn" data-cat="rpg" onclick="setCat(this)">rpg</button>
         <button class="fb-btn" data-cat="media" onclick="setCat(this)">media</button>
         <button class="fb-btn" data-cat="info" onclick="setCat(this)">info</button>
-        <button class="fb-btn" data-cat="tools" onclick="setCat(this)">tools</button>
         <button class="fb-btn" data-cat="admin" onclick="setCat(this)">admin</button>
         <button class="fb-btn" data-cat="owner" onclick="setCat(this)">owner</button>
+        <button class="fb-btn" data-cat="misc" onclick="setCat(this)">misc</button>
       </div>
-      <div class="cl" id="cmd-list"><div class="empty">Carregando...</div></div>
+      <div id="cmd-list"><div class="empty">Carregando...</div></div>
     </div>
   </div>
 </div>
 
 <!-- MENUS -->
 <div id="tab-menus" class="tab">
-  <div class="tb"><div class="tb-title">Menus & Design</div>
-    <button class="btn btn-g btn-sm" onclick="saveMenu()"><i class="fas fa-save"></i> Salvar</button>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-palette"></i>Temas — Clique para aplicar</div></div>
-    <div class="pnl-bd" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-q" onclick="applyTheme('default')">⚙️ Default</button>
-      <button class="btn btn-q" onclick="applyTheme('redline')">🏎️ Redline</button>
-      <button class="btn btn-q" onclick="applyTheme('neon')">🌌 Neon</button>
-      <button class="btn btn-q" onclick="applyTheme('minimal')">🤍 Minimal</button>
-      <button class="btn btn-q" onclick="applyTheme('stars')">⭐ Stars</button>
-      <button class="btn btn-q" onclick="applyTheme('sakura')">🌸 Sakura</button>
-      <button class="btn btn-q" onclick="applyTheme('hacker')">💚 Hacker</button>
-      <button class="btn btn-q" onclick="applyTheme('royal')">👑 Royal</button>
+  <div class="tb"><div class="tb-title">Menus</div>
+    <div class="tb-right">
+      <button class="btn btn-q btn-sm" onclick="saveMenu()"><i class="fas fa-save"></i> Salvar</button>
     </div>
   </div>
   <div class="row2" style="align-items:start">
     <div>
-      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-paint-brush"></i>Aparência</div></div>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-palette"></i>Estilo</div></div>
         <div class="pnl-bd">
+          <div class="fi"><label>Borda topo</label><input id="m-top" placeholder="┏━━━⪩ *KAIUS* ⪨━━━┓" oninput="updPrev()"/></div>
+          <div class="fi"><label>Borda base</label><input id="m-bot" placeholder="┗━━━━━━━━━━━━━━━━━━┛" oninput="updPrev()"/></div>
           <div class="row2">
-            <div class="fi"><label>Footer / Rodapé</label><input id="m-footer" oninput="updPrev()" placeholder="Powered by DevSquad"/></div>
-            <div class="fi"><label>Nome exibido</label><input id="m-botnome" oninput="updPrev()"/></div>
+            <div class="fi"><label>Lado</label><input id="m-side" value="│" maxlength="5" oninput="updPrev()"/></div>
+            <div class="fi"><label>Item</label><input id="m-item" value="├" maxlength="5" oninput="updPrev()"/></div>
           </div>
-          <div class="fi"><label>URL da Foto/Vídeo (todos os menus)</label><input id="m-foto" placeholder="https://... ou vazio para usar arquivo local"/></div>
-          <div class="hint" style="margin-bottom:8px">💡 Borda vazia = usa o design padrão automático com o nome do bot</div>
-          <div class="row2">
-            <div class="fi"><label>Borda Topo</label><input id="m-top" oninput="updPrev()" placeholder="vazio = automático"/></div>
-            <div class="fi"><label>Borda Base</label><input id="m-bot" oninput="updPrev()" placeholder="vazio = automático"/></div>
-          </div>
-          <div class="row3">
-            <div class="fi"><label>Lateral</label><input id="m-side" maxlength="6" oninput="updPrev()"/></div>
-            <div class="fi"><label>Item ├</label><input id="m-item" maxlength="8" oninput="updPrev()"/></div>
-            <div class="fi"><label>Último └</label><input id="m-sub" maxlength="8" oninput="updPrev()"/></div>
-          </div>
-          <div style="display:flex;gap:18px;flex-wrap:wrap">
-            <label class="tog"><input type="checkbox" id="m-bold" onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Negrito</span></label>
+          <div class="fi"><label>Sub-item</label><input id="m-sub" value="└" maxlength="5" oninput="updPrev()"/></div>
+          <div class="fi"><label>Rodapé</label><input id="m-footer" placeholder="Powered by DevSquad" oninput="updPrev()"/></div>
+          <div class="fi"><label>Nome no menu</label><input id="m-botnome" placeholder="(usa nome do bot)" oninput="updPrev()"/></div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+            <label class="tog"><input type="checkbox" id="m-bold" checked onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Negrito</span></label>
             <label class="tog"><input type="checkbox" id="m-italic" onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Itálico</span></label>
-            <label class="tog"><input type="checkbox" id="m-desc" onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Descrição</span></label>
+          </div>
+          <div class="fi"><label>Tema rápido</label>
+            <div class="fb">
+              <button class="fb-btn" onclick="applyTheme('kaius')">Kaius</button>
+              <button class="fb-btn" onclick="applyTheme('neon')">Neon</button>
+              <button class="fb-btn" onclick="applyTheme('minimal')">Minimal</button>
+              <button class="fb-btn" onclick="applyTheme('hacker')">Hacker</button>
+              <button class="fb-btn" onclick="applyTheme('stars')">Stars</button>
+              <button class="fb-btn" onclick="applyTheme('sakura')">Sakura</button>
+              <button class="fb-btn" onclick="applyTheme('royal')">Royal</button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="pnl">
-        <div class="pnl-hd">
-          <div class="pnl-tt"><i class="fas fa-list"></i>Linhas do Menu Principal</div>
-          <button class="btn btn-b btn-sm" onclick="addMenuLine()"><i class="fas fa-plus"></i></button>
-        </div>
-        <div class="pnl-bd" id="menu-lines-list"></div>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-list-ol"></i>Linhas do Menu</div>
+        <button class="btn btn-b btn-sm" onclick="addMenuLine()"><i class="fas fa-plus"></i></button>
       </div>
-      <div class="pnl">
-        <div class="pnl-hd">
-          <div class="pnl-tt"><i class="fas fa-layer-group"></i>Categorias</div>
-          <button class="btn btn-b btn-sm" onclick="openCatModal()"><i class="fas fa-plus"></i> Nova</button>
-        </div>
-        <div class="pnl-bd" id="cat-table"></div>
+        <div class="pnl-bd"><div id="menu-lines-list"></div></div>
       </div>
     </div>
     <div>
-      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-eye"></i>Preview ao Vivo</div>
-        <button class="btn btn-q btn-sm" onclick="updPrev()">🔄</button>
-      </div>
-        <div class="pnl-bd"><div class="menu-prev" id="menu-prev">Carregando...</div></div>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-eye"></i>Preview</div></div>
+        <div class="pnl-bd"><pre id="menu-prev" style="font-size:11px;white-space:pre-wrap;color:var(--tx2);line-height:1.7"></pre></div>
       </div>
     </div>
   </div>
@@ -634,77 +360,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <!-- AUTOMAÇÕES -->
 <div id="tab-auto" class="tab">
   <div class="tb"><div class="tb-title">Automações</div>
-    <button class="btn btn-g btn-sm" onclick="openAutoModal(null)"><i class="fas fa-plus"></i> Nova</button>
+    <button class="btn btn-g btn-sm" onclick="openAutoModal()"><i class="fas fa-plus"></i> Nova</button>
   </div>
-  <div class="hint">⚡ Quando o bot ler uma mensagem com o <b>gatilho</b>, ele responde automaticamente — sem precisar de prefixo! Suporte a texto, áudio (URL), imagem e vídeo.</div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-bolt"></i>Regras</div></div>
-    <div class="pnl-bd"><div id="auto-list" class="cl"><div class="empty">Nenhuma automação</div></div></div>
-  </div>
-</div>
-
-<!-- CONFIGURAÇÕES -->
-<div id="tab-cfg" class="tab">
-  <div class="tb"><div class="tb-title">Configurações</div>
-    <button class="btn btn-g btn-sm" onclick="saveCfg()"><i class="fas fa-save"></i> Salvar</button>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-robot"></i>Identidade</div></div>
-    <div class="pnl-bd">
-      <div class="row2">
-        <div class="fi"><label>Nome do Bot</label><input id="cfg-nome" oninput="prevNome()"/></div>
-        <div class="fi"><label>Prefixo Global</label><input id="cfg-prefixo" maxlength="3"/></div>
-      </div>
-      <div class="row2">
-        <div class="fi"><label>Emoji</label><input id="cfg-emoji" placeholder="🤖" maxlength="8"/></div>
-        <div class="fi"><label>Número do Dono</label><input id="cfg-owner" placeholder="5511999999999"/></div>
-      </div>
-      <div class="fi"><label>Mensagem de boas-vindas (sub-dono/VIP)</label><textarea id="cfg-welc" rows="2" placeholder="🎉 Você foi promovido a {cargo} do bot {nome}!"></textarea></div>
-    </div>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA & APIs</div></div>
-    <div class="pnl-bd">
-      <div class="fi"><label>Provider para criar comandos</label>
-        <select id="cfg-ai-provider" onchange="updateProviderUI()">
-          <option value="manus">🤖 Manus (Agente autônomo) — recomendado</option>
-          <option value="groq">⚡ Groq direto (rápido)</option>
-          <option value="gemini">🔷 Google Gemini</option>
-        </select>
-      </div>
-      <div class="row2">
-        <div class="fi"><label>Groq API Key</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
-        <div class="fi" id="fi-gemini"><label>Gemini API Key</label><input id="cfg-gemini" type="password" placeholder="AIza..."/></div>
-      </div>
-      <div class="fi"><label>Modelo Groq</label>
-        <select id="cfg-modelo">
-          <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (recomendado)</option>
-          <option value="llama-3.1-70b-versatile">llama-3.1-70b-versatile</option>
-          <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (rápido)</option>
-          <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-          <option value="gemma2-9b-it">gemma2-9b-it</option>
-        </select>
-      </div>
-      <div class="fi"><label>Personalidade da IA</label><textarea id="cfg-pers" rows="3" placeholder="Você é {nome}, uma assistente..."></textarea></div>
-      <div style="padding:8px 12px;background:rgba(0,255,136,.06);border-radius:var(--r);border:1px solid rgba(0,255,136,.15);font-size:11px;color:var(--tx2)">
-        🤖 <b style="color:var(--ac)">Manus</b> — agente autônomo que usa a <b>Groq Key</b> acima para criar/corrigir comandos com tools reais.<br>
-        🔷 <b style="color:#4fc3f7">Gemini</b> — provider alternativo para geração de código.<br>
-        <span id="cfg-manus-note" style="color:var(--tx3);font-size:10px">carregando...</span>
-      </div>
-    </div>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-shield-alt"></i>Comportamento</div></div>
-    <div class="pnl-bd" style="display:flex;flex-direction:column;gap:12px">
-      <label class="tog"><input type="checkbox" id="cfg-spam"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Anti-Spam</span></label>
-      <label class="tog"><input type="checkbox" id="cfg-code"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Detector de código automático</span></label>
-      <label class="tog"><input type="checkbox" id="cfg-codeowner"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Detector apenas para o dono</span></label>
-      <label class="tog"><input type="checkbox" id="cfg-iadefault"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">IA ativada por padrão nos grupos</span></label>
-    </div>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-comment-alt"></i>Mensagens Personalizadas</div></div>
-    <div class="pnl-bd">
-      <div class="fi"><label>Mensagem para banido</label><input id="cfg-msgban" placeholder="🚫 Você foi banido do bot."/></div>
-      <div class="fi"><label>Mensagem de cooldown</label><input id="cfg-msgcd" placeholder="⏳ Aguarde {tempo}s para usar {cmd}."/></div>
-      <div class="fi"><label>Mensagem sem permissão</label><input id="cfg-msgnoperm" placeholder="❌ Você não tem permissão."/></div>
-    </div>
-  </div>
+  <div class="pnl"><div class="pnl-bd"><div id="auto-list"><div class="empty">Carregando...</div></div></div></div>
 </div>
 
 <!-- IA / CRIAR CMD -->
@@ -712,26 +370,34 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   <div class="tb"><div class="tb-title">Criar Comando com IA</div></div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-magic"></i>Gerar com IA</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Descreva o comando</label><textarea id="ai-desc" rows="4" placeholder="Ex: um comando que busca o clima de qualquer cidade com emojis bonitos e previsão de 3 dias"></textarea></div>
+      <div class="fi"><label>Descreva o comando</label>
+        <textarea id="ai-desc" rows="4" placeholder="Ex: um comando .clima que busca temperatura de qualquer cidade com emojis bonitos e previsão de 3 dias"></textarea>
+      </div>
       <div class="row2">
-        <div class="fi"><label>Categoria</label><select id="ai-cat"><option value="fun">fun</option><option value="games">games</option><option value="media">media</option><option value="info">info</option><option value="tools">tools</option><option value="admin">admin</option><option value="misc">misc</option></select></div>
-        <div class="fi"><label>Nome (opcional)</label><input id="ai-file" placeholder="(automático)"/></div>
+        <div class="fi"><label>Categoria</label>
+          <select id="ai-cat">
+            <option value="fun">fun</option><option value="games">games</option>
+            <option value="media">media</option><option value="info">info</option>
+            <option value="tools">tools</option><option value="admin">admin</option><option value="misc">misc</option>
+          </select>
+        </div>
+        <div class="fi"><label>Provider IA</label>
+          <select id="ai-gen-provider">
+            <option value="auto">🤖 Auto (Manus → Groq)</option>
+            <option value="manus">🤖 Manus (agente)</option>
+            <option value="groq">⚡ Groq direto</option>
+            <option value="gemini">🔷 Gemini</option>
+          </select>
+        </div>
       </div>
-      <div class="fi"><label>Provider IA</label>
-        <select id="ai-gen-provider">
-          <option value="auto">🤖 Auto (Manus → Groq)</option>
-          <option value="manus">🤖 Manus (agente)</option>
-          <option value="groq">⚡ Groq direto</option>
-          <option value="gemini">🔷 Gemini</option>
-        </select>
-      </div>
-      <button class="btn btn-g" onclick="genCmd()" style="margin-top:8px"><i class="fas fa-bolt"></i> Gerar com IA</button>
+      <div class="fi"><label>Nome do arquivo (opcional)</label><input id="ai-file" placeholder="(automático a partir do código)"/></div>
+      <button class="btn btn-g" onclick="genCmd()"><i class="fas fa-bolt"></i> Gerar com IA</button>
     </div>
   </div>
   <div id="ai-res" style="display:none">
     <div class="pnl"><div class="pnl-hd">
       <div class="pnl-tt"><i class="fas fa-code"></i>Código Gerado</div>
-      <div style="display:flex;gap:7px">
+      <div class="tb-right">
         <button class="btn btn-q btn-sm" onclick="copyCode()"><i class="fas fa-copy"></i></button>
         <button class="btn btn-o btn-sm" onclick="genCmd()"><i class="fas fa-redo"></i></button>
         <button class="btn btn-g btn-sm" onclick="installGen()"><i class="fas fa-download"></i> Instalar</button>
@@ -740,14 +406,31 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <div class="pnl-bd"><textarea class="ce" id="ai-code" rows="18"></textarea></div>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-edit"></i>Editor Manual</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-keyboard"></i>Editor Manual</div></div>
     <div class="pnl-bd">
       <div class="row2">
-        <div class="fi"><label>Nome</label><input id="man-name" placeholder="meucomando"/></div>
-        <div class="fi"><label>Categoria</label><select id="man-cat"><option value="fun">fun</option><option value="games">games</option><option value="media">media</option><option value="info">info</option><option value="tools">tools</option><option value="misc">misc</option></select></div>
+        <div class="fi"><label>Nome do comando</label><input id="man-name" placeholder="meucomando (sem ponto)"/></div>
+        <div class="fi"><label>Categoria</label>
+          <select id="man-cat">
+            <option value="fun">fun</option><option value="games">games</option>
+            <option value="media">media</option><option value="info">info</option>
+            <option value="tools">tools</option><option value="admin">admin</option><option value="misc">misc</option>
+          </select>
+        </div>
       </div>
-      <div class="fi"><label>Código JS</label><textarea class="ce" id="man-code" rows="14" placeholder="export default { name: 'test', ... }"></textarea></div>
-      <button class="btn btn-g" onclick="installManual()"><i class="fas fa-save"></i> Salvar & Instalar</button>
+      <div class="fi"><label>Código JS</label>
+        <textarea class="ce" id="man-code" rows="16" placeholder="export default {
+  name: 'meucomando',
+  aliases: ['mc'],
+  description: 'Descrição',
+  category: 'fun',
+  cooldown: 5,
+  async execute({ reply, argStr }) {
+    await reply('Olá! ' + argStr)
+  }
+}"></textarea>
+      </div>
+      <button class="btn btn-g" onclick="installManual()"><i class="fas fa-save"></i> Salvar &amp; Instalar</button>
     </div>
   </div>
   <div class="pnl"><div class="pnl-hd">
@@ -756,149 +439,205 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
     <div class="pnl-bd">
       <div id="hooks-list"><div class="empty">Nenhum hook ativo</div></div>
-      <div style="margin-top:12px;padding:10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--br2)">
-        <div style="color:var(--tx3);font-size:11px;line-height:1.7">
-          <b style="color:var(--ac)">O que são hooks?</b> Interceptors que ouvem mensagens sem tocar no handler.js.<br>
-          <b>Comandos:</b> <code>.antiword on</code> · <code>.autoreact on ❤️</code> · <code>.hooks</code> · <code>.removehook &lt;id&gt;</code><br>
-          <b>No código:</b> <code>import { registerHook } from '../../hooks.js'</code>
-        </div>
+      <div class="hint">🔌 <b>Hooks</b> interceptam mensagens sem tocar no handler.js.<br>Use <code>.antiword on</code> ou <code>.autoreact on ❤️</code> no WhatsApp.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div id="tab-cfg" class="tab">
+  <div class="tb"><div class="tb-title">Configurações</div>
+    <button class="btn btn-g btn-sm" onclick="saveCfg()"><i class="fas fa-save"></i> Salvar</button>
+  </div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-robot"></i>Identidade</div></div>
+    <div class="pnl-bd">
+      <div class="row2">
+        <div class="fi"><label>Nome do Bot</label><input id="cfg-nome"/></div>
+        <div class="fi"><label>Prefixo</label><input id="cfg-prefixo" maxlength="3"/></div>
       </div>
+      <div class="fi"><label>Número do Dono</label><input id="cfg-owner" placeholder="5511999999999"/></div>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-brain"></i>IA &amp; Providers</div></div>
+    <div class="pnl-bd">
+      <div class="fi"><label>Provider para criar comandos</label>
+        <select id="cfg-ai-provider">
+          <option value="auto">🤖 Auto (Manus → Groq)</option>
+          <option value="manus">🤖 Manus (agente autônomo)</option>
+          <option value="groq">⚡ Groq direto (rápido)</option>
+          <option value="gemini">🔷 Google Gemini</option>
+        </select>
+      </div>
+      <div class="row2">
+        <div class="fi"><label>Groq API Key</label><input id="cfg-groq" type="password" placeholder="gsk_..."/></div>
+        <div class="fi"><label>Gemini API Key</label><input id="cfg-gemini" type="password" placeholder="AIza..."/></div>
+      </div>
+      <div class="hint" style="margin-bottom:12px">🤖 <b style="color:var(--ac)">Manus</b> usa a Groq Key — é o agente autônomo com tools.<br>🔷 <b style="color:#4fc3f7">Gemini</b> é o provider alternativo do Google.</div>
+      <div class="fi"><label>Modelo Groq</label>
+        <select id="cfg-modelo">
+          <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (recomendado)</option>
+          <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (rápido)</option>
+          <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+          <option value="gemma2-9b-it">gemma2-9b-it</option>
+        </select>
+      </div>
+      <div class="fi"><label>Personalidade</label><textarea id="cfg-pers" rows="3" placeholder="Você é Kaius, uma assistente..."></textarea></div>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-shield-alt"></i>Comportamento</div></div>
+    <div class="pnl-bd" style="display:flex;flex-direction:column;gap:12px">
+      <label class="tog"><input type="checkbox" id="cfg-spam"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Anti-Spam</span></label>
+      <label class="tog"><input type="checkbox" id="cfg-code"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Detector de código automático</span></label>
+      <label class="tog"><input type="checkbox" id="cfg-codeowner"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Detector só para dono</span></label>
+      <label class="tog"><input type="checkbox" id="cfg-iadefault"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">IA ativada por padrão nos grupos</span></label>
+      <label class="tog"><input type="checkbox" id="cfg-fuzzy"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Fuzzy commands (typos)</span></label>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-comment-alt"></i>Mensagens</div></div>
+    <div class="pnl-bd">
+      <div class="fi"><label>Banido</label><input id="cfg-msgban" placeholder="🚫 Você foi banido do bot."/></div>
+      <div class="fi"><label>Cooldown</label><input id="cfg-msgcd" placeholder="⏳ Aguarde {tempo}s para usar {cmd}."/></div>
+      <div class="fi"><label>Sem permissão</label><input id="cfg-msgnoperm" placeholder="❌ {cmd} requer: _{cargo}_"/></div>
     </div>
   </div>
 </div>
 
 <!-- MINIONS -->
 <div id="tab-minions" class="tab">
-  <div class="tb"><div class="tb-title">Minions</div>
-    <div style="display:flex;gap:6px">
-      <button class="fb-btn on" data-mf="all" onclick="setMF(this)">Todos</button>
-      <button class="fb-btn" data-mf="ativos" onclick="setMF(this)">Ativos</button>
-      <button class="fb-btn" data-mf="vips" onclick="setMF(this)">VIPs</button>
-      <button class="fb-btn" data-mf="banidos" onclick="setMF(this)">Banidos</button>
-    </div>
-  </div>
+  <div class="tb"><div class="tb-title">Minions (Usuários)</div></div>
   <div class="grid">
-    <div class="card"><div class="card-ico">👥</div><div class="card-lbl">Total</div><div class="card-val g" id="m-total">—</div></div>
-    <div class="card"><div class="card-ico">✅</div><div class="card-lbl">Ativos (7d)</div><div class="card-val b" id="m-ativos">—</div></div>
-    <div class="card"><div class="card-ico">🌟</div><div class="card-lbl">Sub-Donos</div><div class="card-val o" id="m-subdons">—</div></div>
-    <div class="card"><div class="card-ico">🚫</div><div class="card-lbl">Banidos</div><div class="card-val" id="m-banidos" style="color:var(--rd)">—</div></div>
+    <div class="card"><span class="card-val" id="m-total">—</span><div class="card-lbl">👥 Total</div></div>
+    <div class="card"><span class="card-val" id="m-ativos">—</span><div class="card-lbl">🟢 Ativos 7d</div></div>
+    <div class="card"><span class="card-val" id="m-subdons">—</span><div class="card-lbl">⭐ VIPs/SDs</div></div>
+    <div class="card"><span class="card-val" id="m-banidos">—</span><div class="card-lbl">🚫 Banidos</div></div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-users"></i>Lista</div></div>
-    <div class="pnl-bd"><div id="minion-list" class="cl"><div class="empty">Carregando...</div></div></div>
-  </div>
+  <div class="pnl"><div class="pnl-bd">
+    <div class="fb" style="margin-bottom:12px">
+      <button class="fb-btn on" data-mf="all" onclick="setMF(this)">Todos</button>
+      <button class="fb-btn" data-mf="recent" onclick="setMF(this)">Recentes</button>
+      <button class="fb-btn" data-mf="banned" onclick="setMF(this)">Banidos</button>
+      <button class="fb-btn" data-mf="vip" onclick="setMF(this)">VIP/SD</button>
+    </div>
+    <div id="minion-list"><div class="empty">Carregando...</div></div>
+  </div></div>
 </div>
 
 <!-- SUB-DONOS -->
 <div id="tab-subdons" class="tab">
-  <div class="tb"><div class="tb-title">Sub-Donos & VIPs</div></div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-user-plus"></i>Adicionar</div></div>
+  <div class="tb"><div class="tb-title">Sub-Donos &amp; VIPs</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-plus"></i>Adicionar</div></div>
     <div class="pnl-bd">
       <div class="row2">
-        <div class="fi"><label>Número (com DDI)</label><input id="sd-num" placeholder="5511999999999"/></div>
-        <div class="fi"><label>Cargo</label><select id="sd-role"><option value="2">🌟 Sub-Dono</option><option value="4">💎 VIP</option></select></div>
+        <div class="fi"><label>Número</label><input id="sd-num" placeholder="5511999999999"/></div>
+        <div class="fi"><label>Cargo</label>
+          <select id="sd-role">
+            <option value="2">🌟 Sub-Dono</option>
+            <option value="4">💎 VIP</option>
+            <option value="99">🚫 Banido global</option>
+          </select>
+        </div>
       </div>
-      <div class="fi"><label>Apelido (opcional)</label><input id="sd-label" placeholder="Ex: Moderador, Dev"/></div>
+      <div class="fi"><label>Apelido (opcional)</label><input id="sd-label" placeholder="Ex: Admin fulano"/></div>
       <button class="btn btn-g" onclick="addSD()"><i class="fas fa-plus"></i> Adicionar</button>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-list"></i>Lista</div></div>
-    <div class="pnl-bd"><div id="sd-list" class="cl"><div class="empty">Nenhum cadastrado</div></div></div>
-  </div>
-</div>
-
-<!-- CONTRIBUIÇÕES -->
-<div id="tab-contribs" class="tab">
-  <div class="tb"><div class="tb-title">Contribuições</div></div>
-  <div class="grid">
-    <div class="card"><div class="card-ico">📦</div><div class="card-lbl">Total</div><div class="card-val g" id="c-total">—</div></div>
-    <div class="card"><div class="card-ico">⏳</div><div class="card-lbl">Pendentes</div><div class="card-val o" id="c-pending">—</div></div>
-    <div class="card"><div class="card-ico">✅</div><div class="card-lbl">Aceitos</div><div class="card-val b" id="c-accepted">—</div></div>
-    <div class="card"><div class="card-ico">❌</div><div class="card-lbl">Rejeitados</div><div class="card-val" id="c-rejected" style="color:var(--rd)">—</div></div>
-  </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-code-branch"></i>Comandos</div>
-    <div style="display:flex;gap:5px">
-      <button class="fb-btn on" data-cf="all" onclick="setCF(this)">Todos</button>
-      <button class="fb-btn" data-cf="pending" onclick="setCF(this)">Pendentes</button>
-      <button class="fb-btn" data-cf="accepted" onclick="setCF(this)">Aceitos</button>
-    </div>
-  </div>
-  <div class="pnl-bd"><div id="contrib-list" class="cl"><div class="empty">Carregando...</div></div></div>
-  </div>
+  <div class="pnl"><div class="pnl-bd"><div id="sd-list"><div class="empty">Carregando...</div></div></div></div>
 </div>
 
 <!-- GRUPOS -->
 <div id="tab-grupos" class="tab">
-  <div class="tb"><div class="tb-title">Controle de Grupos</div></div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-lock"></i>Restrição</div></div>
+  <div class="tb"><div class="tb-title">Grupos Autorizados</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-lock"></i>Restrição de Grupos</div></div>
     <div class="pnl-bd">
-      <div class="hint">Quando ativado, o bot só funciona em grupos autorizados. Use <b>!bangp</b> no WhatsApp para alternar um grupo rapidamente.</div>
-      <label class="tog" style="margin-bottom:16px"><input type="checkbox" id="grp-restriction" onchange="toggleRestriction()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Ativar restrição de grupos</span></label>
-      <div class="row2">
-        <div class="fi"><label>JID do Grupo</label><input id="grp-jid" placeholder="5511999999999@g.us"/></div>
-        <div class="fi"><label>Nome (opcional)</label><input id="grp-nome" placeholder="Nome do grupo"/></div>
-      </div>
-      <button class="btn btn-g" onclick="addAllowedGroup()"><i class="fas fa-plus"></i> Autorizar Grupo</button>
+      <label class="tog" style="margin-bottom:12px">
+        <input type="checkbox" id="grp-restriction" onchange="toggleRestriction()"/>
+        <div class="tog-t"><div class="tog-th"></div></div>
+        <span class="tog-lbl">Restringir bot a grupos autorizados</span>
+      </label>
+      <div class="hint">Quando ativo, o bot só responde em grupos da lista abaixo.</div>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-list"></i>Grupos Autorizados</div></div>
-    <div class="pnl-bd"><div id="grp-list" class="cl"><div class="empty">Nenhum grupo</div></div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-plus"></i>Autorizar grupo</div></div>
+    <div class="pnl-bd">
+      <div class="row2">
+        <div class="fi"><label>JID do Grupo</label><input id="grp-jid" placeholder="120363000000000@g.us"/></div>
+        <div class="fi"><label>Nome</label><input id="grp-nome" placeholder="Nome do grupo"/></div>
+      </div>
+      <button class="btn btn-g" onclick="addAllowedGroup()"><i class="fas fa-plus"></i> Autorizar</button>
+    </div>
   </div>
+  <div class="pnl"><div class="pnl-bd"><div id="grp-list"><div class="empty">Carregando...</div></div></div></div>
 </div>
 
 <!-- LOGS -->
 <div id="tab-logs" class="tab">
-  <div class="tb"><div class="tb-title">Logs</div>
-    <div style="display:flex;gap:7px">
+  <div class="tb"><div class="tb-title">Logs ao Vivo</div>
+    <div class="tb-right">
+      <label class="tog"><input type="checkbox" id="log-auto" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl" style="font-size:11px">Auto-scroll</span></label>
       <button class="btn btn-q btn-sm" onclick="clearLogs()"><i class="fas fa-trash"></i></button>
-      <label class="tog"><input type="checkbox" id="log-auto" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Auto-scroll</span></label>
     </div>
   </div>
-  <div class="pnl">
-    <div class="pnl-hd">
-      <div class="pnl-tt"><i class="fas fa-circle" style="color:var(--rd);font-size:8px"></i> AO VIVO</div>
-      <div style="display:flex;gap:5px">
-        <button class="fb-btn on" data-lt="all" onclick="setLF(this)">Todos</button>
-        <button class="fb-btn" data-lt="message" onclick="setLF(this)">Msgs</button>
-        <button class="fb-btn" data-lt="warn" onclick="setLF(this)">Warn</button>
-        <button class="fb-btn" data-lt="error" onclick="setLF(this)">Erro</button>
-      </div>
-    </div>
-    <div class="pnl-bd" style="padding:0"><div class="logterm" id="log-term"></div></div>
+  <div class="fb" style="margin-bottom:10px">
+    <button class="fb-btn on" data-lt="all" onclick="setLF(this)">Todos</button>
+    <button class="fb-btn" data-lt="ok" onclick="setLF(this)">✅ OK</button>
+    <button class="fb-btn" data-lt="err" onclick="setLF(this)">❌ Erro</button>
+    <button class="fb-btn" data-lt="warn" onclick="setLF(this)">⚠️ Warn</button>
+    <button class="fb-btn" data-lt="info" onclick="setLF(this)">ℹ️ Info</button>
   </div>
+  <div class="log-term" id="log-term"></div>
 </div>
 
 <!-- TERMUX -->
 <div id="tab-termux" class="tab">
-  <div class="tb"><div class="tb-title">Termux</div></div>
-  <div class="row2">
+  <div class="tb"><div class="tb-title">Termux / Shell</div></div>
+  <div class="row2" style="align-items:start">
     <div>
       <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-terminal"></i>Terminal</div></div>
-        <div class="pnl-bd" style="padding:0">
-          <div class="term" id="term-out"></div>
-          <div class="tin-bar"><span style="color:var(--ac);padding:7px">$</span><input class="tin" id="term-in" placeholder="comando..." onkeydown="if(event.key==='Enter')runTerm()"/><button class="btn btn-g btn-sm" onclick="runTerm()">↵</button></div>
+        <div class="pnl-bd">
+          <div class="term-out" id="term-out"><div class="tl" style="color:var(--ac)">$ Kaius Terminal — pronto</div></div>
+          <div class="tin-bar">
+            <span style="color:var(--ac);padding:0 10px;font-size:13px">$</span>
+            <input class="tin" id="term-in" placeholder="comando..." onkeydown="if(event.key==='Enter')runTerm()"/>
+            <button class="btn btn-g btn-sm" onclick="runTerm()" style="margin:4px;border-radius:6px">↵</button>
+          </div>
         </div>
       </div>
-      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-box"></i>npm install</div></div>
-        <div class="pnl-bd"><div style="display:flex;gap:7px"><div class="fi" style="flex:1;margin:0"><input id="npm-pkg" placeholder="pacote"/></div><button class="btn btn-o" onclick="npmInst()"><i class="fas fa-download"></i></button></div></div>
-      </div>
-      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fab fa-github"></i>GitHub</div></div>
-        <div class="pnl-bd" style="display:flex;flex-direction:column;gap:7px">
-          <button class="btn btn-q" onclick="gitPush()"><i class="fas fa-upload"></i> Push bot</button>
-          <button class="btn btn-q" onclick="gitUpd()"><i class="fas fa-download"></i> Verificar updates</button>
-          <div id="git-res" style="color:var(--tx2);font-size:11px;margin-top:3px"></div>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fab fa-npm"></i>NPM</div></div>
+        <div class="pnl-bd">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input id="npm-pkg" placeholder="nome do pacote" style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-family:var(--f);font-size:12px;outline:none"/>
+            <button class="btn btn-g btn-sm" onclick="npmInst()">Instalar</button>
+          </div>
+          <div class="fb">
+            <button class="fb-btn" onclick="quickNpm('axios')">axios</button>
+            <button class="fb-btn" onclick="quickNpm('sharp')">sharp</button>
+            <button class="fb-btn" onclick="quickNpm('node-cron')">cron</button>
+            <button class="fb-btn" onclick="quickNpm('cheerio')">cheerio</button>
+            <button class="fb-btn" onclick="quickNpm('qrcode')">qrcode</button>
+          </div>
         </div>
       </div>
     </div>
     <div>
-      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-mobile-alt"></i>Ações Rápidas</div></div>
-        <div class="pnl-bd" style="display:flex;flex-direction:column;gap:7px">
-          <button class="btn btn-q" onclick="tq('termux-battery-status')"><i class="fas fa-battery-half"></i> Bateria</button>
-          <button class="btn btn-q" onclick="termNotif()"><i class="fas fa-bell"></i> Notificação</button>
-          <button class="btn btn-q" onclick="termTTS()"><i class="fas fa-volume-up"></i> TTS</button>
-          <button class="btn btn-q" onclick="tq('termux-vibrate -d 500')"><i class="fas fa-mobile"></i> Vibrar</button>
-          <button class="btn btn-q" onclick="tq('termux-torch --on')"><i class="fas fa-lightbulb"></i> Lanterna ON</button>
-          <button class="btn btn-q" onclick="tq('termux-torch --off')"><i class="fas fa-lightbulb" style="opacity:.4"></i> Lanterna OFF</button>
-          <button class="btn btn-q" onclick="tq('free -h && df -h $HOME')"><i class="fas fa-info-circle"></i> Memória/Disco</button>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fab fa-github"></i>GitHub</div></div>
+        <div class="pnl-bd">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn btn-b btn-sm" onclick="gitStatus()"><i class="fas fa-info-circle"></i> Status</button>
+            <button class="btn btn-g btn-sm" onclick="gitPush()"><i class="fas fa-upload"></i> Push</button>
+            <button class="btn btn-b btn-sm" onclick="gitPull()"><i class="fas fa-download"></i> Pull Tudo</button>
+            <button class="btn btn-q btn-sm" onclick="gitUpd()"><i class="fas fa-sync"></i> Update</button>
+          </div>
+          <div id="git-res" style="font-size:11px;color:var(--tx2);padding:8px;background:var(--bg);border-radius:var(--r);min-height:40px;white-space:pre-wrap;word-break:break-all"></div>
+        </div>
+      </div>
+      <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-tools"></i>Ações rápidas</div></div>
+        <div class="pnl-bd" style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-q btn-sm" onclick="tq('pm2 restart all')">PM2 Restart</button>
+          <button class="btn btn-q btn-sm" onclick="tq('pm2 list')">PM2 List</button>
+          <button class="btn btn-q btn-sm" onclick="tq('df -h')">Disco</button>
+          <button class="btn btn-q btn-sm" onclick="tq('free -m')">RAM</button>
+          <button class="btn btn-q btn-sm" onclick="tq('pkg update -y')">Pkg Update</button>
+          <button class="btn btn-q btn-sm" onclick="tq('pkg install git -y')">Install Git</button>
         </div>
       </div>
     </div>
@@ -907,318 +646,311 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <!-- CONECTAR -->
 <div id="tab-connect" class="tab">
-  <div class="tb"><div class="tb-title">Conectar ao WhatsApp</div></div>
-  <div class="pnl" style="max-width:480px">
-    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-key"></i>Pairing Code</div></div>
-    <div class="pnl-bd">
-      <p style="color:var(--tx2);margin-bottom:14px;line-height:1.6">No WhatsApp: <strong>Dispositivos Vinculados → Vincular com número de telefone</strong></p>
-      <div class="fi"><label>Número (com DDI)</label><input id="pair-phone" placeholder="5511999999999"/></div>
-      <button class="btn btn-g" onclick="reqPairing()"><i class="fas fa-key"></i> Gerar Código</button>
-      <div id="pair-res" style="margin-top:14px;display:none">
-        <div style="text-align:center;padding:20px;background:rgba(0,255,136,.05);border:1px solid rgba(0,255,136,.2);border-radius:var(--r)">
-          <div style="font-size:30px;font-weight:700;color:var(--ac);letter-spacing:6px;font-family:var(--f2)" id="pair-code">——</div>
-          <div style="color:var(--tx3);font-size:11px;margin-top:7px">Digite este código no WhatsApp</div>
+  <div class="tb"><div class="tb-title">Conectar Bot</div></div>
+  <div class="row2" style="align-items:start">
+    <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-mobile-alt"></i>Pairing Code</div></div>
+      <div class="pnl-bd">
+        <div class="fi"><label>Número (com DDI)</label><input id="pair-phone" placeholder="5511999999999" type="tel"/></div>
+        <button class="btn btn-g" onclick="reqPairing()"><i class="fas fa-key"></i> Gerar Código</button>
+        <div id="pair-res" style="display:none;margin-top:16px;text-align:center">
+          <div style="font-size:11px;color:var(--tx3);margin-bottom:8px">Digite este código no seu WhatsApp → Aparelhos Conectados</div>
+          <div id="pair-code" style="font-family:var(--f2);font-size:36px;font-weight:700;color:var(--ac);letter-spacing:8px"></div>
         </div>
       </div>
     </div>
-  </div>
-      <div class="pnl" style="max-width:480px;margin-top:16px">
-        <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-tools"></i>Reviver QR / Limpar Auth</div></div>
-        <div class="pnl-bd">
-          <div class="hint">🧹 <b>Limpar Cache</b> — remove arquivos inúteis acumulados (pre-keys antigas, sender-keys, app-state-sync) mas mantém a sessão ativa. <br>🔄 <b>Resetar Sessão</b> — apaga tudo e força novo QR scan.</div>
-          <div class="revive-btns">
-            <button class="btn btn-o" onclick="cleanAuth('cache')" style="width:100%;padding:12px;border-radius:10px"><i class="fas fa-broom"></i><div style="font-size:11px;margin-top:3px">Limpar Cache</div></button>
-            <button class="btn btn-r" onclick="cleanAuth('full')" style="width:100%;padding:12px;border-radius:10px"><i class="fas fa-sync"></i><div style="font-size:11px;margin-top:3px">Resetar Sessão</div></button>
-          </div>
-          <div id="clean-res" style="color:var(--tx2);font-size:12px;margin-top:12px;display:none"></div>
+    <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-broom"></i>Sessão</div></div>
+      <div class="pnl-bd">
+        <p style="font-size:12px;color:var(--tx2);margin-bottom:14px">Limpar sessão resolve problemas de desconexão e loops de QR.</p>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-o" onclick="cleanAuth('cache')"><i class="fas fa-broom"></i> Limpar Cache</button>
+          <button class="btn btn-r" onclick="cleanAuth('full')"><i class="fas fa-sync"></i> Resetar</button>
         </div>
+        <div id="clean-res" style="display:none;margin-top:12px;font-size:12px;padding:8px;background:var(--bg);border-radius:var(--r)"></div>
       </div>
-
+    </div>
+  </div>
 </div>
 
-</main>
+</main><!-- /MAIN -->
+
+<!-- MOBILE NAV -->
+<nav class="mob-nav">
+  <div class="mob-items">
+    <div class="mob-ni on" data-tab="dash"><i class="fas fa-chart-line"></i><span>Home</span></div>
+    <div class="mob-ni" data-tab="cmds"><i class="fas fa-terminal"></i><span>Cmds</span></div>
+    <div class="mob-ni" data-tab="auto"><i class="fas fa-bolt"></i><span>Auto</span></div>
+    <div class="mob-ni" data-tab="ai"><i class="fas fa-magic"></i><span>IA</span></div>
+    <div class="mob-ni" data-tab="logs"><i class="fas fa-stream"></i><span>Logs</span></div>
+    <div class="mob-ni" data-tab="cfg"><i class="fas fa-cog"></i><span>Config</span></div>
+  </div>
+</nav>
 
 <!-- MODAL: Editor de Comando -->
 <div id="ed-modal" class="mo" style="display:none" onclick="if(event.target===this)tryCloseEd()">
-  <div class="mo-box" style="width:520px">
-    <div class="mo-tt" style="justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:8px"><i class="fas fa-edit"></i><span id="ed-title">!cmd</span></div>
-      <button class="btn btn-q btn-sm" onclick="tryCloseEd()" style="padding:4px 8px"><i class="fas fa-times"></i></button>
+  <div class="mo-box">
+    <div class="mo-tt">
+      <i class="fas fa-edit"></i>
+      <span id="ed-title">.comando</span>
+      <span class="dirty" id="ed-dirty">● não salvo</span>
     </div>
+    <div class="mo-bd">
+      <div class="ed-tabs">
+        <button class="ed-tab on" data-tab="basic" onclick="edTab('basic',this)">⚙️ Geral</button>
+        <button class="ed-tab" data-tab="perm" onclick="edTab('perm',this)">🛡️ Permissão</button>
+        <button class="ed-tab" data-tab="menu" onclick="edTab('menu',this)">📋 Menus</button>
+        <button class="ed-tab" data-tab="alias" onclick="edTab('alias',this)">🔗 Aliases</button>
+      </div>
 
-    <!-- Tabs -->
-    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--br)">
-      <button class="ed-tab on" data-tab="basic" onclick="edSwitchTab('basic',this)">⚙️ Geral</button>
-      <button class="ed-tab" data-tab="perm" onclick="edSwitchTab('perm',this)">🛡️ Permissão</button>
-      <button class="ed-tab" data-tab="menu" onclick="edSwitchTab('menu',this)">📋 Menus</button>
-      <button class="ed-tab" data-tab="alias" onclick="edSwitchTab('alias',this)">🔗 Aliases</button>
-    </div>
+      <!-- Aba Geral -->
+      <div id="ed-tab-basic">
+        <div class="fi"><label>Descrição</label><input id="ed-desc" oninput="markDirty()"/></div>
+        <div class="row2">
+          <div class="fi"><label>Uso</label><input id="ed-usage" oninput="markDirty()"/></div>
+          <div class="fi"><label>Cooldown (s)</label><input id="ed-cd" type="number" min="0" oninput="markDirty()"/></div>
+        </div>
+        <label class="tog">
+          <input type="checkbox" id="ed-enabled" onchange="toggleEdCmd();markDirty()"/>
+          <div class="tog-t"><div class="tog-th"></div></div>
+          <span class="tog-lbl">Comando ativo</span>
+        </label>
+      </div>
 
-    <!-- Tab: Geral -->
-    <div id="ed-tab-basic">
-      <div class="fi"><label>Descrição</label><input id="ed-desc" oninput="markDirty()"/></div>
-      <div class="fi"><label>Uso</label><input id="ed-usage" oninput="markDirty()"/></div>
-      <div class="row2">
-        <div class="fi"><label>Cooldown (segundos)</label><input id="ed-cd" type="number" min="0" oninput="markDirty()"/></div>
-        <div class="fi" style="display:flex;align-items:flex-end;padding-bottom:2px">
-          <label class="tog"><input type="checkbox" id="ed-enabled" onchange="toggleEdCmd();markDirty()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Ativado</span></label>
+      <!-- Aba Permissão -->
+      <div id="ed-tab-perm" style="display:none">
+        <div class="fi"><label>Cargo mínimo</label>
+          <div class="picker" id="ed-roles">
+            <button class="pk-btn" data-role="1" onclick="selR(this)">👑 Só Dono</button>
+            <button class="pk-btn" data-role="2" onclick="selR(this)">🌟 +Sub-Dono</button>
+            <button class="pk-btn" data-role="3" onclick="selR(this)">⭐ +Admin</button>
+            <button class="pk-btn" data-role="4" onclick="selR(this)">💎 +VIP</button>
+            <button class="pk-btn" data-role="5" onclick="selR(this)">👤 Todos</button>
+            <button class="pk-btn on" data-role="" onclick="selR(this)">⚙️ Padrão</button>
+          </div>
+        </div>
+        <div class="fi"><label>Onde funciona</label>
+          <div class="picker" id="ed-locs">
+            <button class="pk-btn on" data-loc="both" onclick="selL(this)">📱 Ambos</button>
+            <button class="pk-btn" data-loc="group" onclick="selL(this)">👥 Só Grupo</button>
+            <button class="pk-btn" data-loc="private" onclick="selL(this)">🔒 Só Privado</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Tab: Permissão -->
-    <div id="ed-tab-perm" style="display:none">
-      <div style="color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;font-family:var(--f2)">Quem pode usar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px" id="ed-roles">
-        <button class="rp-btn" data-role="1" onclick="selR(this);markDirty()">👑 Só Dono</button>
-        <button class="rp-btn" data-role="2" onclick="selR(this);markDirty()">🌟 +Sub-Dono</button>
-        <button class="rp-btn" data-role="3" onclick="selR(this);markDirty()">⭐ +Admin</button>
-        <button class="rp-btn" data-role="4" onclick="selR(this);markDirty()">💎 +VIP</button>
-        <button class="rp-btn" data-role="5" onclick="selR(this);markDirty()">👤 Todos</button>
-        <button class="rp-btn sel" data-role="" onclick="selR(this);markDirty()">⚙️ Padrão</button>
+      <!-- Aba Menus -->
+      <div id="ed-tab-menu" style="display:none">
+        <div class="fi"><label>Aparece nos menus</label>
+          <div style="display:flex;flex-wrap:wrap;gap:5px" id="ed-menus"></div>
+        </div>
       </div>
-      <div style="color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;font-family:var(--f2)">Onde pode usar</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px" id="ed-locs">
-        <button class="rp-btn sel" data-loc="both" onclick="selL(this);markDirty()">📱 Ambos</button>
-        <button class="rp-btn" data-loc="group" onclick="selL(this);markDirty()">👥 Grupo</button>
-        <button class="rp-btn" data-loc="private" onclick="selL(this);markDirty()">🔒 Privado</button>
+
+      <!-- Aba Aliases -->
+      <div id="ed-tab-alias" style="display:none">
+        <div class="fi"><label>Aliases</label>
+          <div id="ed-aliases" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;margin-bottom:8px;padding:8px;background:var(--bg);border-radius:var(--r);border:1px solid var(--br2)"></div>
+          <div style="display:flex;gap:6px">
+            <input id="new-alias" placeholder="+ novo alias (Enter para adicionar)" onkeydown="if(event.key==='Enter'){event.preventDefault();addAlias()}"/>
+            <button class="btn btn-b btn-sm" onclick="addAlias()"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Tab: Menus -->
-    <div id="ed-tab-menu" style="display:none">
-      <div style="color:var(--tx3);font-size:11px;margin-bottom:12px">Selecione em quais menus este comando aparece:</div>
-      <div id="ed-menus" style="display:flex;flex-wrap:wrap;gap:7px"></div>
-    </div>
-
-    <!-- Tab: Aliases -->
-    <div id="ed-tab-alias" style="display:none">
-      <div id="ed-aliases" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:32px"></div>
-      <div style="display:flex;gap:7px">
-        <input id="new-alias" placeholder="+ novo alias..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();addAlias()}"/>
-        <button class="btn btn-b btn-sm" onclick="addAlias()"><i class="fas fa-plus"></i></button>
+      <div class="mo-act">
+        <button class="btn btn-r btn-sm" onclick="delCmd()"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-b btn-sm" onclick="editSrc()"><i class="fas fa-code"></i> Código</button>
+        <button class="btn btn-q btn-sm" onclick="tryCloseEd()">Fechar</button>
+        <button class="btn btn-g" onclick="saveCmd()"><i class="fas fa-save"></i> Salvar</button>
       </div>
-    </div>
-
-    <div class="dv"></div>
-    <div style="display:flex;gap:7px;align-items:center">
-      <div id="ed-dirty-badge" style="display:none;padding:3px 8px;background:rgba(255,107,53,.15);color:var(--or);border-radius:4px;font-size:11px;border:1px solid rgba(255,107,53,.3)">● Não salvo</div>
-      <div style="flex:1"></div>
-      <button class="btn btn-r btn-sm" onclick="delCmd()"><i class="fas fa-trash"></i></button>
-      <button class="btn btn-o btn-sm" onclick="editSrc()"><i class="fas fa-code"></i> Código</button>
-      <button class="btn btn-g" onclick="saveCmd()"><i class="fas fa-save"></i> Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL Automação -->
+<!-- MODAL: Código Fonte -->
+<div id="src-modal" class="mo" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="mo-box" style="max-width:680px">
+    <div class="mo-tt"><i class="fas fa-code"></i><span id="src-title">Código</span></div>
+    <div class="mo-bd">
+      <textarea class="ce fi" id="src-code" rows="22" style="margin:0"></textarea>
+      <div class="mo-act">
+        <button class="btn btn-q btn-sm" onclick="G('src-modal').style.display='none'">Cancelar</button>
+        <button class="btn btn-g" onclick="saveSrc()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Menu Target (após instalar) -->
+<div id="mt-modal" class="mo" style="display:none">
+  <div class="mo-box">
+    <div class="mo-tt"><i class="fas fa-list"></i>Adicionar ao Menu</div>
+    <div class="mo-bd">
+      <p style="font-size:12px;color:var(--tx2);margin-bottom:12px">Em qual(is) menu(s) o comando <b id="mt-cmd" style="color:var(--ac)"></b> deve aparecer?</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="mt-chips"></div>
+      <div class="mo-act">
+        <button class="btn btn-q btn-sm" onclick="skipMt()">Pular</button>
+        <button class="btn btn-g" onclick="saveMt()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Automação -->
 <div id="auto-modal" class="mo" style="display:none" onclick="if(event.target===this)closeAutoModal()">
   <div class="mo-box">
     <div class="mo-tt"><i class="fas fa-bolt"></i><span id="auto-modal-tt">Nova Automação</span></div>
-    <input type="hidden" id="auto-id"/>
-    <div class="row2">
-      <div class="fi"><label>Gatilho (trigger)</label><input id="auto-trigger" placeholder="oi, bom dia..."/></div>
-      <div class="fi"><label>Tipo de Match</label>
-        <select id="auto-match">
-          <option value="exact">Exato</option>
-          <option value="contains">Contém</option>
-          <option value="regex">Regex</option>
-        </select>
-      </div>
-    </div>
-    <div class="fi"><label>Resposta (texto)</label><textarea id="auto-resp" rows="3" placeholder="Olá {nome}! 👋"></textarea></div>
-    <div class="row2">
-      <div class="fi"><label>Tipo de mídia</label>
-        <select id="auto-type" onchange="toggleAutoMedia()">
-          <option value="text">Só texto</option>
-          <option value="audio">🔊 Áudio + texto</option>
-          <option value="image">🖼️ Imagem + texto</option>
-          <option value="video">🎬 Vídeo + texto</option>
-          <option value="sticker">🎭 Figurinha</option>
-        </select>
-      </div>
-      <div class="fi"><label>Onde responder</label>
-        <select id="auto-scope">
-          <option value="both">Grupos e privado</option>
-          <option value="group">Só grupos</option>
-          <option value="private">Só privado</option>
-        </select>
-      </div>
-    </div>
-    <div id="auto-media-row" style="display:none">
-      <div class="fi"><label>URL da Mídia</label><input id="auto-media" placeholder="https://... ou faça upload abaixo"/></div>
-      <div class="fi">
-        <label>📤 Upload (mp3 → vira opus automaticamente)</label>
-        <div style="display:flex;gap:7px;align-items:center">
-          <input type="file" id="auto-media-file" accept="audio/*,image/*,video/*" style="flex:1;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);padding:6px;border-radius:var(--r);font-size:11px" onchange="uploadAutoMedia(this)"/>
-          <span id="auto-upload-status" style="font-size:11px;color:var(--tx3)"></span>
+    <div class="mo-bd">
+      <input type="hidden" id="auto-id"/>
+      <div class="row2">
+        <div class="fi"><label>Gatilho</label><input id="auto-trigger" placeholder="oi, bom dia..."/></div>
+        <div class="fi"><label>Tipo de Match</label>
+          <select id="auto-match">
+            <option value="exact">Exato</option>
+            <option value="contains">Contém</option>
+            <option value="regex">Regex</option>
+          </select>
         </div>
       </div>
-    </div>
-    <div class="row2">
-      <div class="fi"><label>Cooldown (s)</label><input id="auto-cd" type="number" min="0" value="0"/></div>
-      <div class="fi"><label>Emoji de Reação (opcional)</label><input id="auto-react-emoji" placeholder="❤️ 🔥 ✅ (deixe vazio)"/></div>
-    </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
-      <label class="tog"><input type="checkbox" id="auto-stop" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Parar após trigger</span></label>
-      <label class="tog"><input type="checkbox" id="auto-multi"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Resposta aleatória (separe com |)</span></label>
-      <label class="tog"><input type="checkbox" id="auto-delete"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Deletar msg do usuário</span></label>
-      <label class="tog"><input type="checkbox" id="auto-noquote"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Sem citação</span></label>
-    </div>
-    <div class="hint" style="font-size:11px">
-      💡 Variáveis: <code>{nome}</code> <code>{grupo}</code> <code>{hora}</code> <code>{data}</code> <code>{texto}</code> <code>{prefix}</code><br>
-      🎲 Resposta aleatória: <code>oi|olá|e aí!</code> — escolhe uma aleatoriamente
-    </div>
-    <div class="mo-act">
-      <button class="btn btn-q btn-sm" onclick="closeAutoModal()">Cancelar</button>
-      <button class="btn btn-g" onclick="saveAuto()"><i class="fas fa-save"></i> Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL Nova Categoria -->
-<div id="cat-modal" class="mo" style="display:none" onclick="if(event.target===this)document.getElementById('cat-modal').style.display='none'">
-  <div class="mo-box" style="width:380px">
-    <div class="mo-tt"><i class="fas fa-layer-group"></i>Nova Categoria</div>
-    <div class="fi"><label>ID (sem espaços)</label><input id="cat-id" placeholder="minhacat"/></div>
-    <div class="fi"><label>Nome exibido</label><input id="cat-nome" placeholder="Minha Categoria"/></div>
-    <div class="fi"><label>Ícone (emoji, opcional)</label><input id="cat-ico" placeholder="✨" maxlength="8" style="font-size:18px;text-align:center"/></div>
-    <div class="mo-act">
-      <button class="btn btn-q btn-sm" onclick="document.getElementById('cat-modal').style.display='none'">Cancelar</button>
-      <button class="btn btn-g" onclick="saveCat()"><i class="fas fa-plus"></i> Criar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL Código Fonte -->
-<div id="src-modal" class="mo" style="display:none" onclick="if(event.target===this)document.getElementById('src-modal').style.display='none'">
-  <div class="mo-box" style="width:680px">
-    <div class="mo-tt"><i class="fas fa-code"></i><span id="src-title">Código</span></div>
-    <div class="fi"><textarea class="ce" id="src-code" rows="22"></textarea></div>
-    <div class="mo-act">
-      <button class="btn btn-q btn-sm" onclick="document.getElementById('src-modal').style.display='none'">Fechar</button>
-      <button class="btn btn-g" onclick="saveSrc()"><i class="fas fa-save"></i> Salvar código</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL Menu Destino (após criar comando) -->
-<div id="mt-modal" class="mo" style="display:none" onclick="if(event.target===this)skipMt()">
-  <div class="mo-box" style="width:480px">
-    <div class="mo-tt"><i class="fas fa-list-alt"></i>Em qual menu vai aparecer <span id="mt-cmd" style="color:var(--ac)"></span>?</div>
-    <p style="color:var(--tx3);font-size:12px;margin-bottom:16px">Selecione os menus. Pode mudar depois clicando no comando.</p>
-    <div id="mt-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-      <button class="mt-chip" data-id="menubn">🎭 Brincadeiras</button>
-      <button class="mt-chip" data-id="menugold">💎 RPG/Gold</button>
-      <button class="mt-chip" data-id="menudown">📥 Downloads</button>
-      <button class="mt-chip" data-id="menujogos">🎮 Jogos</button>
-      <button class="mt-chip" data-id="menudono">👑 Dono</button>
-      <button class="mt-chip" data-id="menuutils">🔧 Utilidades</button>
-      <button class="mt-chip" data-id="menufig">🖼️ Figurinhas/Mídia</button>
-      <button class="mt-chip" data-id="menuadm">⭐ Admin</button>
-      <button class="mt-chip" data-id="menumemb">👥 Membros</button>
-      <button class="mt-chip" data-id="menuia">🤖 IA</button>
-      <button class="mt-chip" data-id="menuall">📋 Menu Tudo</button>
-    </div>
-    <div class="mo-act">
-      <button class="btn btn-q btn-sm" onclick="skipMt()">Pular</button>
-      <button class="btn btn-g" onclick="saveMt()"><i class="fas fa-check"></i> Confirmar</button>
+      <div class="fi"><label>Resposta — use | para respostas aleatórias</label>
+        <textarea id="auto-resp" rows="3" placeholder="Olá {nome}! | Oi {nome}! | E aí {nome}!"></textarea>
+      </div>
+      <div class="row2">
+        <div class="fi"><label>Tipo de mídia</label>
+          <select id="auto-type" onchange="toggleAutoMedia()">
+            <option value="text">💬 Só texto</option>
+            <option value="audio">🔊 Áudio (opus/mp3)</option>
+            <option value="image">🖼️ Imagem</option>
+            <option value="video">🎬 Vídeo</option>
+            <option value="sticker">🎭 Figurinha</option>
+            <option value="mention">📢 Menção</option>
+          </select>
+        </div>
+        <div class="fi"><label>Escopo</label>
+          <select id="auto-scope">
+            <option value="both">📱 Grupos e privado</option>
+            <option value="group">👥 Só grupos</option>
+            <option value="private">🔒 Só privado</option>
+          </select>
+        </div>
+      </div>
+      <div id="auto-media-row" style="display:none">
+        <div class="fi"><label>URL da Mídia</label><input id="auto-media" placeholder="https://... ou faça upload"/></div>
+        <div class="fi"><label>📤 Upload (mp3 → opus automático)</label>
+          <div style="display:flex;gap:7px;align-items:center">
+            <input type="file" id="auto-media-file" accept="audio/*,image/*,video/*" style="flex:1;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);padding:6px;border-radius:var(--r);font-size:11px" onchange="uploadAutoMedia(this)"/>
+            <span id="auto-upload-status" style="font-size:11px;color:var(--tx3)"></span>
+          </div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fi"><label>Cooldown (s)</label><input id="auto-cd" type="number" min="0" value="0"/></div>
+        <div class="fi"><label>Emoji de reação (opcional)</label><input id="auto-react-emoji" placeholder="❤️ 🔥 ✅"/></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+        <label class="tog"><input type="checkbox" id="auto-stop" checked/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Parar propagação</span></label>
+        <label class="tog"><input type="checkbox" id="auto-multi"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Resposta aleatória</span></label>
+        <label class="tog"><input type="checkbox" id="auto-delete"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Deletar msg</span></label>
+        <label class="tog"><input type="checkbox" id="auto-noquote"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Sem citação</span></label>
+      </div>
+      <div class="hint">Variáveis: <code>{nome}</code> <code>{grupo}</code> <code>{hora}</code> <code>{data}</code> <code>{texto}</code> <code>{prefix}</code></div>
+      <div class="mo-act">
+        <button class="btn btn-q btn-sm" onclick="closeAutoModal()">Cancelar</button>
+        <button class="btn btn-g" onclick="saveAuto()"><i class="fas fa-save"></i> Salvar</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-//  KAIUS BOT DASHBOARD — JS Único e Limpo v27
-//  Sem duplicatas, sem overrides quebrados
-// ═══════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+//  KAIUS DASHBOARD — JS único, limpo, sem duplicatas
+//  Zero overrides, zero conflitos
+// ════════════════════════════════════════════════════════════════
 
-// ── Helpers ──────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────
 const G = id => document.getElementById(id)
 
-function toast(msg, t='s', dur=3200) {
+function toast(msg, t='s', dur=3000) {
+  document.querySelectorAll('.toast').forEach(e => e.remove())
   const el = document.createElement('div')
-  el.className = `toast ${t}`; el.textContent = msg
+  el.className = `toast ${t}`
+  el.textContent = msg
   document.body.appendChild(el)
-  setTimeout(() => { el.style.opacity='0'; el.style.transform='translateY(8px)' }, dur-400)
-  setTimeout(() => el.remove(), dur)
+  setTimeout(() => { try { el.style.opacity='0'; el.style.transform='translateY(8px)'; el.style.transition='all .3s' } catch{} }, dur - 400)
+  setTimeout(() => { try { el.remove() } catch{} }, dur)
   sfx(t==='s'?'success':t==='e'?'error':'notify')
 }
 
-async function api(u, o={}) {
+async function api(u, opts={}) {
   try {
-    const r = await fetch(u, {headers:{'Content-Type':'application/json'}, ...o})
-    return await r.json()
-  } catch(e) { console.error('API', u, e); return {error:e.message} }
+    const r = await fetch(u, { headers: {'Content-Type':'application/json'}, ...opts })
+    const text = await r.text()
+    try { return JSON.parse(text) }
+    catch { return { error: `Resposta inválida do servidor (${r.status}): ${text.slice(0,100)}` } }
+  } catch(e) { return { error: e.message } }
 }
-const post = (u,b) => api(u,{method:'POST',body:JSON.stringify(b)})
-const put  = (u,b) => api(u,{method:'PUT', body:JSON.stringify(b)})
-const del  = (u)   => api(u,{method:'DELETE'})
+const post = (u, b) => api(u, { method:'POST', body:JSON.stringify(b) })
+const put  = (u, b) => api(u, { method:'PUT',  body:JSON.stringify(b) })
+const del  = (u)    => api(u, { method:'DELETE' })
 
-// ── SFX ─────────────────────────────────────────────────────
+// ── SFX ─────────────────────────────────────────────────────────
 let _sfxCtx = null
-const sfxEnabled = () => localStorage.getItem('sfx') !== 'off'
+const sfxOn = () => localStorage.getItem('sfx') !== 'off'
 
 function sfx(type) {
-  if (!sfxEnabled()) return
+  if (!sfxOn()) return
   try {
-    if (!_sfxCtx) _sfxCtx = new (window.AudioContext||window.webkitAudioContext)()
+    if (!_sfxCtx) _sfxCtx = new (window.AudioContext || window.webkitAudioContext)()
     if (_sfxCtx.state === 'suspended') _sfxCtx.resume()
     const t = _sfxCtx.currentTime
-    const presets = {
-      click:   {freqs:[800],       wave:'sine',     dur:0.07, vol:0.08},
-      success: {freqs:[520,660,800],wave:'sine',    dur:0.30, vol:0.10},
-      error:   {freqs:[300,200],   wave:'sawtooth', dur:0.25, vol:0.09},
-      save:    {freqs:[440,550,660],wave:'sine',    dur:0.32, vol:0.10},
-      open:    {freqs:[500,700],   wave:'sine',     dur:0.15, vol:0.08},
-      close:   {freqs:[700,400],   wave:'sine',     dur:0.12, vol:0.07},
-      notify:  {freqs:[880,1100],  wave:'sine',     dur:0.20, vol:0.09},
-      toggle:  {freqs:[600],       wave:'sine',     dur:0.08, vol:0.07},
-      delete:  {freqs:[400,250],   wave:'sawtooth', dur:0.20, vol:0.08},
-      install: {freqs:[440,550,660,880],wave:'sine',dur:0.45, vol:0.09},
+    const P = {
+      click:   { f:[800],           w:'sine',     d:.07, v:.08 },
+      success: { f:[520,660,800],   w:'sine',     d:.28, v:.10 },
+      error:   { f:[300,200],       w:'sawtooth', d:.25, v:.09 },
+      save:    { f:[440,550,660],   w:'sine',     d:.30, v:.10 },
+      open:    { f:[500,700],       w:'sine',     d:.14, v:.08 },
+      close:   { f:[700,400],       w:'sine',     d:.12, v:.07 },
+      notify:  { f:[880,1100],      w:'sine',     d:.18, v:.09 },
+      toggle:  { f:[600],           w:'sine',     d:.08, v:.07 },
+      delete:  { f:[400,250],       w:'sawtooth', d:.20, v:.08 },
+      install: { f:[440,550,660,880],w:'sine',    d:.42, v:.09 },
     }
-    const p = presets[type] || presets.click
-    const seg = p.dur / p.freqs.length
-    p.freqs.forEach((freq,i) => {
+    const p = P[type] || P.click
+    const seg = p.d / p.f.length
+    p.f.forEach((freq, i) => {
       const o = _sfxCtx.createOscillator(), g = _sfxCtx.createGain()
       o.connect(g); g.connect(_sfxCtx.destination)
-      const s = t + i*seg*0.6
-      o.type = p.wave; o.frequency.setValueAtTime(freq,s)
-      g.gain.setValueAtTime(0.001,s)
-      g.gain.linearRampToValueAtTime(p.vol,s+0.02)
-      g.gain.exponentialRampToValueAtTime(0.001,s+seg)
-      o.start(s); o.stop(s+seg+0.05)
+      const s = t + i * seg * .65
+      o.type = p.w; o.frequency.setValueAtTime(freq, s)
+      g.gain.setValueAtTime(.001, s); g.gain.linearRampToValueAtTime(p.v, s+.02)
+      g.gain.exponentialRampToValueAtTime(.001, s+seg)
+      o.start(s); o.stop(s+seg+.05)
     })
-  } catch{}
+  } catch {}
 }
 
 function toggleSFX() {
-  const on = sfxEnabled()
-  localStorage.setItem('sfx', on?'off':'on')
-  const btn = G('sfx-btn'); if(btn) btn.textContent = on?'🔇':'🔊'
-  if(!on) sfx('toggle')
+  const on = sfxOn()
+  localStorage.setItem('sfx', on ? 'off' : 'on')
+  const btn = G('sfx-btn'); if (btn) btn.textContent = on ? '🔇' : '🔊'
+  if (!on) sfx('toggle')
 }
 
-// ── Estado global ────────────────────────────────────────────
-let allCmds=[], allPerms={}, allMenuTargets={}, allAutos=[], allContribs=[]
-let curCat='all', curLF='all', curMF='all', curCF='all'
+// ── Estado global ────────────────────────────────────────────────
+let allCmds=[], allPerms={}, allMenuTargets={}, allAutos=[]
+let curCat='all', curLF='all', curMF='all'
 let edCmd=null, edRole='', edLoc='both', edAliases=[], edMenuTargets=[], _edDirty=false
 let menuLines=[], _mtCmd=null
-let CATS=['core','fun','rpg','media','info','tools','admin','owner','misc']
-
-const MENU_OPS=[
+const CATS = ['core','fun','rpg','media','info','tools','admin','owner','misc']
+const MENU_OPS = [
   {id:'menubn',l:'🎭 Brincadeiras'},{id:'menugold',l:'💎 RPG'},
   {id:'menudown',l:'📥 Downloads'},{id:'menujogos',l:'🎮 Jogos'},
   {id:'menudono',l:'👑 Dono'},{id:'menuutils',l:'🔧 Utilidades'},
   {id:'menufig',l:'🖼️ Figurinhas'},{id:'menuadm',l:'⭐ Admin'},
-  {id:'menumemb',l:'👥 Membros'},{id:'menuia',l:'🤖 IA'},
-  {id:'menuall',l:'📋 Tudo'}
+  {id:'menumemb',l:'👥 Membros'},{id:'menuia',l:'🤖 IA'},{id:'menuall',l:'📋 Tudo'}
 ]
-const RL={1:'👑 Dono',2:'🌟 Sub-Dono',3:'⭐ Admin',4:'💎 VIP',5:'👤 Todos'}
+const RL = {1:'👑 Dono',2:'🌟 Sub-Dono',3:'⭐ Admin',4:'💎 VIP',5:'👤 Todos'}
 
-// ── Socket.IO — UMA instância ────────────────────────────────
+// ── Socket.IO ────────────────────────────────────────────────────
 const socket = io()
-
 socket.on('init', ({logs, commands}) => {
   if (Array.isArray(commands) && commands.length) {
     allCmds = commands
@@ -1227,147 +959,139 @@ socket.on('init', ({logs, commands}) => {
   ;(logs||[]).forEach(addLog)
 })
 socket.on('log', e => addLog(e))
-socket.on('reload', ({total}) => {
-  loadCmds(); toast(`${total||0} cmds recarregados`); sfx('install')
-})
+socket.on('reload', ({total}) => { loadCmds(); toast(`${total||0} cmds recarregados`); sfx('install') })
 socket.on('status', ({status, jid}) => {
-  const b = G('status-badge'), tx = G('status-txt')
+  const b=G('status-badge'), tx=G('status-txt')
   if (!b || !tx) return
   if (status === 'open') {
     b.className = 'badge online'
     tx.textContent = jid ? '+'+jid.split('@')[0].split(':')[0].slice(-6) : 'Online'
     spawnParticles()
-  } else if (status === 'close') {
-    b.className = 'badge offline'; tx.textContent = 'Desconectado'
   } else {
-    b.className = 'badge offline'; tx.textContent = 'Conectando...'
+    b.className = 'badge offline'
+    tx.textContent = status === 'close' ? 'Desconectado' : 'Conectando...'
   }
 })
 socket.on('qr', ({qr}) => {
-  const c=G('pair-code'); if(c)c.textContent=qr
-  const r=G('pair-res'); if(r)r.style.display='block'
+  const c=G('pair-code'); if(c) c.textContent=qr
+  const r=G('pair-res'); if(r) r.style.display='block'
 })
 
-// ── Animações ────────────────────────────────────────────────
+// ── Animações ────────────────────────────────────────────────────
 function animCount(el, target, dur=700) {
-  if(!el||isNaN(target)) return
-  const start = parseInt(el.textContent.replace(/\D/g,''))||0
+  if (!el || isNaN(target)) return
+  const start = parseInt(el.textContent.replace(/\D/g,'')) || 0
   const t0 = performance.now()
   const tick = now => {
-    const p = Math.min((now-t0)/dur,1), e = 1-Math.pow(1-p,3)
+    const p = Math.min((now-t0)/dur, 1), e = 1-Math.pow(1-p,3)
     el.textContent = Math.round(start+(target-start)*e).toLocaleString('pt-BR')
-    if(p<1) requestAnimationFrame(tick)
+    if (p < 1) requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
 }
 
 function spawnParticles() {
-  const b = G('status-badge'); if(!b) return
+  const b = G('status-badge'); if (!b) return
   const rect = b.getBoundingClientRect()
-  for(let i=0;i<14;i++) {
+  for (let i=0; i<12; i++) {
     const p = document.createElement('div')
-    const angle = (i/14)*Math.PI*2, dist=30+Math.random()*30
-    p.style.cssText=`position:fixed;width:5px;height:5px;border-radius:50%;background:var(--ac);pointer-events:none;z-index:9999;left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:ptcl .6s ease-out forwards`
-    document.body.appendChild(p); setTimeout(()=>p.remove(),600)
+    const a = (i/12)*Math.PI*2, d = 25+Math.random()*25
+    p.style.cssText = `position:fixed;width:5px;height:5px;border-radius:50%;background:var(--ac);pointer-events:none;z-index:9999;left:${rect.left+rect.width/2}px;top:${rect.top+rect.height/2}px;--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;animation:ptcl .6s ease-out forwards`
+    document.body.appendChild(p); setTimeout(()=>p.remove(), 600)
   }
 }
 
-// Ripple nos botões
+// Ripple
 document.addEventListener('mousedown', e => {
   const btn = e.target.closest('.btn')
-  if(!btn||btn.dataset.noripple) return
-  const rect=btn.getBoundingClientRect(), size=Math.max(rect.width,rect.height)
+  if (!btn) return
+  const r = btn.getBoundingClientRect(), sz = Math.max(r.width, r.height)
   const rp = document.createElement('span')
-  rp.style.cssText=`position:absolute;border-radius:50%;width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;background:rgba(255,255,255,.18);animation:ripple .5s ease-out forwards;pointer-events:none;z-index:99`
-  btn.appendChild(rp); setTimeout(()=>rp.remove(),500)
+  rp.style.cssText = `position:absolute;border-radius:50%;width:${sz}px;height:${sz}px;left:${e.clientX-r.left-sz/2}px;top:${e.clientY-r.top-sz/2}px;background:rgba(255,255,255,.18);animation:ripple .5s ease-out forwards;pointer-events:none;z-index:99`
+  btn.appendChild(rp); setTimeout(()=>rp.remove(), 500)
 }, {passive:true})
 
-// ── Navegação ────────────────────────────────────────────────
+// Cursor trail
+document.addEventListener('mousemove', e => {
+  const dot = document.createElement('div')
+  dot.style.cssText = `position:fixed;width:4px;height:4px;border-radius:50%;background:var(--ac);opacity:.4;pointer-events:none;z-index:9998;left:${e.clientX-2}px;top:${e.clientY-2}px;transition:opacity .4s,transform .4s`
+  document.body.appendChild(dot)
+  requestAnimationFrame(() => { dot.style.opacity='0'; dot.style.transform='scale(0)' })
+  setTimeout(()=>dot.remove(), 400)
+}, {passive:true})
+
+// Inject keyframe CSS
+document.head.insertAdjacentHTML('beforeend',`<style>
+@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
+@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
+</style>`)
+
+// ── Navegação ────────────────────────────────────────────────────
 const LOADERS = {
   dash:loadStatus, cmds:loadCmds, menus:loadMenuCfg, auto:loadAutos,
-  cfg:loadCfg, minions:loadMinions, subdons:loadSDs,
-  contribs:loadContribs, grupos:loadGrupos
+  cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos
 }
 
 function goTab(id) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'))
-  document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('on'))
-  const tab=G('tab-'+id); if(tab) tab.classList.add('on')
-  document.querySelectorAll(`[data-tab="${id}"]`).forEach(x=>x.classList.add('on'))
-  const mm=G('mob-more-menu'); if(mm) mm.style.display='none'
-  if(LOADERS[id]) LOADERS[id]()
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'))
+  document.querySelectorAll('[data-tab]').forEach(x => x.classList.remove('on'))
+  const tab = G('tab-'+id); if (tab) tab.classList.add('on')
+  document.querySelectorAll(`[data-tab="${id}"]`).forEach(x => x.classList.add('on'))
+  if (LOADERS[id]) LOADERS[id]()
   history.replaceState(null,'','#'+id)
-  sfx('click')
 }
 
-function toggleMobMore() {
-  const mm=G('mob-more-menu'), btn=G('mob-more-btn')
-  if(!mm) return
-  const open = mm.style.display==='flex'
-  mm.style.display = open?'none':'flex'
-  if(btn) btn.classList.toggle('on',!open)
-}
-
-// Fecha menu mobile ao clicar fora
-document.addEventListener('click', e => {
-  const mm=G('mob-more-menu'), mb=G('mob-more-btn')
-  if(mm && mb && !mm.contains(e.target) && !mb.contains(e.target))
-    mm.style.display='none'
-}, {passive:true})
-
-// Wire up nav items
 document.querySelectorAll('[data-tab]').forEach(n => {
-  n.onclick = function(e) { e.stopPropagation(); goTab(this.dataset.tab) }
+  n.addEventListener('click', function(e) { e.stopPropagation(); goTab(this.dataset.tab); sfx('click') })
 })
 
-// ── Dashboard ────────────────────────────────────────────────
+// ── Dashboard ────────────────────────────────────────────────────
 async function loadStatus() {
-  const d = await api('/api/status'); if(d.error) return
+  const d = await api('/api/status'); if (d.error) return
   animCount(G('s-msgs'),   parseInt(d.msgs||0))
   animCount(G('s-cmds'),   parseInt(d.cmdsTotal||0))
   animCount(G('s-loaded'), allCmds.length || parseInt(d.cmdsAtivos||0))
-  const ut=G('s-uptime'); if(ut) ut.textContent=d.uptime||'—'
-  const nm=d.nome||'KaiusBot'
-  if(G('dash-title')) G('dash-title').textContent='✦ '+nm
-  if(G('sb-nm'))     G('sb-nm').textContent=nm
+  const ut = G('s-uptime'); if (ut) ut.textContent = d.uptime||'—'
+  const nm = d.nome||'KaiusBot'
+  const dt = G('dash-title'); if (dt) dt.textContent = '✦ '+nm
+  const sn = G('sb-nm');     if (sn) sn.textContent = nm
   document.title = nm+' Dashboard'
-  const el=G('top-cmds')
-  if(el && d.topCmds?.length)
-    el.innerHTML=d.topCmds.map(([n,c],i)=>
+  const el = G('top-cmds')
+  if (el && d.topCmds?.length)
+    el.innerHTML = d.topCmds.map(([n,c],i) =>
       `<div class="ci"><div class="ci-info"><div class="ci-name">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]||'▸'} .${n}</div></div><span class="tag tg">${c}×</span></div>`
     ).join('')
 }
 
-// ── Comandos ─────────────────────────────────────────────────
+// ── Comandos ─────────────────────────────────────────────────────
 async function loadCmds() {
-  const [list,perms,targets] = await Promise.all([
+  const [list, perms, targets] = await Promise.all([
     api('/api/commands'), api('/api/cmdperms'), api('/api/menutargets')
   ])
-  if(!Array.isArray(list)) return
+  if (!Array.isArray(list)) { toast('Erro ao carregar comandos','e'); return }
   allCmds=list; allPerms=perms||{}; allMenuTargets=targets||{}
   animCount(G('s-loaded'), list.length)
   renderCmds()
 }
 
 function renderCmds() {
-  const q=(G('cmd-search')?.value||'').toLowerCase().trim()
-  const f=allCmds.filter(c=>
-    (curCat==='all'||c.category===curCat)&&
-    (!q||c.name.includes(q)||(c.description||'').toLowerCase().includes(q)||c.aliases?.some(a=>a.includes(q)))
+  const q = (G('cmd-search')?.value||'').toLowerCase().trim()
+  const f = allCmds.filter(c =>
+    (curCat==='all'||c.category===curCat) &&
+    (!q || c.name.includes(q) || (c.description||'').toLowerCase().includes(q) || c.aliases?.some(a=>a.includes(q)))
   )
-  const el=G('cmd-list'); if(!el) return
-  if(!f.length){el.innerHTML='<div class="empty">Nenhum resultado</div>';return}
-  el.innerHTML=f.map(c=>{
-    const perm=allPerms[c.name], tgts=allMenuTargets[c.name]||c.menuTargets||[]
-    const isSel=edCmd?.name===c.name
-    return `<div class="ci${isSel?' sel':''}" onclick="openEd('${c.name}')" style="cursor:pointer">
+  const el = G('cmd-list'); if (!el) return
+  if (!f.length) { el.innerHTML='<div class="empty">Nenhum resultado</div>'; return }
+  el.innerHTML = f.map(c => {
+    const perm=allPerms[c.name], tgts=(allMenuTargets[c.name]||c.menuTargets||[])
+    return `<div class="ci${edCmd?.name===c.name?' sel':''}" onclick="openEd('${c.name}')">
       <div class="ci-info">
-        <div class="ci-name" style="color:var(--ac)">.${c.name}${c.aliases?.length?`<span style="color:var(--tx3);font-size:10px"> · ${c.aliases.slice(0,2).join(', ')}</span>`:''}</div>
+        <div class="ci-name">.${c.name}${c.aliases?.length?`<span style="color:var(--tx3);font-size:10px"> · ${c.aliases.slice(0,2).join(', ')}</span>`:''}</div>
         <div class="ci-desc">${c.description||'Sem descrição'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-        ${perm?.minRole?`<span class="tag to">${RL[perm.minRole]||''}</span>`:''}
-        ${tgts.length?`<span class="tag tb2">📋${tgts.length}</span>`:''}
+        ${perm?.minRole?`<span class="tag to" style="font-size:9px">${RL[perm.minRole]||''}</span>`:''}
+        ${tgts.length?`<span class="tag tb2" style="font-size:9px">📋${tgts.length}</span>`:''}
         <span class="ci-cat">${c.category}</span>
         <label class="tog" style="gap:0" onclick="event.stopPropagation()">
           <input type="checkbox" ${c.enabled!==false?'checked':''} onchange="toggleCmd('${c.name}',this.checked)"/>
@@ -1379,250 +1103,236 @@ function renderCmds() {
 }
 
 function setCat(el) {
-  curCat=el.dataset.cat
-  document.querySelectorAll('.fb-btn[data-cat]').forEach(b=>b.classList.remove('on'))
+  curCat = el.dataset.cat
+  document.querySelectorAll('.fb-btn[data-cat]').forEach(b => b.classList.remove('on'))
   el.classList.add('on'); renderCmds()
 }
 
-async function toggleCmd(name,enabled) {
-  await post(`/api/commands/${name}/toggle`,{enabled})
-  const c=allCmds.find(x=>x.name===name); if(c)c.enabled=enabled
-  toast(`.${name} ${enabled?'ativado':'desativado'}`)
+async function toggleCmd(name, enabled) {
+  await post(`/api/commands/${name}/toggle`, {enabled})
+  const c = allCmds.find(x=>x.name===name); if(c) c.enabled=enabled
 }
 
 async function reloadCmds() {
-  const r=await post('/api/reload',{}); sfx('install')
-  toast(`${r.total||0} cmds recarregados`); await loadCmds()
-  if(edCmd) openEd(edCmd.name)
+  const r = await post('/api/reload', {}); sfx('install')
+  toast(`${r.total||0} comandos recarregados`)
+  await loadCmds()
+  if (edCmd) openEd(edCmd.name)
 }
 
 async function delCmd() {
-  if(!edCmd||!confirm(`Deletar .${edCmd.name}?`)) return
-  await del(`/api/commands/${edCmd.name}`)
+  if (!edCmd || !confirm(`Deletar .${edCmd.name} permanentemente?`)) return
+  const r = await del(`/api/commands/${edCmd.name}`)
+  if (r.error) { toast('Erro: '+r.error,'e'); return }
   toast(`.${edCmd.name} deletado`,'i'); sfx('delete')
   closeEdModal(); loadCmds()
 }
 
-// ── Editor Popup ─────────────────────────────────────────────
+// ── Editor ───────────────────────────────────────────────────────
 function markDirty() {
-  _edDirty=true
-  const b=G('ed-dirty-badge'); if(b) b.style.display='inline-block'
+  _edDirty = true
+  const b = G('ed-dirty'); if(b) b.style.display='inline-block'
 }
 
-function edSwitchTab(tab, triggerEl) {
-  const modal=G('ed-modal'); if(!modal) return
-  modal.querySelectorAll('.ed-tab').forEach(b=>b.classList.remove('on'))
-  if(triggerEl) triggerEl.classList.add('on')
-  else {
-    const btn=modal.querySelector(`.ed-tab[data-tab="${tab}"]`)
-    if(btn) btn.classList.add('on')
-    else modal.querySelectorAll('.ed-tab')[0]?.classList.add('on')
-  }
-  ;['basic','perm','menu','alias'].forEach(t=>{
-    const e=G('ed-tab-'+t); if(e) e.style.display=t===tab?'block':'none'
+function edTab(tab, triggerEl) {
+  const modal = G('ed-modal'); if (!modal) return
+  modal.querySelectorAll('.ed-tab').forEach(b => b.classList.remove('on'))
+  if (triggerEl) triggerEl.classList.add('on')
+  ;['basic','perm','menu','alias'].forEach(t => {
+    const e = G('ed-tab-'+t); if (e) e.style.display = t===tab ? 'block' : 'none'
   })
+  sfx('click')
 }
 
-function syncEd() {
-  document.querySelectorAll('#ed-roles .rp-btn').forEach(b=>b.classList.toggle('sel',b.dataset.role===edRole))
-  document.querySelectorAll('#ed-locs .rp-btn').forEach(b=>b.classList.toggle('sel',b.dataset.loc===edLoc))
+function syncEdPickers() {
+  document.querySelectorAll('#ed-roles .pk-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.role === edRole))
+  document.querySelectorAll('#ed-locs .pk-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.loc === edLoc))
 }
 
-function selR(el) { edRole=el.dataset.role; syncEd(); markDirty() }
-function selL(el) { edLoc=el.dataset.loc;   syncEd(); markDirty() }
+function selR(el) { edRole=el.dataset.role; syncEdPickers(); markDirty() }
+function selL(el) { edLoc=el.dataset.loc;   syncEdPickers(); markDirty() }
 
 function tryCloseEd() {
-  if(_edDirty&&!confirm('Alterações não salvas. Sair mesmo assim?')) return
+  if (_edDirty && !confirm('Há alterações não salvas. Sair mesmo assim?')) return
   closeEdModal()
 }
 
 function closeEdModal() {
   edCmd=null; _edDirty=false
-  const m=G('ed-modal'); if(m) m.style.display='none'
+  const m = G('ed-modal'); if(m) m.style.display='none'
   sfx('close'); renderCmds()
 }
 
-function closeEd() { tryCloseEd() }
-
 function openEd(name) {
-  const cmd=allCmds.find(c=>c.name===name); if(!cmd) return
+  const cmd = allCmds.find(c => c.name===name); if (!cmd) return
   edCmd=cmd; _edDirty=false
-  const perm=allPerms[name]
-  edRole=perm?.minRole?String(perm.minRole):''; edLoc=perm?.allowedIn||'both'
-  edAliases=[...(cmd.aliases||[])]; edMenuTargets=[...(allMenuTargets[name]||cmd.menuTargets||[])]
+  const perm = allPerms[name]
+  edRole = perm?.minRole ? String(perm.minRole) : ''
+  edLoc  = perm?.allowedIn || 'both'
+  edAliases    = [...(cmd.aliases||[])]
+  edMenuTargets = [...(allMenuTargets[name]||cmd.menuTargets||[])]
 
-  const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
-  sv('ed-desc',   cmd.description||'')
-  sv('ed-usage',  cmd.usage||'.'+name)
-  sv('ed-cd',     cmd.cooldown||0)
-  const t=G('ed-title'); if(t) t.textContent='.'+name
-  const en=G('ed-enabled'); if(en) en.checked=cmd.enabled!==false
-  const bd=G('ed-dirty-badge'); if(bd) bd.style.display='none'
+  const sv = (id, v) => { const e=G(id); if(e) e.value=v??'' }
+  sv('ed-desc',  cmd.description||'')
+  sv('ed-usage', cmd.usage||'.'+name)
+  sv('ed-cd',    cmd.cooldown||0)
+  const t = G('ed-title'); if(t) t.textContent = '.'+name
+  const en = G('ed-enabled'); if(en) en.checked = cmd.enabled!==false
+  const bd = G('ed-dirty'); if(bd) bd.style.display='none'
 
-  syncEd(); renderEdAliases(); renderEdMenus()
-  const m=G('ed-modal'); if(!m) return
-  m.style.display='flex'; edSwitchTab('basic'); sfx('open'); renderCmds()
+  syncEdPickers(); renderEdAliases(); renderEdMenus()
+  const m = G('ed-modal'); if(!m) return
+  m.style.display = 'flex'
+  edTab('basic', m.querySelector('.ed-tab'))
+  sfx('open'); renderCmds()
 }
 
 function renderEdAliases() {
-  const el=G('ed-aliases'); if(!el) return
-  el.innerHTML=edAliases.length
-    ?edAliases.map(a=>`<span class="alias-tag">${a}<span class="rm" onclick="rmAlias('${a}')">✕</span></span>`).join('')
-    :'<span style="color:var(--tx3);font-size:11px">Nenhum alias</span>'
+  const el = G('ed-aliases'); if (!el) return
+  el.innerHTML = edAliases.length
+    ? edAliases.map(a => `<span class="alias-tag">${a}<span class="alias-rm" onclick="rmAlias('${a}')">✕</span></span>`).join('')
+    : '<span style="color:var(--tx3);font-size:11px;padding:4px">Nenhum alias</span>'
 }
+
 function addAlias() {
-  const inp=G('new-alias'); if(!inp) return
-  const v=inp.value.trim().toLowerCase().replace(/\s+/g,'')
-  if(!v) return
-  if(edAliases.includes(v)){toast('Já existe','e');return}
+  const inp = G('new-alias'); if (!inp) return
+  const v = inp.value.trim().toLowerCase().replace(/\s+/g,'')
+  if (!v) return
+  if (edAliases.includes(v)) { toast('Alias já existe','w'); return }
   edAliases.push(v); inp.value=''; renderEdAliases(); markDirty()
+  sfx('success')
 }
-function rmAlias(a) { edAliases=edAliases.filter(x=>x!==a); renderEdAliases(); markDirty() }
+
+function rmAlias(a) {
+  edAliases = edAliases.filter(x=>x!==a)
+  renderEdAliases(); markDirty()
+}
 
 function renderEdMenus() {
-  const el=G('ed-menus'); if(!el) return
-  el.innerHTML=MENU_OPS.map(o=>
+  const el = G('ed-menus'); if (!el) return
+  el.innerHTML = MENU_OPS.map(o =>
     `<button class="mt-chip${edMenuTargets.includes(o.id)?' on':''}" onclick="toggleEdMenu('${o.id}')">${o.l}</button>`
   ).join('')
 }
+
 function toggleEdMenu(id) {
   edMenuTargets.includes(id)
-    ?edMenuTargets=edMenuTargets.filter(x=>x!==id)
-    :edMenuTargets.push(id)
+    ? edMenuTargets = edMenuTargets.filter(x=>x!==id)
+    : edMenuTargets.push(id)
   renderEdMenus(); markDirty()
 }
 
 async function toggleEdCmd() {
-  if(!edCmd) return
-  const en=G('ed-enabled')?.checked
-  await post(`/api/commands/${edCmd.name}/toggle`,{enabled:en})
-  const c=allCmds.find(x=>x.name===edCmd.name); if(c) c.enabled=en
+  if (!edCmd) return
+  const en = G('ed-enabled')?.checked
+  await post(`/api/commands/${edCmd.name}/toggle`, {enabled:en})
+  const c = allCmds.find(x=>x.name===edCmd.name); if(c) c.enabled=en
 }
 
 async function saveCmd() {
-  if(!edCmd) return
+  if (!edCmd) return
   const desc=G('ed-desc')?.value, usage=G('ed-usage')?.value, cooldown=parseInt(G('ed-cd')?.value)||0
 
-  // 1. Metadados (desc/uso/cooldown)
-  await fetch(`/api/commands/${edCmd.name}/meta`,{
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({description:desc,usage,cooldown})
-  }).catch(()=>{})
+  const results = await Promise.allSettled([
+    fetch(`/api/commands/${edCmd.name}/meta`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({description:desc, usage, cooldown})
+    }),
+    post(`/api/cmdperms/${edCmd.name}`, {minRole:edRole?parseInt(edRole):null, allowedIn:edLoc||'both'}),
+    post(`/api/commands/${edCmd.name}/aliases`, {aliases:edAliases}),
+    edMenuTargets.length
+      ? post(`/api/menutargets/${edCmd.name}`, {menus:edMenuTargets})
+      : del(`/api/menutargets/${edCmd.name}`)
+  ])
 
-  // 2. Permissões
-  const body={minRole:edRole?parseInt(edRole):null,allowedIn:edLoc||'both'}
-  if(!body.minRole&&body.allowedIn==='both') await del(`/api/cmdperms/${edCmd.name}`)
-  else await post(`/api/cmdperms/${edCmd.name}`,body)
+  const failed = results.filter(r => r.status === 'rejected')
+  if (failed.length) { toast('Erro ao salvar','e'); return }
 
-  // 3. Aliases
-  await post(`/api/commands/${edCmd.name}/aliases`,{aliases:edAliases})
-
-  // 4. Menus
-  if(edMenuTargets.length) await post(`/api/menutargets/${edCmd.name}`,{menus:edMenuTargets})
-  else await del(`/api/menutargets/${edCmd.name}`)
-
-  // 5. Atualiza local
-  const c=allCmds.find(x=>x.name===edCmd.name)
-  if(c){c.aliases=edAliases;c.menuTargets=edMenuTargets;c.description=desc;c.usage=usage;c.cooldown=cooldown}
-  allPerms[edCmd.name]=(!body.minRole&&body.allowedIn==='both')?null:body
-  allMenuTargets[edCmd.name]=edMenuTargets.length?edMenuTargets:undefined
-  _edDirty=false
-  const bd=G('ed-dirty-badge'); if(bd) bd.style.display='none'
+  const c = allCmds.find(x=>x.name===edCmd.name)
+  if (c) { c.aliases=edAliases; c.menuTargets=edMenuTargets; c.description=desc; c.usage=usage; c.cooldown=cooldown }
+  allPerms[edCmd.name]      = edRole ? {minRole:parseInt(edRole),allowedIn:edLoc||'both'} : null
+  allMenuTargets[edCmd.name] = edMenuTargets.length ? edMenuTargets : undefined
+  _edDirty = false
+  const bd = G('ed-dirty'); if(bd) bd.style.display='none'
   toast('✅ Salvo!'); sfx('save'); renderCmds()
 }
 
 async function editSrc() {
-  if(!edCmd) return
-  const r=await api(`/api/commands/${edCmd.name}/source`)
-  if(r.error){toast('Código não disponível','i');return}
-  if(G('src-title')) G('src-title').textContent='Código: .'+edCmd.name
-  if(G('src-code')) G('src-code').value=r.source||''
-  const m=G('src-modal'); if(m) m.style.display='flex'; sfx('open')
+  if (!edCmd) return
+  const r = await api(`/api/commands/${edCmd.name}/source`)
+  if (r.error) { toast('Código não disponível: '+r.error,'w'); return }
+  if (G('src-title')) G('src-title').textContent = '.'+edCmd.name
+  if (G('src-code'))  G('src-code').value = r.source||''
+  const m = G('src-modal'); if(m) m.style.display='flex'; sfx('open')
 }
 
 async function saveSrc() {
-  if(!edCmd) return
-  const code=G('src-code')?.value.trim(); if(!code) return
-  const r=await post(`/api/commands/${edCmd.name}/source`,{source:code,category:edCmd.category})
-  if(r.ok){toast('Código salvo!');sfx('install');G('src-modal').style.display='none';await loadCmds()}
+  if (!edCmd) return
+  const code = G('src-code')?.value.trim(); if (!code) return
+  const r = await post(`/api/commands/${edCmd.name}/source`, {source:code, category:edCmd.category})
+  if (r.ok) { toast('Código salvo!'); sfx('install'); G('src-modal').style.display='none'; await loadCmds() }
   else toast('Erro: '+(r.error||''),'e')
 }
 
+// Menu target modal
 function openMtModal(name) {
-  _mtCmd=name
-  if(G('mt-cmd')) G('mt-cmd').textContent='.'+name
-  document.querySelectorAll('#mt-chips .mt-chip').forEach(b=>b.classList.remove('on'))
-  const m=G('mt-modal'); if(m) m.style.display='flex'
+  _mtCmd = name
+  if (G('mt-cmd')) G('mt-cmd').textContent = '.'+name
+  const chips = G('mt-chips')
+  if (chips) chips.innerHTML = MENU_OPS.map(o =>
+    `<button class="mt-chip" data-id="${o.id}" onclick="this.classList.toggle('on')">${o.l}</button>`
+  ).join('')
+  const m = G('mt-modal'); if(m) m.style.display='flex'
 }
-function skipMt() { const m=G('mt-modal');if(m)m.style.display='none';_mtCmd=null;goTab('cmds') }
+function skipMt() { const m=G('mt-modal');if(m)m.style.display='none';_mtCmd=null; goTab('cmds') }
 async function saveMt() {
-  const name=_mtCmd; if(!name) return
-  const menus=[...document.querySelectorAll('#mt-chips .mt-chip.on')].map(b=>b.dataset.id)
-  if(menus.length) await post(`/api/menutargets/${name}`,{menus})
-  allMenuTargets[name]=menus
-  const m=G('mt-modal'); if(m) m.style.display='none'; _mtCmd=null
-  toast('✅ Salvo!'); await loadCmds(); openEd(name); goTab('cmds')
+  if (!_mtCmd) return
+  const menus = [...document.querySelectorAll('#mt-chips .mt-chip.on')].map(b=>b.dataset.id)
+  if (menus.length) await post(`/api/menutargets/${_mtCmd}`, {menus})
+  allMenuTargets[_mtCmd] = menus
+  const m = G('mt-modal'); if(m) m.style.display='none'; _mtCmd=null
+  toast('✅ Salvo!'); await loadCmds(); openEd(allCmds.find(c=>c.name===_mtCmd)?.name||''); goTab('cmds')
 }
 
-// ── Menus ────────────────────────────────────────────────────
+// ── Menus ────────────────────────────────────────────────────────
 async function loadMenuCfg() {
-  const d=await api('/api/config'); if(!d.menu) return
-  const m=d.menu
+  const d = await api('/api/config'); if (!d.menu) return
+  const m = d.menu
   const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
   const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
-  sv('m-footer',m.footerTexto); sv('m-botnome',m.botNomeDisplay); sv('m-foto',m.botFoto)
   sv('m-top',m.borderTop); sv('m-bot',m.borderBot); sv('m-side',m.borderSide||'│')
   sv('m-item',m.itemPrefix||'├'); sv('m-sub',m.subPrefix||'└')
-  sc('m-bold',m.negrito); sc('m-italic',m.italico); sc('m-desc',m.mostrarDescricao)
-  menuLines=m.menuLines||[]; renderCatTable(m); renderMenuLines(); updPrev()
+  sv('m-footer',m.footerTexto); sv('m-botnome',m.botNomeDisplay)
+  sc('m-bold',m.negrito); sc('m-italic',m.italico)
+  menuLines = m.menuLines||[]; renderMenuLines(); updPrev()
 }
-
 function renderMenuLines() {
-  const el=G('menu-lines-list'); if(!el) return
-  el.innerHTML=menuLines.map((l,i)=>`
+  const el = G('menu-lines-list'); if (!el) return
+  el.innerHTML = menuLines.map((l,i) => `
     <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
-      <input value="${l.label||''}" style="flex:1;padding:5px 9px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px" onchange="menuLines[${i}].label=this.value;updPrev()"/>
-      <button class="btn btn-r btn-sm" onclick="rmMenuLine(${i})">✕</button>
-      ${i>0?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},-1)">▲</button>`:''}
-      ${i<menuLines.length-1?`<button class="btn btn-q btn-sm" onclick="mvMenuLine(${i},1)">▼</button>`:''}
+      <input value="${l.label||''}" style="flex:1;padding:5px 9px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px;outline:none;font-family:var(--f)" onchange="menuLines[${i}].label=this.value;updPrev()"/>
+      <button class="btn btn-r btn-sm" onclick="menuLines.splice(${i},1);renderMenuLines();updPrev()">✕</button>
+      ${i>0?`<button class="btn btn-q btn-sm" onclick="menuLines.splice(${i}-1,0,menuLines.splice(${i},1)[0]);renderMenuLines();updPrev()">▲</button>`:''}
+      ${i<menuLines.length-1?`<button class="btn btn-q btn-sm" onclick="menuLines.splice(${i}+1,0,menuLines.splice(${i},1)[0]);renderMenuLines();updPrev()">▼</button>`:''}
     </div>`).join('')
 }
 function addMenuLine(){menuLines.push({label:'!novocomando'});renderMenuLines();updPrev()}
-function rmMenuLine(i){menuLines.splice(i,1);renderMenuLines();updPrev()}
-function mvMenuLine(i,d){const j=i+d;if(j<0||j>=menuLines.length)return;[menuLines[i],menuLines[j]]=[menuLines[j],menuLines[i]];renderMenuLines();updPrev()}
-
-function renderCatTable(m={}) {
-  const vis=m.categoriasVisiveis||['core','fun','rpg','media','info','tools','admin']
-  const el=G('cat-table'); if(!el) return
-  el.innerHTML=CATS.map(c=>`
-    <div style="display:grid;grid-template-columns:44px 1fr 52px 32px;gap:6px;align-items:center;margin-bottom:5px">
-      <label class="tog" style="justify-self:center"><input type="checkbox" id="cv-${c}" ${vis.includes(c)?'checked':''} onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div></label>
-      <div style="display:flex;gap:5px;align-items:center">
-        <span style="color:var(--tx3);font-size:10px;width:38px;flex-shrink:0">${c}</span>
-        <input id="cn-${c}" value="${(m.nomes?.[c]||c).toUpperCase()}" style="flex:1;padding:3px 7px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:5px;font-size:11px" oninput="updPrev()"/>
-      </div>
-      <input id="ic-${c}" value="${m.icons?.[c]||''}" maxlength="6" placeholder="—" style="padding:3px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:5px;font-size:14px;text-align:center" oninput="updPrev()"/>
-      <button class="btn btn-r btn-sm" style="padding:3px 6px" onclick="rmCat('${c}')">✕</button>
-    </div>`).join('')
-}
-function openCatModal(){const m=G('cat-modal');if(m)m.style.display='flex'}
-function saveCat(){const id=G('cat-id')?.value.trim().toLowerCase();if(!id||CATS.includes(id)){toast('ID inválido','e');return}CATS.push(id);renderCatTable();const m=G('cat-modal');if(m)m.style.display='none';toast('Categoria criada!')}
-function rmCat(c){if(!confirm(`Remover "${c}"?`))return;CATS=CATS.filter(x=>x!==c);renderCatTable()}
 function updPrev() {
-  const p=G('cfg-prefixo')?.value||'.',nm=G('m-botnome')?.value||G('cfg-nome')?.value||'Bot'
+  const nm=G('m-botnome')?.value||G('cfg-nome')?.value||'Bot'
   const b=G('m-bold')?.checked,it=G('m-italic')?.checked
   const fmt=t=>b&&it?`_*${t}*_`:b?`*${t}*`:it?`_${t}_`:t
   const TOP=(G('m-top')?.value||'').trim()||`┏━━━⪩ ${fmt(nm)} ⪨━━━┓`
   const BOT=(G('m-bot')?.value||'').trim()||'┗━━━━━━━━━━━━━━━━━━┛'
   const SID=G('m-side')?.value||'│',ITM=G('m-item')?.value||'├',LST=G('m-sub')?.value||'└'
-  const foot=(G('m-footer')?.value||'Powered by DevSquad').replace('{prefix}',p)
-  let txt=`${TOP}\n${SID}\n${SID} 📊 ${fmt('Estatísticas')}\n${SID} ${ITM} Mensagens: Nk\n${SID} ${LST} Comandos: N\n${SID}\n${SID} ✦ ${fmt('MENUS')}\n`
+  const foot=G('m-footer')?.value||'Powered by DevSquad'
+  let txt=`${TOP}\n${SID}\n`
   menuLines.forEach((l,i)=>{txt+=`${SID} ${i===menuLines.length-1?LST:ITM} ${l.label||''}\n`})
   txt+=`${SID}\n${BOT}\n\n_- ${foot}_`
   const el=G('menu-prev'); if(el) el.textContent=txt
 }
 const THEMES={
-  default:{},
   kaius:{borderTop:'┏━━━⪩ *KAIUS* ⪨━━━┓',borderBot:'┗━━━━━━━━━━━━━━━━━┛',borderSide:'┃',itemPrefix:'┣',subPrefix:'┗',negrito:true},
   neon:{borderTop:'┌─────────────────────┐',borderBot:'└─────────────────────┘',borderSide:'│',itemPrefix:'⟡',subPrefix:'  ↳',negrito:true,italico:true},
   minimal:{borderTop:'▸',borderBot:'◂',borderSide:'›',itemPrefix:'•',subPrefix:'  ·',negrito:false},
@@ -1632,33 +1342,33 @@ const THEMES={
   royal:{borderTop:'┌─꧁𓆩𓆪꧂────────────┐',borderBot:'└────────────꧁𓆩𓆪꧂─┘',borderSide:'│',itemPrefix:'◈',subPrefix:'  └◉',negrito:true}
 }
 function applyTheme(nome) {
-  const t=THEMES[nome]; if(!t) return
+  const t=THEMES[nome]; if(!t)return
   const mp={borderTop:'m-top',borderBot:'m-bot',borderSide:'m-side',itemPrefix:'m-item',subPrefix:'m-sub',footerTexto:'m-footer'}
   Object.entries(mp).forEach(([k,id])=>{if(t[k]!==undefined&&G(id))G(id).value=t[k]})
-  if(G('m-bold')) G('m-bold').checked=t.negrito!==false
-  if(G('m-italic')) G('m-italic').checked=!!t.italico
+  if(G('m-bold'))G('m-bold').checked=t.negrito!==false
+  if(G('m-italic'))G('m-italic').checked=!!t.italico
   updPrev(); toast(`Tema ${nome} aplicado!`)
 }
-function getMenuForm(){
-  return{footerTexto:G('m-footer')?.value||'',botFoto:G('m-foto')?.value||'',botNomeDisplay:G('m-botnome')?.value||'',negrito:G('m-bold')?.checked,italico:G('m-italic')?.checked,mostrarDescricao:G('m-desc')?.checked,borderTop:G('m-top')?.value||'',borderBot:G('m-bot')?.value||'',borderSide:G('m-side')?.value||'│',itemPrefix:G('m-item')?.value||'├',subPrefix:G('m-sub')?.value||'└',menuLines:[...menuLines]}
+async function saveMenu(){
+  const body={footerTexto:G('m-footer')?.value||'',botNomeDisplay:G('m-botnome')?.value||'',negrito:G('m-bold')?.checked,italico:G('m-italic')?.checked,borderTop:G('m-top')?.value||'',borderBot:G('m-bot')?.value||'',borderSide:G('m-side')?.value||'│',itemPrefix:G('m-item')?.value||'├',subPrefix:G('m-sub')?.value||'└',menuLines:[...menuLines]}
+  const r=await post('/api/config/menu',body)
+  r.ok?toast('✅ Menu salvo!'):toast('Erro: '+(r.error||''),'e')
 }
-async function saveMenu(){const r=await post('/api/config/menu',getMenuForm());r.ok?toast('✅ Menu salvo!'):toast('Erro: '+(r.error||''),'e')}
 
-// ── Automações ───────────────────────────────────────────────
+// ── Automações ───────────────────────────────────────────────────
 async function loadAutos() {
-  const d=await api('/api/automations'); if(!Array.isArray(d)) return
+  const d = await api('/api/automations'); if (!Array.isArray(d)) return
   allAutos=d; renderAutos()
 }
-
 function renderAutos() {
   const el=G('auto-list'); if(!el) return
-  if(!allAutos.length){el.innerHTML='<div class="empty">Nenhuma automação. Clique em "+ Nova" para criar.</div>';return}
+  if (!allAutos.length) { el.innerHTML='<div class="empty">Nenhuma automação. Clique em "+ Nova".</div>'; return }
   const ic={text:'💬',audio:'🔊',image:'🖼️',video:'🎬',sticker:'🎭',mention:'📢'}
   el.innerHTML=allAutos.map(a=>`
     <div class="ci">
       <div class="ci-info">
-        <div class="ci-name">${ic[a.type]||'💬'} <span style="color:var(--ac)">"${a.trigger}"</span>${a.multiResponse?' <span class="tag tb2">🎲 aleatório</span>':''}</div>
-        <div class="ci-desc">${(a.response||'').substring(0,60)||'(sem texto)'}${a.reactEmoji?' '+a.reactEmoji:''}</div>
+        <div class="ci-name">${ic[a.type]||'💬'} <span style="color:var(--ac)">"${a.trigger}"</span>${a.matchType==='contains'?' <span class="tag ti">contém</span>':a.matchType==='regex'?' <span class="tag ti">regex</span>':''}${a.multiResponse?' 🎲':''}</div>
+        <div class="ci-desc">${(a.response||'').slice(0,60)||'(sem texto)'}${a.reactEmoji?' '+a.reactEmoji:''}</div>
       </div>
       <div style="display:flex;gap:5px;align-items:center">
         <label class="tog" style="gap:0" onclick="event.stopPropagation()">
@@ -1670,47 +1380,38 @@ function renderAutos() {
       </div>
     </div>`).join('')
 }
-
 function toggleAutoMedia() {
   const t=G('auto-type')?.value, r=G('auto-media-row')
   if(r) r.style.display=['audio','image','video','sticker'].includes(t)?'block':'none'
 }
-
 function openAutoModal(id) {
-  const a=id?allAutos.find(x=>x.id===id):null
-  if(G('auto-modal-tt')) G('auto-modal-tt').textContent=a?`Editar: "${a.trigger}"`:'Nova Automação'
+  const a = id ? allAutos.find(x=>x.id===id) : null
+  if(G('auto-modal-tt')) G('auto-modal-tt').textContent = a?`Editar: "${a.trigger}"`:'Nova Automação'
   const sv=(i,v)=>{const e=G(i);if(e)e.value=v??''}
   const sc=(i,v)=>{const e=G(i);if(e)e.checked=!!v}
   G('auto-id')&&(G('auto-id').value=id||'')
   sv('auto-trigger',a?.trigger); sv('auto-resp',a?.response); sv('auto-media',a?.mediaUrl)
   sv('auto-cd',a?.cooldown||0); sv('auto-react-emoji',a?.reactEmoji||'')
-  if(G('auto-match')) G('auto-match').value=a?.matchType||'exact'
-  if(G('auto-type'))  G('auto-type').value=a?.type||'text'
-  if(G('auto-scope')) G('auto-scope').value=a?.scope||'both'
+  if(G('auto-match'))G('auto-match').value=a?.matchType||'exact'
+  if(G('auto-type'))G('auto-type').value=a?.type||'text'
+  if(G('auto-scope'))G('auto-scope').value=a?.scope||'both'
   sc('auto-stop',a?.stopPropagation!==false); sc('auto-multi',a?.multiResponse)
   sc('auto-delete',a?.deleteMessage); sc('auto-noquote',a?.noQuote)
-  const s=G('auto-upload-status'); if(s) s.textContent=''
-  const f=G('auto-media-file'); if(f) f.value=''
+  const s=G('auto-upload-status');if(s)s.textContent=''
+  const f=G('auto-media-file');if(f)f.value=''
   toggleAutoMedia()
-  const m=G('auto-modal'); if(m) m.style.display='flex'; sfx('open')
+  const m=G('auto-modal'); if(m)m.style.display='flex'; sfx('open')
 }
 function closeAutoModal(){const m=G('auto-modal');if(m)m.style.display='none'}
-
 async function saveAuto() {
   const id=G('auto-id')?.value
   const body={
-    trigger:G('auto-trigger')?.value.trim(),
-    matchType:G('auto-match')?.value,
-    response:G('auto-resp')?.value,
-    type:G('auto-type')?.value,
-    mediaUrl:G('auto-media')?.value.trim(),
-    scope:G('auto-scope')?.value,
-    cooldown:parseInt(G('auto-cd')?.value)||0,
-    stopPropagation:G('auto-stop')?.checked,
-    multiResponse:G('auto-multi')?.checked||false,
-    deleteMessage:G('auto-delete')?.checked||false,
-    noQuote:G('auto-noquote')?.checked||false,
-    reactEmoji:G('auto-react-emoji')?.value.trim()||'',
+    trigger:G('auto-trigger')?.value.trim(), matchType:G('auto-match')?.value,
+    response:G('auto-resp')?.value, type:G('auto-type')?.value,
+    mediaUrl:G('auto-media')?.value.trim(), scope:G('auto-scope')?.value,
+    cooldown:parseInt(G('auto-cd')?.value)||0, stopPropagation:G('auto-stop')?.checked,
+    multiResponse:G('auto-multi')?.checked||false, deleteMessage:G('auto-delete')?.checked||false,
+    noQuote:G('auto-noquote')?.checked||false, reactEmoji:G('auto-react-emoji')?.value.trim()||'',
     enabled:true
   }
   if(!body.trigger){toast('Informe o gatilho!','e');return}
@@ -1720,74 +1421,72 @@ async function saveAuto() {
 }
 async function toggleAuto(id,en){await put(`/api/automations/${id}`,{enabled:en});const a=allAutos.find(x=>x.id===id);if(a)a.enabled=en}
 async function delAuto(id){if(!confirm('Deletar?'))return;await del(`/api/automations/${id}`);toast('Deletada','i');sfx('delete');loadAutos()}
-
 async function uploadAutoMedia(input) {
-  const file=input.files[0]; if(!file) return
+  const file=input.files[0]; if(!file)return
   const s=G('auto-upload-status')
   if(s){s.textContent='⏳ Enviando...';s.style.color='var(--yl)'}
   try {
     const buf=await file.arrayBuffer()
     const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':file.type,'X-Filename':encodeURIComponent(file.name)},body:buf}).then(r=>r.json())
-    if(r.ok){
-      if(G('auto-media')) G('auto-media').value=r.url
-      if(s){s.textContent=r.warning?`⚠️ ${r.warning}`:`✅ ${r.filename}`;s.style.color=r.warning?'var(--yl)':'var(--ac)'}
-      sfx('success')
-    } else if(s){s.textContent='❌ '+(r.error||'Erro');s.style.color='var(--rd)'}
-  } catch(e){if(s){s.textContent='❌ '+e.message;s.style.color='var(--rd)'}}
+    if(r.ok){if(G('auto-media'))G('auto-media').value=r.url;if(s){s.textContent=r.warning?`⚠️ ${r.warning}`:`✅ ${r.filename}`;s.style.color=r.warning?'var(--yl)':'var(--ac)'};sfx('success')}
+    else if(s){s.textContent='❌ '+(r.error||'Erro');s.style.color='var(--rd)'}
+  }catch(e){if(s){s.textContent='❌ '+e.message;s.style.color='var(--rd)'}}
 }
 
-// ── IA / Criar Cmd ───────────────────────────────────────────
+// ── IA Criar CMD ─────────────────────────────────────────────────
 async function genCmd() {
   const desc=G('ai-desc')?.value.trim()
   if(!desc){toast('Descreva o comando!','e');return}
-  const btn=document.querySelector('#tab-ai .btn-g')
-  if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Gerando...'}
+  const provider=G('ai-gen-provider')?.value||'auto'
+  const cat=G('ai-cat')?.value||'fun'
+  const btns=document.querySelectorAll('#tab-ai .btn-g')
+  btns.forEach(b=>{b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Gerando...'})
   try {
-    const r=await post('/api/ai/generate-command',{descricao:desc})
+    const r=await post('/api/ai/generate-command',{descricao:desc,provider,category:cat})
     if(r.error){toast(r.error,'e');return}
-    if(G('ai-code')) G('ai-code').value=r.code
-    if(G('ai-res')) G('ai-res').style.display='block'
-    toast('✅ Gerado via '+(r.via||'IA')+'!'); sfx('install')
-  } finally { if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-bolt"></i> Gerar com IA'} }
+    if(G('ai-code'))G('ai-code').value=r.code
+    if(G('ai-res'))G('ai-res').style.display='block'
+    const via={'manus':'🤖 Manus','groq':'⚡ Groq','gemini':'🔷 Gemini'}[r.via]||r.via||provider
+    toast('✅ Gerado via '+via+'!'); sfx('install')
+  } finally { btns.forEach(b=>{b.disabled=false;b.innerHTML='<i class="fas fa-bolt"></i> Gerar com IA'}) }
 }
 function copyCode(){navigator.clipboard?.writeText(G('ai-code')?.value||'');toast('Copiado!')}
 async function installGen() {
   const code=G('ai-code')?.value.trim(),cat=G('ai-cat')?.value
   let name=G('ai-file')?.value.trim()
   if(!code){toast('Nenhum código!','e');return}
-  if(!name){const m=code.match(/name:\s*['"]([^'"]+)['"]/);name=m?.[1]||'cmd_'+Date.now()}
+  if(!name){const m=code.match(/name:\s*['"]([^'"]+)['"]/);name=m?.[1]||('cmd_'+Date.now())}
   const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
   if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
   else toast('Erro: '+(r.error||''),'e')
 }
 async function installManual() {
-  const name=G('man-name')?.value.trim(),code=G('man-code')?.value.trim(),cat=G('man-cat')?.value
+  const name=G('man-name')?.value.trim(), code=G('man-code')?.value.trim(), cat=G('man-cat')?.value
   if(!name||!code){toast('Preencha nome e código!','e');return}
   const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
   if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
   else toast('Erro: '+(r.error||''),'e')
 }
+async function loadHooks() {
+  const r=await api('/api/hooks').catch(()=>null)
+  const el=G('hooks-list'); if(!el)return
+  if(!r||!Array.isArray(r)||!r.length){el.innerHTML='<div class="empty">Nenhum hook ativo. Use .antiword ou .autoreact no WhatsApp.</div>';return}
+  el.innerHTML=r.map(h=>`<div class="ci"><div class="ci-info"><div class="ci-name">🔌 <span style="color:var(--ac)">${h.name}</span></div><div class="ci-desc">id: ${h.id} · prioridade: ${h.priority}</div></div><button class="btn btn-r btn-sm" onclick="rmHook('${h.id}')"><i class="fas fa-trash"></i></button></div>`).join('')
+}
+async function rmHook(id){const r=await post('/api/hooks/remove',{id});toast(r.ok?'✅ Hook removido!':'❌ '+r.error||'Erro',r.ok?'s':'e');loadHooks()}
 
-// ── Config ───────────────────────────────────────────────────
+// ── Config ───────────────────────────────────────────────────────
 async function loadCfg() {
-  const d=await api('/api/config'); if(d.error) return
+  const d=await api('/api/config'); if(d.error)return
   const sv=(id,v)=>{const e=G(id);if(e)e.value=v??''}
   const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
   sv('cfg-nome',d.nome); sv('cfg-prefixo',d.prefixo); sv('cfg-owner',d.owner)
   sv('cfg-pers',d.personalidade); sv('cfg-modelo',d.modelo)
   sv('cfg-msgban',d.msgBanido); sv('cfg-msgcd',d.msgCooldown); sv('cfg-msgnoperm',d.msgSemPerm)
-  // Groq key
-  const gk=G('cfg-groq')
-  if(gk){gk.value=''; gk.placeholder=d.groqKey?'✓ (salvo)':'gsk_...'}
-  // Gemini key
-  const gmk=G('cfg-gemini')
-  if(gmk){gmk.value=''; gmk.placeholder=d.geminiKey?'✓ (salvo)':'AIza...'}
-  // AI Provider
+  const gk=G('cfg-groq'); if(gk){gk.value='';gk.placeholder=d.groqKey?'✓ (salvo)':'gsk_...'}
+  const gmk=G('cfg-gemini'); if(gmk){gmk.value='';gmk.placeholder=d.geminiKey?'✓ (salvo)':'AIza...'}
   if(G('cfg-ai-provider')&&d.aiProvider) G('cfg-ai-provider').value=d.aiProvider
   if(G('ai-gen-provider')&&d.aiProvider) G('ai-gen-provider').value=d.aiProvider
-  // Note: Manus uses the Groq key — no separate key needed
-  const mn=G('cfg-manus-note')
-  if(mn) mn.textContent=d.groqKey?'✓ Manus usa a Groq Key acima':'⚠️ Configure a Groq Key para usar o Manus'
   sc('cfg-spam',d.antiSpam); sc('cfg-code',d.autoCodeDetect); sc('cfg-codeowner',d.codeOwnerOnly)
   sc('cfg-iadefault',d.iaAtivaPadrao); sc('cfg-fuzzy',d.fuzzyCommands!==false)
 }
@@ -1798,43 +1497,36 @@ async function saveCfg() {
     personalidade:gv('cfg-pers'), modelo:gv('cfg-modelo'),
     msgBanido:gv('cfg-msgban'), msgCooldown:gv('cfg-msgcd'), msgSemPerm:gv('cfg-msgnoperm'),
     antiSpam:gb('cfg-spam'), autoCodeDetect:gb('cfg-code'), codeOwnerOnly:gb('cfg-codeowner'),
-    iaAtivaPadrao:gb('cfg-iadefault'), fuzzyCommands:gb('cfg-fuzzy')
+    iaAtivaPadrao:gb('cfg-iadefault'), fuzzyCommands:gb('cfg-fuzzy'),
+    aiProvider:gv('cfg-ai-provider')
   }
-  // Groq key — só envia se não for placeholder
-  const groq=gv('cfg-groq')
-  if(groq&&groq!=='✓ (salvo)'&&!groq.startsWith('***')&&groq!=='gsk_...') body.groqKey=groq
-  // Gemini key
-  const gemini=gv('cfg-gemini')
-  if(gemini&&gemini!=='✓ (salvo)'&&!gemini.startsWith('***')&&gemini!=='AIza...') body.geminiKey=gemini
-  // AI Provider
-  const prov=gv('cfg-ai-provider')
-  if(prov) body.aiProvider=prov
-
+  const groq=gv('cfg-groq'); if(groq&&!groq.startsWith('✓')&&!groq.startsWith('***')) body.groqKey=groq
+  const gem=gv('cfg-gemini'); if(gem&&!gem.startsWith('✓')&&!gem.startsWith('***')) body.geminiKey=gem
   const r=await post('/api/config',body)
   if(r.ok){
     toast('✅ Config salva!'); sfx('save')
-    if(G('sb-nm')) G('sb-nm').textContent=body.nome||'KaiusBot'
-    if(G('dash-title')) G('dash-title').textContent='✦ '+(body.nome||'KaiusBot')
-    // Refresh placeholders
+    const nm=body.nome||'KaiusBot'
+    const dt=G('dash-title');if(dt)dt.textContent='✦ '+nm
+    const sn=G('sb-nm');if(sn)sn.textContent=nm
     if(body.groqKey){const e=G('cfg-groq');if(e){e.value='';e.placeholder='✓ (salvo)'}}
     if(body.geminiKey){const e=G('cfg-gemini');if(e){e.value='';e.placeholder='✓ (salvo)'}}
   } else toast('Erro: '+(r.error||''),'e')
 }
 
-// ── Minions ──────────────────────────────────────────────────
+// ── Minions ──────────────────────────────────────────────────────
 async function loadMinions() {
-  const d=await api('/api/minions?filter='+curMF); if(!d.stats) return
-  animCount(G('m-total'), d.stats.total); animCount(G('m-ativos'), d.stats.ativos)
-  animCount(G('m-subdons'), d.stats.subdons); animCount(G('m-banidos'), d.stats.banidos)
-  const el=G('minion-list'); if(!el) return
+  const d=await api('/api/minions?filter='+curMF); if(!d.stats)return
+  animCount(G('m-total'),d.stats.total); animCount(G('m-ativos'),d.stats.ativos)
+  animCount(G('m-subdons'),d.stats.subdons); animCount(G('m-banidos'),d.stats.banidos)
+  const el=G('minion-list'); if(!el)return
   if(!d.items?.length){el.innerHTML='<div class="empty">Nenhum usuário</div>';return}
   const em={1:'👑',2:'🌟',3:'⭐',4:'💎',5:'👤',99:'🚫'}
   el.innerHTML=d.items.map(u=>{
     const ago=Math.floor((Date.now()-u.ultimoUso)/60000)
     const t=ago<60?`${ago}m`:ago<1440?`${Math.floor(ago/60)}h`:`${Math.floor(ago/1440)}d`
     return`<div class="ci"><div class="ci-info"><div class="ci-name">${em[u.role]||'👤'} ${u.nome||'?'} <span style="color:var(--tx3)">+${u.num}</span></div><div class="ci-desc">💬 ${u.totalMsgs}msgs · ${t}</div></div>
-      <div style="display:flex;gap:5px">${u.bloqueado?`<button class="btn btn-q btn-sm" onclick="unbanM('${u.num}')"><i class="fas fa-unlock"></i></button>`:`<button class="btn btn-o btn-sm" onclick="banM('${u.num}')"><i class="fas fa-ban"></i></button>`}
-      <button class="btn btn-q btn-sm" onclick="promoM('${u.num}')"><i class="fas fa-star"></i></button></div></div>`
+    <div style="display:flex;gap:5px">${u.bloqueado?`<button class="btn btn-q btn-sm" onclick="unbanM('${u.num}')"><i class="fas fa-unlock"></i></button>`:`<button class="btn btn-o btn-sm" onclick="banM('${u.num}')"><i class="fas fa-ban"></i></button>`}
+    <button class="btn btn-q btn-sm" onclick="promoM('${u.num}')"><i class="fas fa-star"></i></button></div></div>`
   }).join('')
 }
 function setMF(el){curMF=el.dataset.mf;document.querySelectorAll('.fb-btn[data-mf]').forEach(b=>b.classList.remove('on'));el.classList.add('on');loadMinions()}
@@ -1842,258 +1534,105 @@ async function banM(num){if(!confirm(`Banir +${num}?`))return;await post(`/api/m
 async function unbanM(num){await post(`/api/minions/${num}/unban`,{});toast('Desbanido');loadMinions()}
 async function promoM(num){const r=prompt('Cargo: 2=Sub-Dono, 4=VIP','4');if(!r)return;await post(`/api/minions/${num}/promote`,{role:parseInt(r)});toast('Promovido!');loadMinions()}
 
-// ── Sub-donos ────────────────────────────────────────────────
-async function loadSDs() {
-  const d=await api('/api/subdons'); if(!d.items) return
-  const el=G('sd-list'); if(!el) return
+// ── Sub-donos ────────────────────────────────────────────────────
+async function loadSDs(){
+  const d=await api('/api/subdons'); if(!d.items)return
+  const el=G('sd-list'); if(!el)return
   if(!d.items.length){el.innerHTML='<div class="empty">Nenhum cadastrado</div>';return}
   const rn={2:'🌟 Sub-Dono',4:'💎 VIP',99:'🚫 Banido'}
   el.innerHTML=d.items.map(u=>`<div class="ci"><div class="ci-info"><div class="ci-name">${rn[u.role]||'👤'} <span style="color:var(--tx2)">+${u.num}</span></div><div class="ci-desc">${u.label||''}</div></div><button class="btn btn-r btn-sm" onclick="rmSD('${u.num}')"><i class="fas fa-trash"></i></button></div>`).join('')
 }
-async function addSD(){const num=G('sd-num')?.value.replace(/\D/g,''),role=parseInt(G('sd-role')?.value)||2,label=G('sd-label')?.value||'';if(!num){toast('Número!','e');return};await post('/api/subdons',{num,role,label});toast('✅ Adicionado!');loadSDs();[G('sd-num'),G('sd-label')].forEach(e=>{if(e)e.value=''})}
+async function addSD(){
+  const num=G('sd-num')?.value.replace(/\D/g,''),role=parseInt(G('sd-role')?.value)||2,label=G('sd-label')?.value||''
+  if(!num){toast('Informe o número!','e');return}
+  await post('/api/subdons',{num,role,label}); toast('✅ Adicionado!'); loadSDs()
+  ;[G('sd-num'),G('sd-label')].forEach(e=>{if(e)e.value=''})
+}
 async function rmSD(num){if(!confirm(`Remover +${num}?`))return;await del(`/api/subdons/${num}`);toast('Removido','i');loadSDs()}
 
-// ── Contribuições ────────────────────────────────────────────
-async function loadContribs() {
-  const d=await api('/api/contributions'); if(!d.stats) return
-  animCount(G('c-total'),d.stats.total);animCount(G('c-pending'),d.stats.pending)
-  animCount(G('c-accepted'),d.stats.accepted);animCount(G('c-rejected'),d.stats.rejected)
-  const all=d.items||[], f=curCF==='all'?all:all.filter(c=>c.status===curCF)
-  const el=G('contrib-list'); if(!el) return
-  const sc={pending:'to',accepted:'tg',rejected:'tr'}
-  el.innerHTML=f.length?f.map(c=>`<div class="ci"><div class="ci-info"><div class="ci-name">.${c.name} <span class="tag ${sc[c.status]||'to'}">${c.status}</span></div><div class="ci-desc">${c.category} · ${c.description||''}</div></div><div style="display:flex;gap:5px">${c.status==='pending'?`<button class="btn btn-g btn-sm" onclick="appC('${c.name}')">✓</button><button class="btn btn-r btn-sm" onclick="rejC('${c.name}')">✕</button>`:''}</div></div>`).join(''):'<div class="empty">Nenhuma</div>'
-}
-function setCF(el){curCF=el.dataset.cf;document.querySelectorAll('.fb-btn[data-cf]').forEach(b=>b.classList.remove('on'));el.classList.add('on');loadContribs()}
-async function appC(n){const r=await post(`/api/contributions/${n}/approve`,{});toast(r.ok?r.message||'✅ Enviado!':(r.reason||'Erro'),r.ok?'s':'e');loadContribs()}
-async function rejC(n){const m=prompt('Motivo:')||'';await post(`/api/contributions/${n}/reject`,{motivo:m});toast('Rejeitado','i');loadContribs()}
-
-// ── Grupos ───────────────────────────────────────────────────
-async function loadGrupos() {
-  const d=await api('/api/allowedgroups'); if(!d) return
-  if(G('grp-restriction')) G('grp-restriction').checked=!!d.enabled
-  const el=G('grp-list'); if(!el) return
-  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo</div>';return}
+// ── Grupos ───────────────────────────────────────────────────────
+async function loadGrupos(){
+  const d=await api('/api/allowedgroups'); if(!d)return
+  if(G('grp-restriction'))G('grp-restriction').checked=!!d.enabled
+  const el=G('grp-list'); if(!el)return
+  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo autorizado</div>';return}
   el.innerHTML=d.groups.map(g=>`<div class="ci"><div class="ci-info"><div class="ci-name">${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-r btn-sm" onclick="rmGroup('${encodeURIComponent(g.jid)}')">✕</button></div>`).join('')
 }
-async function toggleRestriction(){const en=G('grp-restriction')?.checked;await post('/api/allowedgroups/toggle',{enabled:en});toast(en?'🔒 Restrição ativada':'🔓 Desativada')}
-async function addAllowedGroup(){const jid=G('grp-jid')?.value.trim(),nome=G('grp-nome')?.value.trim();if(!jid){toast('Informe o JID!','e');return};await post('/api/allowedgroups',{jid,nome});toast('✅ Autorizado!');[G('grp-jid'),G('grp-nome')].forEach(e=>{if(e)e.value=''});loadGrupos()}
+async function toggleRestriction(){await post('/api/allowedgroups/toggle',{enabled:G('grp-restriction')?.checked});toast('Salvo!')}
+async function addAllowedGroup(){
+  const jid=G('grp-jid')?.value.trim(),nome=G('grp-nome')?.value.trim()
+  if(!jid){toast('Informe o JID!','e');return}
+  await post('/api/allowedgroups',{jid,nome}); toast('✅ Autorizado!'); loadGrupos()
+  ;[G('grp-jid'),G('grp-nome')].forEach(e=>{if(e)e.value=''})
+}
 async function rmGroup(jid){if(!confirm('Remover?'))return;await del(`/api/allowedgroups/${decodeURIComponent(jid)}`);toast('Removido','i');loadGrupos()}
 
-// ── Logs ─────────────────────────────────────────────────────
+// ── Logs ─────────────────────────────────────────────────────────
 function addLog(e) {
-  const el=G('log-term'); if(!el) return
-  if(el.children.length>500) el.removeChild(el.firstChild)
-  const div=document.createElement('div'); div.className='le'; div.dataset.type=e.type
-  if(curLF!=='all'&&e.type!==curLF) div.style.display='none'
+  const el=G('log-term'); if(!el)return
+  if(el.children.length>400)el.removeChild(el.firstChild)
+  const d=document.createElement('div'); d.className='le'; d.dataset.type=e.type||'info'
+  if(curLF!=='all'&&d.dataset.type!==curLF)d.style.display='none'
   const msg=typeof e.data==='object'?JSON.stringify(e.data):String(e.data||'')
-  div.innerHTML=`<span class="lt">${e.time||''}</span><span class="lk ${e.type||''}">${(e.type||'').toUpperCase()}</span><span class="lm">${msg.slice(0,380)}</span>`
-  el.appendChild(div)
-  if(G('log-auto')?.checked) el.scrollTop=el.scrollHeight
+  d.innerHTML=`<span class="lt">${e.time||''}</span><span class="lk ${e.type||'info'}">${(e.type||'').toUpperCase()}</span><span class="lm">${msg.slice(0,300)}</span>`
+  el.appendChild(d)
+  if(G('log-auto')?.checked)el.scrollTop=el.scrollHeight
 }
 function clearLogs(){const el=G('log-term');if(el)el.innerHTML='';toast('Limpo','i')}
 function setLF(el){curLF=el.dataset.lt;document.querySelectorAll('.fb-btn[data-lt]').forEach(b=>b.classList.remove('on'));el.classList.add('on');document.querySelectorAll('#log-term .le').forEach(e=>{e.style.display=curLF==='all'||e.dataset.type===curLF?'':'none'})}
 
-// ── Termux ───────────────────────────────────────────────────
+// ── Termux / Shell ───────────────────────────────────────────────
 function tl(t,cls=''){const el=G('term-out');if(!el)return;const d=document.createElement('div');d.className='tl'+(cls?' '+cls:'');d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight}
-async function runTerm(){const cmd=G('term-in')?.value.trim();if(!cmd)return;if(G('term-in'))G('term-in').value='';tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout);if(r.stderr)tl(r.stderr,'err');if(r.error&&!r.stdout&&!r.stderr)tl(r.error,'err')}
-async function tq(cmd){tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout);if(r.stderr)tl(r.stderr,'err')}
-async function npmInst(){const p=G('npm-pkg')?.value.trim();if(!p)return;tq('npm install '+p)}
-async function quickNpm(pkg){if(G('npm-pkg'))G('npm-pkg').value=pkg;tq('npm install '+pkg)}
-async function gitPush(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/push',{});if(G('git-res'))G('git-res').textContent=r.ok?(r.message||'✅ Enviado!'):('❌ '+r.reason)}
-async function gitUpd(){if(G('git-res'))G('git-res').textContent='⏳...';const r=await post('/api/github/update',{});if(G('git-res'))G('git-res').textContent=r.updated?`✅ ${r.commits} commit(s)`:('ℹ️ '+r.reason)}
-async function gitPull(){if(G('git-res'))G('git-res').textContent='⏳ Puxando tudo...';const r=await post('/api/github/pull',{});if(G('git-res'))G('git-res').textContent=r.ok?'✅ Bot atualizado do GitHub!':('❌ '+r.reason);if(r.ok){toast('✅ Atualizado!');sfx('install')}}
+async function runTerm(){const cmd=G('term-in')?.value.trim();if(!cmd)return;if(G('term-in'))G('term-in').value='';tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout.trim());if(r.stderr)tl(r.stderr.trim(),'err');if(r.error&&!r.stdout&&!r.stderr)tl(r.error,'err')}
+async function tq(cmd){tl('$ '+cmd);const r=await post('/api/exec',{cmd});if(r.stdout)tl(r.stdout.trim());if(r.stderr)tl(r.stderr.trim(),'err')}
+async function npmInst(){const p=G('npm-pkg')?.value.trim();if(!p)return;tl('$ npm install '+p);const r=await post('/api/npm',{pkg:p});tl(r.stdout?r.stdout.slice(0,300):'feito')}
+async function quickNpm(pkg){if(G('npm-pkg'))G('npm-pkg').value=pkg;tl('$ npm install '+pkg);const r=await post('/api/npm',{pkg});tl(r.stdout?r.stdout.slice(0,300):r.error||'feito',r.error?'err':'')}
+async function gitStatus(){if(G('git-res'))G('git-res').textContent='⏳ verificando...';const r=await api('/api/github/status');if(G('git-res'))G('git-res').textContent=r.ok?`Remote: ${r.remote}\n\n${r.log}`:('❌ '+r.reason)}
+async function gitPush(){if(G('git-res'))G('git-res').textContent='⏳ enviando...';const r=await post('/api/github/push',{});if(G('git-res'))G('git-res').textContent=r.ok?(r.message||'✅ Enviado!'):('❌ '+r.reason);if(r.ok)toast('✅ Push feito!')}
+async function gitPull(){if(G('git-res'))G('git-res').textContent='⏳ baixando tudo...';const r=await post('/api/github/pull',{});if(G('git-res'))G('git-res').textContent=r.ok?'✅ Bot atualizado do GitHub!':('❌ '+r.reason);if(r.ok){toast('✅ Bot atualizado!');sfx('install')}}
+async function gitUpd(){if(G('git-res'))G('git-res').textContent='⏳ verificando...';const r=await post('/api/github/update',{});if(G('git-res'))G('git-res').textContent=r.updated?`✅ ${r.commits} commit(s) aplicados`:('ℹ️ '+r.reason)}
 
-// ── Conectar ─────────────────────────────────────────────────
+// ── Conectar ─────────────────────────────────────────────────────
 async function reqPairing(){const phone=G('pair-phone')?.value.replace(/\D/g,'');if(!phone){toast('Informe o número!','e');return};await post('/api/pairing',{phone});toast('✅ Código solicitado!')}
 async function cleanAuth(mode){
-  if(!confirm(mode==='full'?'⚠️ Resetar sessão (novo QR)?':'Limpar cache mantendo sessão?'))return
+  if(!confirm(mode==='full'?'⚠️ Resetar sessão inteira?':'Limpar cache da sessão?'))return
   const r=G('clean-res');if(r)r.style.display='block'
   const res=await post('/api/clean-auth',{mode})
   if(r){r.textContent=res.ok?res.message:'❌ '+(res.error||'Erro');r.style.color=res.ok?'var(--ac)':'var(--rd)'}
   res.ok?toast(res.message||'✅ Feito!'):toast(res.error||'Erro','e')
 }
 
-// ── PWA — OBRIGATÓRIO BAIXAR ─────────────────────────────────
+// ── PWA ──────────────────────────────────────────────────────────
 let _deferredPrompt = null
 const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone
 
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault(); _deferredPrompt = e
-})
-
-window.addEventListener('appinstalled', () => {
-  const s=G('pwa-screen'); if(s) s.style.display='none'
-  toast('✅ App instalado com sucesso!')
-})
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _deferredPrompt = e })
+window.addEventListener('appinstalled', () => { const s=G('pwa-screen');if(s)s.style.display='none'; toast('✅ App instalado!') })
 
 async function installPWA() {
   sfx('install')
   if (_deferredPrompt) {
     _deferredPrompt.prompt()
-    const { outcome } = await _deferredPrompt.userChoice
+    const {outcome} = await _deferredPrompt.userChoice
     _deferredPrompt = null
-    if (outcome === 'accepted') {
-      const s=G('pwa-screen'); if(s) s.style.display='none'
-    }
+    if (outcome === 'accepted') { const s=G('pwa-screen');if(s)s.style.display='none' }
   } else {
-    const ua = navigator.userAgent.toLowerCase()
-    if (/iphone|ipad|ipod/.test(ua)) {
-      alert('No iPhone:\n1. Toque em Compartilhar ⬆️\n2. "Adicionar à Tela de Início"\n3. Confirme!')
-    } else {
-      alert('No Android/Chrome:\n1. Toque nos 3 pontinhos ⋮\n2. "Adicionar à tela inicial"\n\nOu acesse pelo Chrome para melhor experiência!')
-    }
+    const ua=navigator.userAgent.toLowerCase()
+    if (/iphone|ipad/.test(ua)) alert('No iPhone:\n1. Toque em Compartilhar ⬆️\n2. Toque em "Adicionar à Tela de Início"')
+    else alert('No Chrome/Android:\n1. Menu ⋮\n2. "Adicionar à tela inicial"')
   }
 }
+function skipPWA() { const s=G('pwa-screen');if(s)s.style.display='none' }
 
-function skipPWA() {
-  const s=G('pwa-screen'); if(s) s.style.display='none'
-}
-
-// Mostra tela PWA obrigatória se não for standalone
 if (!_isStandalone) {
-  // Aguarda o app carregar antes de mostrar
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      const s = G('pwa-screen')
-      if (s) s.style.display = 'flex'
-    }, 800)
-  })
+  window.addEventListener('load', () => setTimeout(() => { const s=G('pwa-screen');if(s)s.style.display='flex' }, 1000))
 }
 
-// Registra service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {})
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
 
-// ── SFX Button ───────────────────────────────────────────────
-window.addEventListener('load', () => {
-  const tb = document.querySelector('#tab-dash .tb')
-  if (tb) {
-    const btn = document.createElement('button')
-    btn.id='sfx-btn'; btn.className='btn btn-q btn-sm'
-    btn.style.cssText='padding:5px 9px;font-size:14px;margin-left:4px'
-    btn.title='Sons'; btn.textContent=sfxEnabled()?'🔊':'🔇'
-    btn.onclick=toggleSFX; tb.appendChild(btn)
-  }
-})
-
-// SFX em ações específicas
-document.addEventListener('click', e => {
-  if (e.target.closest('.btn-r, [onclick*="del"],[onclick*="Del"]')) sfx('delete')
-  else if (e.target.closest('.tog-t')) sfx('toggle')
-}, {passive:true})
-
-// ── Animações CSS injetadas ──────────────────────────────────
-document.head.insertAdjacentHTML('beforeend', ``)
-
-// ── Provider UI ───────────────────────────────────────────
-function updateProviderUI() { /* provider selector — both fields always visible */ }
-
-// ── Hooks panel ────────────────────────────────────────────
-async function loadHooks() {
-  // Chama o bot via !hooks equivalent — busca via API exec
-  const r = await post('/api/exec', { cmd: 'echo hooks_loaded' })
-  const el = G('hooks-list'); if (!el) return
-  // Try to get hooks from a dedicated endpoint
-  const hr = await api('/api/hooks').catch(() => null)
-  if (hr && Array.isArray(hr)) {
-    if (!hr.length) { el.innerHTML = '<div class="empty">Nenhum hook ativo</div>'; return }
-    el.innerHTML = hr.map(h => `
-      <div class="ci">
-        <div class="ci-info">
-          <div class="ci-name">🔌 <span style="color:var(--ac)">${h.name}</span> <span class="tag tb2">p${h.priority}</span></div>
-          <div class="ci-desc">ID: <code>${h.id}</code></div>
-        </div>
-        <button class="btn btn-r btn-sm" onclick="removeHookById('${h.id}')"><i class="fas fa-trash"></i></button>
-      </div>`).join('')
-  } else {
-    el.innerHTML = '<div class="empty">Use <code>.hooks</code> no WhatsApp para listar ou <code>.antiword on</code> para criar um hook</div>'
-  }
-}
-
-async function removeHookById(id) {
-  if (!confirm(`Remover hook "${id}"?`)) return
-  const r = await post('/api/hooks/remove', { id })
-  toast(r.ok ? '✅ Hook removido!' : ('❌ ' + (r.error || 'Erro')))
-  loadHooks()
-}
-
-// ════════════════════════════════════════════════════════
-// VFX EXTRAS — Efeitos visuais avançados
-// ════════════════════════════════════════════════════════
-
-// ── Cursor trail ─────────────────────────────────────────
-;(function cursorTrail() {
-  const trail = []
-  const MAX = 8
-  document.addEventListener('mousemove', e => {
-    const dot = document.createElement('div')
-    dot.style.cssText = `position:fixed;width:4px;height:4px;border-radius:50%;pointer-events:none;z-index:9998;left:${e.clientX-2}px;top:${e.clientY-2}px;background:var(--ac);opacity:.5;transition:opacity .4s,transform .4s`
-    document.body.appendChild(dot)
-    trail.push(dot)
-    requestAnimationFrame(() => { dot.style.opacity='0'; dot.style.transform='scale(0)' })
-    if (trail.length > MAX) { trail[0].remove(); trail.shift() }
-    setTimeout(() => { dot.remove(); const i=trail.indexOf(dot); if(i>-1)trail.splice(i,1) }, 400)
-  }, { passive: true })
-})()
-
-// ── Glitch text effect ────────────────────────────────────
-function glitchText(el, duration=400) {
-  if (!el) return
-  const orig = el.textContent
-  const chars = '!<>-_\/[]{}—=+*^?#______'
-  let frame = 0
-  const id = setInterval(() => {
-    el.textContent = orig.split('').map((c, i) => {
-      if (i < frame / 3) return orig[i]
-      return chars[Math.floor(Math.random() * chars.length)]
-    }).join('')
-    if (frame++ > orig.length * 3) { el.textContent = orig; clearInterval(id) }
-  }, 30)
-}
-
-// ── Neon flash on status change ───────────────────────────
-const _origSocket_status = socket.listeners ? null : null
-socket.on('status', ({status}) => {
-  const main = document.querySelector('.main')
-  if (!main) return
-  if (status === 'open') {
-    main.style.transition = 'box-shadow .15s'
-    main.style.boxShadow = '0 0 80px rgba(0,255,136,.18), inset 0 0 80px rgba(0,255,136,.04)'
-    setTimeout(() => { main.style.boxShadow = '' }, 800)
-    // Glitch on bot name
-    setTimeout(() => glitchText(G('dash-title'), 500), 400)
-  }
-})
-
-// ── Log entry color pulse ─────────────────────────────────
-// SFX on logs handled by socket.on log event
-
-// ── Card shimmer on click ─────────────────────────────────
-document.addEventListener('click', e => {
-  const card = e.target.closest('.card')
-  if (!card) return
-  card.style.transition = 'box-shadow .05s'
-  card.style.boxShadow = '0 0 24px rgba(0,255,136,.2)'
-  setTimeout(() => { card.style.boxShadow='' }, 200)
-}, {passive:true})
-
-// ── Online badge — matrix digits ─────────────────────────
-;(function matrixBadge() {
-  const el = G('status-badge')
-  if (!el) return
-  socket.on('status', ({status}) => {
-    if (status !== 'open') return
-    const digits = '01'
-    let i = 0
-    const id = setInterval(() => {
-      if (i++ > 15) return clearInterval(id)
-    }, 60)
-  })
-})()
-
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ─────────────────────────────────────────────────────────
 ;(function init() {
+  // Restore tab from URL hash
   const h = location.hash.replace('#','')
   if (h && G('tab-'+h)) goTab(h)
   else goTab('dash')
