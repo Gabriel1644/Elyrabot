@@ -14,6 +14,7 @@ import { groupsDB, configDB, allowedGroupsDB } from './src/database.js'
 import { initErrorTracker, setTrackerSocket, setTrackerSock } from './src/errorTracker.js'
 import { initGit, pushFullBot, startAutoUpdateScheduler } from './src/github.js'
 import { cleanNum } from './src/permissions.js'
+import { initScheduler } from './src/scheduler.js'
 
 printBanner()
 initErrorTracker()
@@ -135,6 +136,7 @@ async function conectar() {
         }
       }
       startPulse(CONFIG.nome)
+      initScheduler(sock)
 
       // Restaura hooks de mensagem salvos (antiword, autoreact, etc.)
       import('./src/commands/owner/hooks_cmd.js')
