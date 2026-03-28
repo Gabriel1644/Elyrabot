@@ -2,13 +2,23 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#07080f">
 <title>Kaius Dashboard</title>
 <link rel="manifest" href="/manifest.json"/>
 <link rel="icon" href="/icon.svg" type="image/svg+xml"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+<style>
+  .CodeMirror { height: 400px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+</style>
 <style>
 :root{
   --bg:#07080f;--bg2:#0e0f1a;--bg3:#14162a;--bg4:#1c1e35;
@@ -241,10 +251,9 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   <div class="ni on" data-tab="dash"><i class="fas fa-chart-line"></i><span class="ni-label">Dashboard</span></div>
   <div class="ni" data-tab="cmds"><i class="fas fa-terminal"></i><span class="ni-label">Comandos</span></div>
   <div class="ni" data-tab="menus"><i class="fas fa-list"></i><span class="ni-label">Menus</span></div>
-  <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div>
-  <div class="ni" data-tab="ai"><i class="fas fa-magic"></i><span class="ni-label">Criar Cmd</span></div>
-  <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>
-  <div class="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
+  <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div      <div class="ni" data-tab="logs"><i class="fas fa-terminal"></i><span class="ni-label">Logs</span></div>
+      <div class="ni" data-tab="schedule"><i class="fas fa-calendar-alt"></i><span class="ni-label">Agendador</span></div>
+      <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>lass="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
   <div class="ni" data-tab="subdons"><i class="fas fa-star"></i><span class="ni-label">Sub-donos</span></div>
   <div class="ni" data-tab="grupos"><i class="fas fa-shield-alt"></i><span class="ni-label">Grupos</span></div>
   <div class="ni" data-tab="logs"><i class="fas fa-stream"></i><span class="ni-label">Logs</span></div>
@@ -271,10 +280,14 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
     <div class="card"><span class="card-val" id="s-msgs">—</span><div class="card-lbl">💬 Mensagens</div></div>
     <div class="card"><span class="card-val" id="s-cmds">—</span><div class="card-lbl">⚡ Comandos totais</div></div>
     <div class="card"><span class="card-val" id="s-loaded">—</span><div class="card-lbl">📦 Carregados</div></div>
-    <div class="card"><span class="card-val" id="s-uptime" style="font-size:18px">—</span><div class="card-lbl">⏱️ Uptime</div></div>
+        <div class="card"><span class="card-val" id="s-loaded">—</span><div class="card-lbl">📦 Comandos</div></div>
   </div>
-  <div class="pnl">
-    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-fire"></i>Top comandos</div></div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-users"></i>Estatísticas por Grupo</div></div>
+    <div class="pnl-bd">
+      <div id="group-stats-list"><div class="empty">Nenhum dado de grupo ainda</div></div>
+    </div>
+  </div>
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-trophy"></i>Top Comandos</div></div> comandos</div></div>
     <div class="pnl-bd"><div id="top-cmds"><div class="empty">Carregando...</div></div></div>
   </div>
 </div>
@@ -441,6 +454,27 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
       <div id="hooks-list"><div class="empty">Nenhum hook ativo</div></div>
       <div class="hint">🔌 <b>Hooks</b> interceptam mensagens sem tocar no handler.js.<br>Use <code>.antiword on</code> ou <code>.autoreact on ❤️</code> no WhatsApp.</div>
     </div>
+  </div>
+</div>
+
+<!-- AGENDADOR -->
+<div id="tab-schedule" class="tab">
+  <div class="tb"><div class="tb-title">Agendador de Mensagens</div></div>
+  <div class="pnl">
+    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-plus"></i>Novo Agendamento</div></div>
+    <div class="pnl-bd">
+      <div class="fi"><label>Mensagem</label><textarea id="sch-text" placeholder="Olá, esta é uma mensagem agendada!"></textarea></div>
+      <div class="row2">
+        <div class="fi"><label>JID (Grupo ou Privado)</label><input id="sch-jid" placeholder="123456789@g.us"></div>
+        <div class="fi"><label>Horário (HH:MM)</label><input id="sch-time" type="time"></div>
+      </div>
+      <div class="fi"><label class="tog"><input type="checkbox" id="sch-repeat"><span>Repetir diariamente</span></label></div>
+      <button class="btn btn-g" onclick="saveSchedule()"><i class="fas fa-save"></i> Salvar Agendamento</button>
+    </div>
+  </div>
+  <div class="pnl">
+    <div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-list"></i>Agendamentos Ativos</div></div>
+    <div class="pnl-bd" id="schedule-list"><div class="empty">Nenhum agendamento ativo</div></div>
   </div>
 </div>
 
@@ -1047,7 +1081,8 @@ document.querySelectorAll('[data-tab]').forEach(n => {
 
 // ── Dashboard ────────────────────────────────────────────────────
 async function loadStatus() {
-  const d = await api('/api/status'); if (d.error) return
+  const [d, gs, sch] = await Promise.all([api('/api/status'), api('/api/stats/groups'), api('/api/scheduler')])
+  if (d.error) return
   animCount(G('s-msgs'),   parseInt(d.msgs||0))
   animCount(G('s-cmds'),   parseInt(d.cmdsTotal||0))
   animCount(G('s-loaded'), allCmds.length || parseInt(d.cmdsAtivos||0))
@@ -1056,11 +1091,40 @@ async function loadStatus() {
   const dt = G('dash-title'); if (dt) dt.textContent = '✦ '+nm
   const sn = G('sb-nm');     if (sn) sn.textContent = nm
   document.title = nm+' Dashboard'
+  
   const el = G('top-cmds')
   if (el && d.topCmds?.length)
     el.innerHTML = d.topCmds.map(([n,c],i) =>
       `<div class="ci"><div class="ci-info"><div class="ci-name">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]||'▸'} .${n}</div></div><span class="tag tg">${c}×</span></div>`
     ).join('')
+
+  const gel = G('group-stats-list')
+  if (gel && Array.isArray(gs)) {
+    if (!gs.length) gel.innerHTML = '<div class="empty">Nenhum dado de grupo ainda</div>'
+    else gel.innerHTML = gs.sort((a,b) => b.msgs - a.msgs).map(g => 
+      `<div class="ci"><div class="ci-info"><div class="ci-name">${g.name}</div><div class="ci-desc">${g.jid}</div></div><div style="text-align:right"><span class="tag tg">${g.msgs} msgs</span><br><span class="tag tb2">${g.cmds} cmds</span></div></div>`
+    ).join('')
+  }
+
+  const sel = G('schedule-list')
+  if (sel && typeof sch === 'object') {
+    const tasks = Object.values(sch)
+    if (!tasks.length) sel.innerHTML = '<div class="empty">Nenhum agendamento ativo</div>'
+    else sel.innerHTML = tasks.map(t => 
+      `<div class="ci"><div class="ci-info"><div class="ci-name">${t.time} - ${t.repeat ? 'Diário' : 'Uma vez'}</div><div class="ci-desc">${t.text.slice(0,30)}...</div></div><button class="btn btn-r btn-sm" onclick="deleteSchedule('${t.id}')"><i class="fas fa-trash"></i></button></div>`
+    ).join('')
+  }
+}
+
+async function saveSchedule() {
+  const text = G('sch-text').value, jid = G('sch-jid').value, time = G('sch-time').value, repeat = G('sch-repeat').checked
+  if (!text || !jid || !time) return toast('Preencha tudo!', 'e')
+  const r = await post('/api/scheduler', { text, jid, time, repeat })
+  if (r.ok) { toast('Agendado!'); G('sch-text').value = ''; loadStatus() }
+}
+
+async function deleteSchedule(id) {
+  if (confirm('Excluir?')) { await api('/api/scheduler/'+id, { method: 'DELETE' }); loadStatus() }
 }
 
 // ── Comandos ─────────────────────────────────────────────────────
@@ -1433,8 +1497,17 @@ async function uploadAutoMedia(input) {
   }catch(e){if(s){s.textContent='❌ '+e.message;s.style.color='var(--rd)'}}
 }
 
-// ── IA Criar CMD ─────────────────────────────────────────────────
-async function genCmd() {
+  // ── CodeMirror Init ──────────────────────────────────────────
+  let aiEditor, manEditor
+  window.addEventListener('load', () => {
+    const aiCode = G('ai-code')
+    if (aiCode) aiEditor = CodeMirror.fromTextArea(aiCode, { mode: 'javascript', theme: 'dracula', lineNumbers: true, lineWrapping: true })
+    const manCode = G('man-code')
+    if (manCode) manEditor = CodeMirror.fromTextArea(manCode, { mode: 'javascript', theme: 'dracula', lineNumbers: true, lineWrapping: true })
+  })
+
+  // ── IA Criar CMD ─────────────────────────────────────────────────
+  async function genCmd() {
   const desc=G('ai-desc')?.value.trim()
   if(!desc){toast('Descreva o comando!','e');return}
   const provider=G('ai-gen-provider')?.value||'auto'
@@ -1444,7 +1517,8 @@ async function genCmd() {
   try {
     const r=await post('/api/ai/generate-command',{descricao:desc,provider,category:cat})
     if(r.error){toast(r.error,'e');return}
-    if(G('ai-code'))G('ai-code').value=r.code
+    if(aiEditor) aiEditor.setValue(r.code)
+    else if(G('ai-code'))G('ai-code').value=r.code
     if(G('ai-res'))G('ai-res').style.display='block'
     const via={'manus':'🤖 Manus','groq':'⚡ Groq','gemini':'🔷 Gemini'}[r.via]||r.via||provider
     toast('✅ Gerado via '+via+'!'); sfx('install')
@@ -1452,7 +1526,8 @@ async function genCmd() {
 }
 function copyCode(){navigator.clipboard?.writeText(G('ai-code')?.value||'');toast('Copiado!')}
 async function installGen() {
-  const code=G('ai-code')?.value.trim(),cat=G('ai-cat')?.value
+  const code = aiEditor ? aiEditor.getValue().trim() : G('ai-code')?.value.trim()
+  const cat = G('ai-cat')?.value
   let name=G('ai-file')?.value.trim()
   if(!code){toast('Nenhum código!','e');return}
   if(!name){const m=code.match(/name:\s*['"]([^'"]+)['"]/);name=m?.[1]||('cmd_'+Date.now())}
@@ -1461,7 +1536,9 @@ async function installGen() {
   else toast('Erro: '+(r.error||''),'e')
 }
 async function installManual() {
-  const name=G('man-name')?.value.trim(), code=G('man-code')?.value.trim(), cat=G('man-cat')?.value
+  const name = G('man-name')?.value.trim()
+  const code = manEditor ? manEditor.getValue().trim() : G('man-code')?.value.trim()
+  const cat = G('man-cat')?.value
   if(!name||!code){toast('Preencha nome e código!','e');return}
   const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
   if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
