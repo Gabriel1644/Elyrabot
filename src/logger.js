@@ -80,7 +80,7 @@ export function logError(msg) {
 //  │  ⚡ .menu
 //  └───────────────────────────────────────────────────────
 
-export function logMsg({ usuario, grupo, conteudo, tipo, comando, userId }) {
+export function logMsg({ usuario, grupo, conteudo, tipo, comando, userId, from }) {
   const h   = getTime()
   const isG = tipo === 'GRUPO'
 
@@ -125,6 +125,17 @@ export function logMsg({ usuario, grupo, conteudo, tipo, comando, userId }) {
   const today = new Date().toISOString().split('T')[0]
   const tot   = statsDB.get('total', {})
   statsDB.set('total', { ...tot, msgs: (tot.msgs || 0) + 1 })
+  
+  // Estatísticas por grupo
+  if (tipo === 'GRUPO' && from) {
+    const groupStats = statsDB.get('groups', {})
+    if (!groupStats[from]) groupStats[from] = { msgs: 0, cmds: 0, name: grupo || 'Grupo' }
+    groupStats[from].msgs++
+    if (comando) groupStats[from].cmds++
+    if (grupo) groupStats[from].name = grupo
+    statsDB.set('groups', groupStats)
+  }
+
   if (comando) {
     const cmds = statsDB.get('commands', {})
     cmds[comando] = (cmds[comando] || 0) + 1

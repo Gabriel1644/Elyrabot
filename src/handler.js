@@ -166,7 +166,13 @@ export async function handleMessage(sock, msg) {
       if (isGrupo) {
         try { const m = await sock.groupMetadata(from); grupoNome = m.subject } catch {}
       }
-      trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
+      const res = trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
+      if (res?.up && CONFIG.notifyLevelUp !== false) {
+        await sock.sendMessage(from, { 
+          text: `🆙 *LEVEL UP!* @${userId.split('@')[0]}\n\n✨ Você subiu para o nível *${res.level}*!\n📊 XP: ${res.xp} / ${res.xpProx}`,
+          mentions: [userId]
+        })
+      }
     }
     _trackAsync().catch(() => {})
   }
@@ -454,7 +460,7 @@ export async function handleMessage(sock, msg) {
     return msgCooldown.replace('{cmd}', p + cmdName).replace('{tempo}', tempo).replace('{nome}', usuario)
   }
 
-  logMsg({ usuario, grupo: nomeGrupo, conteudo: texto, tipo, comando: cmdNome, userId })
+  logMsg({ usuario, grupo: nomeGrupo, conteudo: texto, tipo, comando: cmdNome, userId, from })
 
   // ── Permissão: override por comando > padrão por categoria ──
   const cmdPerm = cmdPermsDB.get(cmd.name, null)

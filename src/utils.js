@@ -133,6 +133,18 @@ export function getMentionedJids(msg) {
 export function getMessageText(msg) {
   const m = msg?.message
   if (!m) return ''
+  
+  // Extrai texto de mensagens interativas (botões novos)
+  let interactiveText = ''
+  if (m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson) {
+    try {
+      const params = JSON.parse(m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson)
+      interactiveText = params.id || params.selected_id || ''
+    } catch {
+      interactiveText = m.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson
+    }
+  }
+
   return (
     m.conversation                            ||
     m.extendedTextMessage?.text               ||
@@ -143,7 +155,7 @@ export function getMessageText(msg) {
     m.buttonsResponseMessage?.selectedDisplayText ||
     m.listResponseMessage?.singleSelectReply?.selectedRowId ||
     m.templateButtonReplyMessage?.selectedDisplayText ||
-    m.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson ||
+    interactiveText                           ||
     m.ephemeralMessage?.message?.conversation ||
     m.viewOnceMessage?.message?.imageMessage?.caption ||
     m.viewOnceMessage?.message?.videoMessage?.caption ||

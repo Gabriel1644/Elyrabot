@@ -11,12 +11,13 @@ import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
-import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB } from './database.js'
+import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB } from './database.js'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
 import { getMinionList, getMinionStats, addSubdono, removeSubdono, listSubdonos, ROLE_NAMES } from './permissions.js'
 import { getAllContribs, getContribStats, approveContrib, rejectContrib } from './contributions.js'
+import { pullFullBot } from './github.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -148,13 +149,14 @@ export function startDashboard() {
   })
 
   app.post('/api/commands/:name/source', auth, async (req, res) => {
-    res.setHeader('Content-Type', 'application/json')  // force JSON response always
+    res.setHeader('Content-Type', 'application/json')
     try {
-      const { source, category } = req.body
-      if (!source) return res.status(400).json({ error: 'Source (código) é obrigatório' })
+      const { source, category, code } = req.body
+      const finalSource = source || code
+      if (!finalSource) return res.status(400).json({ error: 'Source (código) é obrigatório' })
       const name = req.params.name
       if (!name || name.length < 1) return res.status(400).json({ error: 'Nome inválido' })
-      await createCommand({ name, code: source, category: category || 'misc' })
+      await createCommand({ name, code: finalSource, category: category || 'misc' })
       res.json({ ok: true, name, category: category || 'misc' })
     } catch (e) {
       res.status(500).json({ error: e.message || 'Erro interno' })
@@ -255,8 +257,27 @@ export function startDashboard() {
 
   app.get('/api/groups', auth, (req, res) => res.json(groupsDB.all()))
 
+  app.get('/api/stats/groups', auth, (req, res) => {
+    const groups = statsDB.get('groups', {})
+    res.json(Object.entries(groups).map(([jid, data]) => ({ jid, ...data })))
+  })
+
   app.get('/api/rpg/ranking', auth, (req, res) => {
     res.json(Object.values(rpgDB.all()).sort((a, b) => b.nivel - a.nivel).slice(0, 20))
+  })
+
+  // ── Agendador ──────────────────────────────────────────
+  app.get('/api/scheduler', auth, (req, res) => res.json(schedulerDB.all()))
+  app.post('/api/scheduler', auth, (req, res) => {
+    const { id, text, jid, time, repeat } = req.body
+    if (!text || !jid || !time) return res.status(400).json({ error: 'Campos obrigatórios faltando' })
+    const newId = id || Date.now().toString()
+    schedulerDB.set(newId, { id: newId, text, jid, time, repeat, enabled: true })
+    res.json({ ok: true, id: newId })
+  })
+  app.delete('/api/scheduler/:id', auth, (req, res) => {
+    schedulerDB.delete(req.params.id)
+    res.json({ ok: true })
   })
 
   // ── Pairing ──────────────────────────────────────────────

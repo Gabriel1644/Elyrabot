@@ -10,7 +10,7 @@ const DEFAULTS = {
   groqKey:        process.env.GROQ_API_KEY  || '',
   geminiKey:      process.env.GEMINI_API_KEY || '',
   aiProvider:     process.env.AI_PROVIDER    || 'auto',
-  dashboardPort:  parseInt(process.env.DASHBOARD_PORT) || 3000,
+  dashboardPort:  parseInt(process.env.DASHBOARD_PORT || process.env.PORT) || 3000,
   dashboardPass:  process.env.DASHBOARD_PASS || '',
   dashboardAI:    process.env.DASHBOARD_AI !== 'false',
   iaAtivaPadrao:  process.env.IA_DEFAULT === 'true',

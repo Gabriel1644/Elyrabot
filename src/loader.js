@@ -82,6 +82,14 @@ export async function createCommand({ name, code, category = 'misc' }) {
   const file = path.join(dir, `${name}.js`)
   fs.writeFileSync(file, code, 'utf-8')
   logOk(`Comando '${name}' criado em ${category}/`)
+  
+  // Auto-upload para o GitHub se configurado
+  if (CONFIG.autoUpload || process.env.AUTO_UPLOAD === 'true') {
+    import('./github.js').then(m => {
+      m.uploadCommand({ name, category, code }).catch(() => {})
+    }).catch(() => {})
+  }
+
   await loadCommands()
   return file
 }

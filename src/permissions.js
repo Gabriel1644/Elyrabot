@@ -91,6 +91,16 @@ export function trackUser({ userId, usuario, isGrupo, grupo, from }) {
   if (!num) return
   const now      = Date.now()
   const existing = minionsDB.get(num, null)
+  
+  // Sistema de Níveis (XP)
+  const xpGanho = Math.floor(Math.random() * 11) + 5 // 5 a 15 XP por msg
+  const xpAtual = (existing?.xp || 0) + xpGanho
+  const lvlAtual = existing?.level || 1
+  const xpProx = lvlAtual * lvlAtual * 100 // Fórmula simples: lvl^2 * 100
+  
+  let novoLvl = lvlAtual
+  if (xpAtual >= xpProx) novoLvl++
+
   minionsDB.set(num, {
     num,
     nome:        usuario || existing?.nome || 'Desconhecido',
@@ -101,7 +111,12 @@ export function trackUser({ userId, usuario, isGrupo, grupo, from }) {
     grupos:      [...new Set([...(existing?.grupos || []), ...(isGrupo && grupo ? [grupo] : [])])].slice(-10),
     role:        getRole(userId),
     bloqueado:   isBanido(userId),
+    xp:          xpAtual,
+    level:       novoLvl,
+    up:          novoLvl > lvlAtual // Flag para avisar no chat se subiu
   })
+
+  return { up: novoLvl > lvlAtual, level: novoLvl, xp: xpAtual, xpProx }
 }
 
 export function getMinionStats() {
