@@ -15,9 +15,11 @@ import { initErrorTracker, setTrackerSocket, setTrackerSock } from './src/errorT
 import { initGit, pushFullBot, startAutoUpdateScheduler } from './src/github.js'
 import { cleanNum } from './src/permissions.js'
 import { initScheduler } from './src/scheduler.js'
+import { initCleaner } from './src/cleaner.js'
 
 printBanner()
 initErrorTracker()
+initCleaner(12) // Limpeza a cada 12h
 
 // ── Dashboard — iniciado UMA SÓ VEZ ──────────────────────
 const io = startDashboard()
@@ -79,10 +81,12 @@ async function conectar() {
     auth:                state,
     printQRInTerminal:   false,
     logger:              pino({ level: 'silent' }),
-    browser:             ['Windows', 'Chrome', '121.0.6167.184'],
-    connectTimeoutMs:    60000,
-    keepAliveIntervalMs: 30000,
-    markOnlineOnConnect: true,
+    browser:             ['Termux', 'Chrome', '121.0.6167.184'],
+    connectTimeoutMs:    30000,
+    keepAliveIntervalMs: 60000, // Menos keep-alive = menos bateria
+    markOnlineOnConnect: false, // Menos tráfego inicial
+    shouldSyncHistoryMessage: () => false, // NÃO sincroniza histórico (economiza MUITA RAM)
+    getMessage: async (key) => { return { conversation: '' } } // Cache de msg vazio
   })
 
   _sock = sock
