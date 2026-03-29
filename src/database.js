@@ -23,7 +23,12 @@ class JsonDB {
   }
 
   save() {
-    fs.writeFileSync(this.file, JSON.stringify(this.data, null, 2))
+    if (this._timer) clearTimeout(this._timer)
+    this._timer = setTimeout(() => {
+      try {
+        fs.writeFileSync(this.file, JSON.stringify(this.data, null, 2))
+      } catch (e) { console.error(`[DB ERROR] ${this.file}:`, e.message) }
+    }, 2000) // Aguarda 2s de inatividade para salvar (Debounce)
   }
 
   get(key, def = null) {
@@ -39,6 +44,12 @@ class JsonDB {
   delete(key) {
     delete this.data[key]
     this.save()
+  }
+
+  // Força o salvamento imediato (ex: ao desligar o bot)
+  flush() {
+    if (this._timer) clearTimeout(this._timer)
+    fs.writeFileSync(this.file, JSON.stringify(this.data, null, 2))
   }
 
   has(key) { return key in this.data }

@@ -12,6 +12,7 @@ import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB } from './database.js'
+import os from 'os'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
@@ -278,6 +279,64 @@ export function startDashboard() {
   app.delete('/api/scheduler/:id', auth, (req, res) => {
     schedulerDB.delete(req.params.id)
     res.json({ ok: true })
+  })
+
+  // ── Gerenciador de Arquivos ─────────────────────────────
+  app.get('/api/files', auth, (req, res) => {
+    const dir = req.query.path || ''
+    const fullPath = path.join(ROOT, dir)
+    if (!fullPath.startsWith(ROOT)) return res.status(403).json({ error: 'Acesso negado' })
+    try {
+      const files = fs.readdirSync(fullPath).map(f => {
+        const s = fs.statSync(path.join(fullPath, f))
+        return { name: f, isDir: s.isDirectory(), size: s.size, mtime: s.mtime }
+      })
+      res.json(files)
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  app.delete('/api/files', auth, (req, res) => {
+    const { path: filePath } = req.query
+    const fullPath = path.join(ROOT, filePath)
+    if (!fullPath.startsWith(ROOT) || filePath === '.env') return res.status(403).json({ error: 'Acesso negado' })
+    try {
+      if (fs.statSync(fullPath).isDirectory()) fs.rmSync(fullPath, { recursive: true })
+      else fs.unlinkSync(fullPath)
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Monitor de Recursos ─────────────────────────────────
+  app.get('/api/system/usage', auth, (req, res) => {
+    const free = os.freemem(), total = os.totalmem()
+    res.json({
+      ram: { free, total, used: total - free, percent: ((total - free) / total * 100).toFixed(1) },
+      cpu: os.loadavg(),
+      uptime: os.uptime(),
+      platform: os.platform()
+    })
+  })
+
+  // ── Controle de Grupos ──────────────────────────────────
+  app.post('/api/groups/broadcast', auth, async (req, res) => {
+    const { text } = req.body
+    if (!text) return res.status(400).json({ error: 'Texto vazio' })
+    const groups = Object.keys(groupsDB.all())
+    let count = 0
+    for (const gid of groups) {
+      try {
+        await _sock.sendMessage(gid, { text })
+        count++
+      } catch {}
+    }
+    res.json({ ok: true, sent: count })
+  })
+
+  app.post('/api/groups/leave/:jid', auth, async (req, res) => {
+    try {
+      await _sock.groupLeave(req.params.jid)
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
   })
 
   // ── Pairing ──────────────────────────────────────────────
