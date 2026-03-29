@@ -252,6 +252,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   <div class="ni" data-tab="cmds"><i class="fas fa-terminal"></i><span class="ni-label">Comandos</span></div>
   <div class="ni" data-tab="menus"><i class="fas fa-list"></i><span class="ni-label">Menus</span></div>
   <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div      <div class="ni" data-tab="logs"><i class="fas fa-terminal"></i><span class="ni-label">Logs</span></div>
+      <div class="ni" data-tab="files"><i class="fas fa-folder-open"></i><span class="ni-label">Arquivos</span></div>
       <div class="ni" data-tab="schedule"><i class="fas fa-calendar-alt"></i><span class="ni-label">Agendador</span></div>
       <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>lass="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
   <div class="ni" data-tab="subdons"><i class="fas fa-star"></i><span class="ni-label">Sub-donos</span></div>
@@ -281,6 +282,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
     <div class="card"><span class="card-val" id="s-cmds">—</span><div class="card-lbl">⚡ Comandos totais</div></div>
     <div class="card"><span class="card-val" id="s-loaded">—</span><div class="card-lbl">📦 Carregados</div></div>
         <div class="card"><span class="card-val" id="s-loaded">—</span><div class="card-lbl">📦 Comandos</div></div>
+    <div class="card"><span class="card-val" id="s-ram">—</span><div class="card-lbl">🧠 RAM</div></div>
   </div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-users"></i>Estatísticas por Grupo</div></div>
     <div class="pnl-bd">
@@ -455,6 +457,14 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
       <div class="hint">🔌 <b>Hooks</b> interceptam mensagens sem tocar no handler.js.<br>Use <code>.antiword on</code> ou <code>.autoreact on ❤️</code> no WhatsApp.</div>
     </div>
   </div>
+</div>
+
+<!-- ARQUIVOS -->
+<div id="tab-files" class="tab">
+  <div class="tb"><div class="tb-title">Gerenciador de Arquivos</div>
+    <div class="tb-right"><button class="btn btn-q btn-sm" onclick="loadFiles('')"><i class="fas fa-home"></i></button></div>
+  </div>
+  <div class="pnl"><div class="pnl-bd" id="file-list"><div class="empty">Carregando...</div></div></div>
 </div>
 
 <!-- AGENDADOR -->
@@ -1081,11 +1091,12 @@ document.querySelectorAll('[data-tab]').forEach(n => {
 
 // ── Dashboard ────────────────────────────────────────────────────
 async function loadStatus() {
-  const [d, gs, sch] = await Promise.all([api('/api/status'), api('/api/stats/groups'), api('/api/scheduler')])
+  const [d, gs, sch, sys] = await Promise.all([api('/api/status'), api('/api/stats/groups'), api('/api/scheduler'), api('/api/system/usage')])
   if (d.error) return
   animCount(G('s-msgs'),   parseInt(d.msgs||0))
   animCount(G('s-cmds'),   parseInt(d.cmdsTotal||0))
   animCount(G('s-loaded'), allCmds.length || parseInt(d.cmdsAtivos||0))
+  if (sys && sys.ram) G('s-ram').textContent = sys.ram.percent + '%'
   const ut = G('s-uptime'); if (ut) ut.textContent = d.uptime||'—'
   const nm = d.nome||'KaiusBot'
   const dt = G('dash-title'); if (dt) dt.textContent = '✦ '+nm
@@ -1126,6 +1137,31 @@ async function saveSchedule() {
 async function deleteSchedule(id) {
   if (confirm('Excluir?')) { await api('/api/scheduler/'+id, { method: 'DELETE' }); loadStatus() }
 }
+
+// ── Arquivos ─────────────────────────────────────────────────────
+let currentPath = ''
+async function loadFiles(path) {
+  currentPath = path
+  const files = await api('/api/files?path='+path)
+  const el = G('file-list')
+  if (!Array.isArray(files)) return el.innerHTML = '<div class="empty">Erro ao carregar</div>'
+  el.innerHTML = files.map(f => `
+    <div class="ci">
+      <div class="ci-info" onclick="${f.isDir ? `loadFiles('${path}/${f.name}')` : ''}" style="cursor:${f.isDir?'pointer':'default'}">
+        <div class="ci-name"><i class="fas ${f.isDir?'fa-folder':'fa-file'}"></i> ${f.name}</div>
+        <div class="ci-desc">${f.isDir ? 'Pasta' : (f.size/1024).toFixed(1)+' KB'}</div>
+      </div>
+      ${f.name !== '.env' ? `<button class="btn btn-r btn-sm" onclick="deleteFile('${path}/${f.name}')"><i class="fas fa-trash"></i></button>` : ''}
+    </div>
+  `).join('')
+}
+async function deleteFile(path) {
+  if (confirm('Deletar permanentemente?')) {
+    await api('/api/files?path='+path, { method: 'DELETE' })
+    loadFiles(currentPath)
+  }
+}
+window.addEventListener('load', () => loadFiles(''))
 
 // ── Comandos ─────────────────────────────────────────────────────
 async function loadCmds() {
