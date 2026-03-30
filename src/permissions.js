@@ -2,7 +2,9 @@
 //  permissions.js — Sistema de permissões
 // ══════════════════════════════════════════════════════════
 import { CONFIG } from './config.js'
-import { subdonsDB, minionsDB } from './database.js'
+import { subdonsDB, minionsDB, allowedGroupsDB } from './database.js'
+import JsonDB from './database.js'
+export const bannedGroupsDB = new JsonDB('banned_groups')
 
 export const ROLES = { DONO: 1, SUBDONO: 2, ADMIN: 3, VIP: 4, USUARIO: 5, BANIDO: 99 }
 export const ROLE_NAMES = { 1:'👑 Dono', 2:'🌟 Sub-dono', 3:'⭐ Admin', 4:'💎 VIP', 5:'👤 Usuário', 99:'🚫 Banido' }
@@ -149,3 +151,14 @@ export function getMinionList(filter = 'all', page = 0, size = 20) {
 export function getMinionByNum(num) {
   return minionsDB.get(cleanNum(num), null)
 }
+
+// ── Grupos ────────────────────────────────────────────────
+export function isGroupAllowed(jid) {
+  if (bannedGroupsDB.has(jid)) return false
+  if (!CONFIG.restrictGroups) return true
+  return allowedGroupsDB.has(jid)
+}
+
+export function banGroup(jid) { bannedGroupsDB.set(jid, true) }
+export function unbanGroup(jid) { bannedGroupsDB.delete(jid) }
+export function isGroupBanned(jid) { return bannedGroupsDB.has(jid) }

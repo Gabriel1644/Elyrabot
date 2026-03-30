@@ -12,7 +12,7 @@ import { isLikelyCode, processCodeInChat } from './codeDetector.js'
 import { handleContribReply } from './contributions.js'
 import {
   getRole, isDono, isSubdono, isBanido, trackUser,
-  hasPermission, getSubdonoPerms, cleanNum, ROLES, ROLE_NAMES
+  hasPermission, getSubdonoPerms, cleanNum, ROLES, ROLE_NAMES, isGroupAllowed
 } from './permissions.js'
 import { cmdPermsDB } from './database.js'
 import { runHooks } from './hooks.js'
@@ -101,9 +101,20 @@ export async function handleMessage(sock, msg) {
   if (!from) return
 
   const isGrupo = from.endsWith('@g.us')
+  if (isGrupo && !isGroupAllowed(from)) return // Bloqueio de grupo (Bangp ou Restrição)
   const tipo    = isGrupo ? 'GRUPO' : 'PRIVADO'
   const texto   = getMessageText(msg) || ''
   const p       = CONFIG.prefixosGrupo?.[from] || CONFIG.prefixo || '!'
+
+  // ── Auto-Resposta IA ────────────────────────────────────
+  const autoIA = automationsDB.get('auto_ia', [])
+  for (const a of autoIA) {
+    if (a.enabled && texto.toLowerCase().includes(a.keyword.toLowerCase())) {
+      const prompt = `Responda a esta mensagem baseando-se nesta instrução: "${a.response}". Mensagem do usuário: "${texto}"`
+      const aiResp = await handleAIResponse(prompt, userId)
+      if (aiResp) return sock.sendMessage(from, { text: aiResp }, { quoted: msg })
+    }
+  }
 
   // Declarar cedo — usados em automações e hooks antes do metadata fetch
   let nomeGrupo = null

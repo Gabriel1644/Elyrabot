@@ -28,6 +28,8 @@
 // ══════════════════════════════════════════════════════════
 
 import { logInfo, logWarn } from './logger.js'
+import { automationsDB } from './database.js'
+import axios from 'axios'
 
 // Mapa de hooks registrados: id → hook
 const _hooks = new Map()
@@ -81,6 +83,29 @@ export function listHooks() {
  * Chamado pelo handler.js antes do processamento de comandos.
  */
 export async function runHooks(ctx) {
+  // ── 1. Super Hooks (Event Streamer / Webhooks) ──────────
+  const webhooks = automationsDB.get('hooks', [])
+  if (webhooks.length) {
+    const payload = {
+      event: 'message',
+      timestamp: Date.now(),
+      data: {
+        from: ctx.from,
+        pushName: ctx.usuario,
+        text: ctx.texto,
+        isGrupo: ctx.isGrupo,
+        userId: ctx.userId,
+        key: ctx.msg.key
+      }
+    }
+    for (const wh of webhooks) {
+      if (wh.enabled && wh.url) {
+        axios.post(wh.url, payload, { timeout: 2000 }).catch(() => {})
+      }
+    }
+  }
+
+  // ── 2. Hooks Internos (Lógica de Comandos) ──────────────
   const hooks = listHooks()
   for (const hook of hooks) {
     try {

@@ -12,7 +12,6 @@ import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB } from './database.js'
-import os from 'os'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
@@ -335,6 +334,60 @@ export function startDashboard() {
   app.post('/api/groups/leave/:jid', auth, async (req, res) => {
     try {
       await _sock.groupLeave(req.params.jid)
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Webhooks (Super Hooks) ──────────────────────────────
+  app.get('/api/webhooks', auth, (req, res) => {
+    res.json(automationsDB.get('hooks', []))
+  })
+
+  app.post('/api/webhooks', auth, (req, res) => {
+    const { name, url, enabled } = req.body
+    if (!name || !url) return res.status(400).json({ error: 'Nome e URL obrigatórios' })
+    const hooks = automationsDB.get('hooks', [])
+    const id = Date.now().toString()
+    hooks.push({ id, name, url, enabled: enabled !== false })
+    automationsDB.set('hooks', hooks)
+    res.json({ ok: true, id })
+  })
+
+  app.delete('/api/webhooks/:id', auth, (req, res) => {
+    const hooks = automationsDB.get('hooks', []).filter(h => h.id !== req.params.id)
+    automationsDB.set('hooks', hooks)
+    res.json({ ok: true })
+  })
+
+  // ── Auto-Resposta IA ────────────────────────────────────
+  app.get('/api/auto-ia', auth, (req, res) => {
+    res.json(automationsDB.get('auto_ia', []))
+  })
+
+  app.post('/api/auto-ia', auth, (req, res) => {
+    const { keyword, response, enabled } = req.body
+    if (!keyword || !response) return res.status(400).json({ error: 'Palavra-chave e resposta obrigatórias' })
+    const list = automationsDB.get('auto_ia', [])
+    list.push({ id: Date.now().toString(), keyword, response, enabled: enabled !== false })
+    automationsDB.set('auto_ia', list)
+    res.json({ ok: true })
+  })
+
+  app.delete('/api/auto-ia/:id', auth, (req, res) => {
+    const list = automationsDB.get('auto_ia', []).filter(h => h.id !== req.params.id)
+    automationsDB.set('auto_ia', list)
+    res.json({ ok: true })
+  })
+
+  // ── Gerenciador de Plugins (Instalação via URL) ──────────
+  app.post('/api/plugins/install', auth, async (req, res) => {
+    const { url, name } = req.body
+    if (!url || !name) return res.status(400).json({ error: 'URL e nome obrigatórios' })
+    try {
+      const { default: axios } = await import('axios')
+      const { data } = await axios.get(url)
+      const { createCommand } = await import('./loader.js')
+      await createCommand({ name, code: data, category: 'misc' })
       res.json({ ok: true })
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
