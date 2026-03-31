@@ -1686,13 +1686,30 @@ async function installGen() {
   else toast('Erro: '+(r.error||''),'e')
 }
 async function installManual() {
-  const name = G('man-name')?.value.trim()
-  const code = manEditor ? manEditor.getValue().trim() : G('man-code')?.value.trim()
-  const cat = G('man-cat')?.value
-  if(!name||!code){toast('Preencha nome e código!','e');return}
-  const r=await post(`/api/commands/${name}/source`,{source:code,category:cat||'misc'})
-  if(r.ok){toast(`✅ .${name} instalado!`);sfx('install');await loadCmds();openMtModal(name)}
-  else toast('Erro: '+(r.error||''),'e')
+  const name = (G('man-name')?.value||'').trim()
+  // Get code from CodeMirror if available, otherwise raw textarea
+  const code = (typeof manEditor !== 'undefined' && manEditor)
+    ? manEditor.getValue().trim()
+    : (G('man-code')?.value||'').trim()
+  const cat = G('man-cat')?.value || 'misc'
+  if (!name) { toast('Informe o nome do comando!','e'); return }
+  if (!code) { toast('Escreva o código!','e'); return }
+  if (!code.includes('export default') && !code.includes('export const') && !code.includes('export function')) {
+    if (!confirm('O código não parece ter um export. Continuar mesmo assim?')) return
+  }
+  const btn = event?.target?.closest('button')
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Instalando...' }
+  try {
+    const r = await post(`/api/commands/${name}/source`, {source:code, category:cat})
+    if (r.ok) {
+      toast(`✅ .${name} instalado!`); sfx('install')
+      await loadCmds(); openMtModal(name)
+    } else {
+      toast('Erro: ' + (r.error||'Falha desconhecida'), 'e')
+    }
+  } finally {
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Salvar & Instalar' }
+  }
 }
 async function loadHooks() {
   const r=await api('/api/hooks').catch(()=>null)
