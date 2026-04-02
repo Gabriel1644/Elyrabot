@@ -207,6 +207,7 @@ export function startDashboard() {
       botEmoji:       CONFIG.botEmoji    || '',
       botDescricao:   CONFIG.botDescricao|| '',
       welcomeMsg:     CONFIG.welcomeMsg  || '',
+      msgCmdNaoEncontrado: CONFIG.msgCmdNaoEncontrado || '',
       msgBanido:      CONFIG.msgBanido   || '',
       msgCooldown:    CONFIG.msgCooldown || '',
       msgSemPerm:     CONFIG.msgSemPerm  || '',
@@ -216,7 +217,7 @@ export function startDashboard() {
   app.post('/api/config', auth, (req, res) => {
     const allowed = ['prefixo', 'nome', 'personalidade', 'modelo', 'antiSpam', 'owner',
       'bannerMenu', 'autoCodeDetect', 'codeOwnerOnly', 'iaAtivaPadrao',
-      'botEmoji', 'botDescricao', 'welcomeMsg', 'msgBanido', 'msgCooldown', 'msgSemPerm', 'fuzzyCommands']
+      'botEmoji', 'botDescricao', 'welcomeMsg', 'msgCmdNaoEncontrado', 'msgBanido', 'msgCooldown', 'msgSemPerm', 'fuzzyCommands']
     for (const k of allowed) {
       if (k in req.body) CONFIG[k] = req.body[k]
     }

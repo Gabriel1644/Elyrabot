@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { logInfo, logOk, logWarn } from './logger.js'
+import { loadHooksFromModule, removeHook, listHooks } from './hooks.js'
 import { configDB } from './database.js'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // metadados editados pelo painel         // ← único import
@@ -45,6 +46,8 @@ export async function loadCommands() {
         const v = mtime !== cached_mtime ? mtime : (cached_mtime || 0)
         _fileModTimes.set(fp, mtime)
         const mod  = await import(`${fp}?v=${v}`)
+        // Auto-load hooks declared in this module
+        loadHooksFromModule(mod, fp)
         const cmds = Array.isArray(mod.default) ? mod.default : [mod.default]
         for (const cmd of cmds) {
           if (!cmd?.name) { logWarn(`Sem nome: ${file}`); continue }

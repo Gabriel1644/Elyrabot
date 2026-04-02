@@ -380,9 +380,14 @@ export async function handleMessage(sock, msg) {
   if (!isMe) {
     const hookCtx = {
       sock, msg, from, userId, usuario, texto, isGrupo,
-      nomeGrupo: null,  // será preenchido se precisar
-      reply: (text) => sock.sendMessage(from, { text, quoted: msg }),
-      react: (e)    => sock.sendMessage(from, { react: { text: e, key: msg.key } }),
+      nomeGrupo,         // nome do grupo (pode ser null em privado)
+      membros,           // array de participantes do grupo
+      p,                 // prefixo configurado
+      args: texto.split(' ').slice(1),
+      reply:    (text, opts={}) => sock.sendMessage(from, { text, quoted: msg, ...opts }),
+      react:    (e)             => sock.sendMessage(from, { react: { text: e, key: msg.key } }),
+      sendText: (jid, text)     => sock.sendMessage(jid,  { text }),
+      mention:  (jid, text)     => sock.sendMessage(from, { text, mentions: [jid] }),
     }
     const stopped = await runHooks(hookCtx)
     if (stopped) return  // Hook parou a propagação
@@ -445,7 +450,18 @@ export async function handleMessage(sock, msg) {
     cmd = fuzzyMatch(cmdNome)
   }
 
-  if (!cmd) return
+  if (!cmd) {
+    // Mensagem de comando não encontrado (configurável no painel)
+    const msgNao = CONFIG.msgCmdNaoEncontrado
+    if (msgNao && msgNao.trim()) {
+      const resposta = msgNao
+        .replace('{cmd}', p + cmdNome)
+        .replace('{prefix}', p)
+        .replace('{nome}', usuario)
+      await sock.sendMessage(from, { text: resposta, quoted: msg }).catch(() => {})
+    }
+    return
+  }
 
   if (!isCommandEnabled(cmd.name)) {
     await sock.sendMessage(from, { text: `❌ *${p}${cmd.name}* está desativado.`, quoted: msg })

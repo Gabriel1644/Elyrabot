@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════
-//  github.js — Integração completa com GitHub
+//  github.js — Integração GitHub segura (sem corrupção)
 // ══════════════════════════════════════════════════════════
 import { exec }     from 'child_process'
 import { promisify } from 'util'
@@ -18,7 +18,9 @@ async function git(cmd) {
 }
 async function gitOk()  { try { await git('--version'); return true } catch { return false } }
 async function isRepo() { return fs.existsSync(path.join(ROOT, '.git')) }
-async function remote() { try { return (await git('remote get-url origin')).stdout.trim() } catch { return null } }
+async function remote() {
+  try { return (await git('remote get-url origin')).stdout.trim() } catch { return null }
+}
 
 const GITIGNORE = `node_modules/
 auth_info_multi/
@@ -30,7 +32,26 @@ data/
 session/
 `
 
-function saveEnv(token, baseUrl) {
+// Arquivos locais que NUNCA devem ser sobrescritos pelo pull
+const LOCAL_FILES = ['.env', 'data/', 'auth/', 'auth_info_multi/', 'session/']
+
+function backupLocalFiles() {
+  const backup = {}
+  const envPath = path.join(ROOT, '.env')
+  if (fs.existsSync(envPath)) {
+    backup.env = fs.readFileSync(envPath, 'utf-8')
+  }
+  return backup
+}
+
+function restoreLocalFiles(backup) {
+  if (backup.env) {
+    const envPath = path.join(ROOT, '.env')
+    fs.writeFileSync(envPath, backup.env, 'utf-8')
+  }
+}
+
+function saveGitConfig(token, baseUrl) {
   try {
     const p = path.join(ROOT, '.env')
     let env = fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : ''
@@ -49,126 +70,100 @@ function saveEnv(token, baseUrl) {
   } catch { return false }
 }
 
-// ── Inicializar repo ─────────────────────────────────────
 export async function initGit({ repoUrl, userName, userEmail } = {}) {
   if (!repoUrl) return { ok: false, reason: 'URL não fornecida' }
-  if (!await gitOk()) return { ok: false, reason: 'git não instalado. Execute: pkg install git' }
-
+  if (!await gitOk()) return { ok: false, reason: 'git não instalado — rode: pkg install git' }
   try {
     const giPath = path.join(ROOT, '.gitignore')
     if (!fs.existsSync(giPath)) fs.writeFileSync(giPath, GITIGNORE)
-
     if (!await isRepo()) await git('init')
     await git('branch -M main').catch(() => {})
-
     try { await git('config user.name "' + (userName||'KaiusBot') + '"') } catch {}
     try { await git('config user.email "' + (userEmail||'bot@kaius.local') + '"') } catch {}
     try { await git('config core.pager ""') } catch {}
     try { await git('config push.default current') } catch {}
-
+    try { await git('config pull.rebase false') } catch {}
     await git('remote remove origin').catch(() => {})
     await git('remote add origin "' + repoUrl + '"')
     logOk('GitHub: configurado → ' + repoUrl.replace(/https?:\/\/[^@]+@/, 'https://***@'))
     return { ok: true }
   } catch (e) {
-    logWarn('GitHub init: ' + e.message)
     return { ok: false, reason: e.message }
   }
 }
 
-// ── Push completo ─────────────────────────────────────────
 export async function pushFullBot() {
   if (!await gitOk())  return { ok: false, reason: 'git não instalado (pkg install git)' }
   if (!await isRepo()) return { ok: false, reason: 'Use .git config <url> primeiro' }
   if (!await remote()) return { ok: false, reason: 'Remote não configurado' }
-
   try {
     const giPath = path.join(ROOT, '.gitignore')
     if (!fs.existsSync(giPath)) fs.writeFileSync(giPath, GITIGNORE)
-
     await git('add -A')
     const { stdout: status } = await git('status --porcelain')
     if (!status.trim()) return { ok: true, message: '✅ Já sincronizado com o GitHub!' }
-
     const date = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-    await git('commit -m "chore: sync ' + date + '"')
-
+    await git('commit -m "sync: ' + date + '"')
     try { await git('push origin main') }
     catch { await git('push -u origin main --force') }
-
     logOk('Bot sincronizado no GitHub!')
     return { ok: true, message: '✅ Bot sincronizado no GitHub!' }
   } catch (e) {
     const msg = e.message || ''
-    if (msg.includes('Authentication') || msg.includes('403') || msg.includes('denied'))
-      return { ok: false, reason: '❌ Token inválido!\nGere em: github.com/settings/tokens\nPermissão: repo\nUse: .git token SEU_TOKEN' }
-    if (msg.includes('not found'))
-      return { ok: false, reason: '❌ Repositório não encontrado!' }
+    if (msg.includes('Authentication') || msg.includes('403'))
+      return { ok: false, reason: '❌ Token inválido!\nUse: .git token SEU_TOKEN' }
     return { ok: false, reason: msg.split('\n')[0] }
   }
 }
 
-// ── Pull TUDO do GitHub (sem exceções) ────────────────────
+// ── Pull seguro — SEM stash, com backup de arquivos locais ──
 export async function pullFullBot() {
   if (!await gitOk())  return { ok: false, reason: 'git não instalado' }
   if (!await isRepo()) return { ok: false, reason: 'Repo não inicializado' }
   if (!await remote()) return { ok: false, reason: 'Remote não configurado' }
 
+  // 1. Faz backup dos arquivos locais importantes ANTES de qualquer coisa
+  const backup = backupLocalFiles()
+
   try {
-    // Fetch tudo
     await git('fetch origin main')
-
-    // Stash mudanças locais para não perder nada
-    try { await git('stash') } catch {}
-
-    // Reset COMPLETO para o estado do GitHub (puxa absolutamente tudo)
+    // Hard reset sem stash — NÃO usa stash (causa corrupção)
     await git('reset --hard origin/main')
-
-    // Tenta aplicar stash de volta (mudanças locais)
-    try { await git('stash pop') } catch {}
-
-    logOk('Bot atualizado do GitHub (pull completo)')
+    // 2. Restaura os arquivos locais que não devem ser sobrescritos
+    restoreLocalFiles(backup)
+    // 3. Garante que .gitignore está certo
+    const giPath = path.join(ROOT, '.gitignore')
+    fs.writeFileSync(giPath, GITIGNORE)
+    logOk('Bot atualizado do GitHub (pull seguro)')
     return { ok: true }
   } catch (e) {
+    // Em caso de erro, tenta restaurar
+    try { restoreLocalFiles(backup) } catch {}
     return { ok: false, reason: (e.message||'').split('\n')[0] }
   }
 }
 
-// ── Verificar e aplicar atualizações ─────────────────────
 export async function checkForUpdates() {
   if (!await gitOk())  return { updated: false, reason: 'git não instalado' }
   if (!await isRepo()) return { updated: false, reason: 'repo não inicializado' }
   if (!await remote()) return { updated: false, reason: 'remote não configurado' }
-
   try {
     await git('fetch origin main --depth=20')
     const { stdout } = await git('rev-list HEAD..origin/main --count')
     const n = parseInt(stdout.trim()) || 0
     if (n === 0) return { updated: false, reason: 'já na versão mais recente ✅' }
-
-    logInfo('Auto-update: ' + n + ' commit(s) disponíveis, aplicando...')
-
-    // Puxa TUDO do GitHub (src/, public/, package.json, etc.)
-    // Exclui apenas: .env, auth/, data/ (dados locais do usuário)
-    try { await git('stash') } catch {}
+    logInfo('Auto-update: ' + n + ' commit(s), aplicando com backup...')
+    const backup = backupLocalFiles()
     await git('reset --hard origin/main')
-    try { await git('stash pop') } catch {}
-
-    // Garante que .env não foi sobrescrito
-    const envPath = path.join(ROOT, '.env')
-    if (!fs.existsSync(envPath)) {
-      const envEx = path.join(ROOT, '.env.example')
-      if (fs.existsSync(envEx)) fs.copyFileSync(envEx, envPath)
-    }
-
-    logOk(n + ' commit(s) aplicado(s) — bot atualizado!')
+    restoreLocalFiles(backup)
+    fs.writeFileSync(path.join(ROOT, '.gitignore'), GITIGNORE)
+    logOk(n + ' commit(s) aplicados — bot atualizado!')
     return { updated: true, commits: n }
   } catch (e) {
     return { updated: false, reason: (e.message||'').split('\n')[0] }
   }
 }
 
-// ── Auto-update scheduler ────────────────────────────────
 export function startAutoUpdateScheduler(intervalHours = 6) {
   const ms = intervalHours * 3_600_000
   logInfo('Auto-update a cada ' + intervalHours + 'h')
@@ -180,24 +175,27 @@ export function startAutoUpdateScheduler(intervalHours = 6) {
         await loadCommands()
         logOk('Auto-update: ' + r.commits + ' commit(s) aplicados')
       }
-    } catch (e) { logWarn('Auto-update error: ' + e.message) }
+    } catch (e) { logWarn('Auto-update: ' + e.message) }
     setTimeout(tick, ms)
   }, ms)
 }
 
-// ── Status ───────────────────────────────────────────────
 export async function getGitStatus() {
   if (!await gitOk())  return { ok: false, reason: 'git não instalado' }
   if (!await isRepo()) return { ok: false, reason: 'repo não inicializado' }
   try {
     const rem = await remote()
-    const { stdout: log } = await git('log --oneline -5 2>/dev/null || echo "sem commits"')
-    const { stdout: st }  = await git('status --short')
-    return { ok: true, remote: rem?.replace(/https?:\/\/[^@]+@/, 'https://'), log: log.trim(), status: st.trim() }
+    const { stdout: log } = await git('log --oneline -5').catch(() => ({ stdout: '' }))
+    const { stdout: st }  = await git('status --short').catch(() => ({ stdout: '' }))
+    return {
+      ok: true,
+      remote: rem?.replace(/https?:\/\/[^@]+@/, 'https://'),
+      log: log.trim(),
+      status: st.trim()
+    }
   } catch (e) { return { ok: false, reason: e.message } }
 }
 
-// ── Upload de um comando para o GitHub ───────────────────
 export async function uploadCommand({ name, category, code, description }) {
   if (!await gitOk() || !await isRepo() || !await remote())
     return { ok: false, reason: 'git não configurado' }
@@ -206,14 +204,13 @@ export async function uploadCommand({ name, category, code, description }) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
     fs.writeFileSync(filePath, code, 'utf-8')
     await git('add "src/commands/' + category + '/' + name + '.js"')
-    await git('commit -m "feat: add command ' + name + (description ? ' — ' + description : '') + '"')
+    await git('commit -m "feat: add command ' + name + '"')
     try { await git('push origin main') }
     catch { await git('push -u origin main --force') }
-    return { ok: true, message: '✅ Comando ' + name + ' publicado no GitHub!' }
+    return { ok: true, message: '✅ ' + name + ' publicado!' }
   } catch (e) { return { ok: false, reason: e.message } }
 }
 
-// ── Configurar token ─────────────────────────────────────
 export async function setToken(token) {
   try {
     const rem = await remote()
@@ -221,9 +218,9 @@ export async function setToken(token) {
     const base = rem.replace(/https?:\/\/[^@]*@/, 'https://')
     const tokenUrl = 'https://' + token + '@' + base.replace('https://', '')
     await git('remote set-url origin "' + tokenUrl + '"')
-    saveEnv(token, base)
+    saveGitConfig(token, base)
     return { ok: true, url: tokenUrl.replace(/\/\/[^@]+@/, '//' + '***@') }
   } catch (e) { return { ok: false, reason: e.message } }
 }
 
-export { saveEnv as saveGitEnv }
+export { saveGitConfig as saveGitEnv }
