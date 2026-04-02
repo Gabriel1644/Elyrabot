@@ -14,12 +14,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
 <style>
   .CodeMirror { height: 400px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
-</style>
-<style>
+
+
 :root{
   --bg:#05060a;--bg2:rgba(14,15,26,0.8);--bg3:rgba(20,22,42,0.6);--bg4:#1c1e35;
   --ac:#00f2ff;--ac2:#00ff88;--bl:#4fc3f7;--or:#ff6b35;
@@ -237,7 +235,16 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
 /* Scan line animation */
 @keyframes scan{0%{top:-2%}100%{top:102%}}
 .main::after{content:'';position:fixed;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,136,.04),transparent);animation:scan 12s linear infinite;pointer-events:none;z-index:0}
+
+
+@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
+@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
+
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+
 </head>
 <body>
 
@@ -256,16 +263,19 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   <span class="sb-name" id="sb-nm">KaiusBot</span>
   <div class="ni on" data-tab="dash"><i class="fas fa-chart-line"></i><span class="ni-label">Dashboard</span></div>
   <div class="ni" data-tab="cmds"><i class="fas fa-terminal"></i><span class="ni-label">Comandos</span></div>
-  <div class="ni" data-tab="menus"><i class="fas fa-list"></i><span class="ni-label">Menus</span></      <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div>
-      <div class="ni" data-tab="autoia"><i class="fas fa-robot"></i><span class="ni-label">Auto-IA</span></div>
-      <div class="ni" data-tab="plugins"><i class="fas fa-puzzle-piece"></i><span class="ni-label">Plugins</span></div>
-      <div class="ni" data-tab="webhooks"><i class="fas fa-plug"></i><span class="ni-label">Webhooks</span></div>
-      <div class="ni" data-tab="logs"><i class="fas fa-terminal"></i><span class="ni-label">Logs</span></div>      <div class="ni" data-tab="files"><i class="fas fa-folder-open"></i><span class="ni-label">Arquivos</span></div>
-      <div class="ni" data-tab="schedule"><i class="fas fa-calendar-alt"></i><span class="ni-label">Agendador</span></div>
-      <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>lass="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
+  <div class="ni" data-tab="menus"><i class="fas fa-list"></i><span class="ni-label">Menus</span></div>
+  <div class="ni" data-tab="auto"><i class="fas fa-bolt"></i><span class="ni-label">Automações</span></div>
+  <div class="ni" data-tab="autoia"><i class="fas fa-robot"></i><span class="ni-label">Auto-IA</span></div>
+  <div class="ni" data-tab="ai"><i class="fas fa-magic"></i><span class="ni-label">Criar Cmd</span></div>
+  <div class="ni" data-tab="plugins"><i class="fas fa-puzzle-piece"></i><span class="ni-label">Plugins</span></div>
+  <div class="ni" data-tab="webhooks"><i class="fas fa-plug"></i><span class="ni-label">Webhooks</span></div>
+  <div class="ni" data-tab="schedule"><i class="fas fa-calendar-alt"></i><span class="ni-label">Agendador</span></div>
+  <div class="ni" data-tab="cfg"><i class="fas fa-cog"></i><span class="ni-label">Config</span></div>
+  <div class="ni" data-tab="minions"><i class="fas fa-users"></i><span class="ni-label">Minions</span></div>
   <div class="ni" data-tab="subdons"><i class="fas fa-star"></i><span class="ni-label">Sub-donos</span></div>
   <div class="ni" data-tab="grupos"><i class="fas fa-shield-alt"></i><span class="ni-label">Grupos</span></div>
   <div class="ni" data-tab="logs"><i class="fas fa-stream"></i><span class="ni-label">Logs</span></div>
+  <div class="ni" data-tab="files"><i class="fas fa-folder-open"></i><span class="ni-label">Arquivos</span></div>
   <div class="ni" data-tab="termux"><i class="fas fa-code"></i><span class="ni-label">Termux</span></div>
   <div class="ni" data-tab="connect"><i class="fas fa-qrcode"></i><span class="ni-label">Conectar</span></div>
 </nav>
@@ -594,6 +604,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   </div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-comment-alt"></i>Mensagens</div></div>
     <div class="pnl-bd">
+      <div class="fi"><label>Comando não encontrado (vazio = silencioso)</label><input id="cfg-cmdnotfound" placeholder="❓ Comando .{cmd} não existe! Use .menu para ver os comandos."/></div>
       <div class="fi"><label>Banido</label><input id="cfg-msgban" placeholder="🚫 Você foi banido do bot."/></div>
       <div class="fi"><label>Cooldown</label><input id="cfg-msgcd" placeholder="⏳ Aguarde {tempo}s para usar {cmd}."/></div>
       <div class="fi"><label>Sem permissão</label><input id="cfg-msgnoperm" placeholder="❌ {cmd} requer: _{cargo}_"/></div>
@@ -1120,13 +1131,11 @@ document.addEventListener('mousemove', e => {
 }, {passive:true})
 
 // Inject keyframe CSS
-document.head.insertAdjacentHTML('beforeend',`<style>
-@keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
-@keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
-</style>`)
+document.head.insertAdjacentHTML('beforeend',``)
 
 // ── Navegação ────────────────────────────────────────────────────
 const LOADERS = {
+    files: () => loadFiles(''),
   dash:loadStatus, cmds:loadCmds, menus:loadMenuCfg, auto:loadAutos,
   cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos
 }
@@ -1275,7 +1284,7 @@ async function installPlugin() {
   if (r.ok) { toast('Plugin instalado!'); G('pl-name').value = ''; G('pl-url').value = ''; loadCmds() }
   else toast('Erro ao instalar!', 'e')
 }
-window.addEventListener('load', () => loadFiles(''))
+// loadFiles runs when tab-files is opened (see LOADERS)
 
 // ── Comandos ─────────────────────────────────────────────────────
 async function loadCmds() {
@@ -1726,7 +1735,7 @@ async function loadCfg() {
   const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
   sv('cfg-nome',d.nome); sv('cfg-prefixo',d.prefixo); sv('cfg-owner',d.owner)
   sv('cfg-pers',d.personalidade); sv('cfg-modelo',d.modelo)
-  sv('cfg-msgban',d.msgBanido); sv('cfg-msgcd',d.msgCooldown); sv('cfg-msgnoperm',d.msgSemPerm)
+  sv('cfg-cmdnotfound',d.msgCmdNaoEncontrado); sv('cfg-msgban',d.msgBanido); sv('cfg-msgcd',d.msgCooldown); sv('cfg-msgnoperm',d.msgSemPerm)
   const gk=G('cfg-groq'); if(gk){gk.value='';gk.placeholder=d.groqKey?'✓ (salvo)':'gsk_...'}
   const gmk=G('cfg-gemini'); if(gmk){gmk.value='';gmk.placeholder=d.geminiKey?'✓ (salvo)':'AIza...'}
   if(G('cfg-ai-provider')&&d.aiProvider) G('cfg-ai-provider').value=d.aiProvider
@@ -1739,7 +1748,7 @@ async function saveCfg() {
   const body={
     nome:gv('cfg-nome'), prefixo:gv('cfg-prefixo'), owner:gv('cfg-owner'),
     personalidade:gv('cfg-pers'), modelo:gv('cfg-modelo'),
-    msgBanido:gv('cfg-msgban'), msgCooldown:gv('cfg-msgcd'), msgSemPerm:gv('cfg-msgnoperm'),
+    msgCmdNaoEncontrado:gv('cfg-cmdnotfound'), msgBanido:gv('cfg-msgban'), msgCooldown:gv('cfg-msgcd'), msgSemPerm:gv('cfg-msgnoperm'),
     antiSpam:gb('cfg-spam'), autoCodeDetect:gb('cfg-code'), codeOwnerOnly:gb('cfg-codeowner'),
     iaAtivaPadrao:gb('cfg-iadefault'), fuzzyCommands:gb('cfg-fuzzy'),
     aiProvider:gv('cfg-ai-provider')
