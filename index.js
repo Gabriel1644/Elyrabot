@@ -15,6 +15,7 @@ import { initErrorTracker, setTrackerSocket, setTrackerSock } from './src/errorT
 import { initGit, pushFullBot, startAutoUpdateScheduler } from './src/github.js'
 import { cleanNum } from './src/permissions.js'
 import { initScheduler } from './src/scheduler.js'
+import { emitEvent, EVENTS } from './src/hooks.js'
 import { initCleaner } from './src/cleaner.js'
 
 printBanner()
@@ -174,6 +175,7 @@ async function conectar() {
       typeof p === 'string' ? p : (p?.id || p?.jid || String(p))
     )
     if (action === 'add') {
+          emitEvent(EVENTS.GROUP_JOIN, { jid: id, groupJid: gid, sock }).catch(() => {})
       for (const jid of jids) {
         if (gd.antifake && !jid.startsWith('55')) {
           logInfo(`Anti-Fake: removendo ${jid}`)
@@ -188,6 +190,7 @@ async function conectar() {
       }
     }
     if (action === 'remove') {
+          emitEvent(EVENTS.GROUP_LEAVE, { jid: id, groupJid: gid, sock }).catch(() => {})
       logInfo(`Membro saiu: ${jids[0]?.split('@')[0] || '?'}`)
     }
   })
