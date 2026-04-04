@@ -78,5 +78,6 @@ export const contribDB      = new JsonDB('contributions') // comandos para contr
 export const cmdPermsDB     = new JsonDB('cmdperms')      // permissões por comando (override)
 export const menuTargetDB   = new JsonDB('menutargets')    // qual menu cada comando aparece
 export const automationsDB  = new JsonDB('automations')    // automações (triggers → respostas)
-export const allowedGroupsDB = new JsonDB('allowedgroups') // grupos onde o bot pode funcionar
+export const allowedGroupsDB  = new JsonDB('allowedgroups')  // whitelist
+export const bannedGroupsDB   = new JsonDB('bannedgroups')   // blacklist — bot bloqueado
 export const schedulerDB     = new JsonDB('scheduler')     // agendador de mensagens

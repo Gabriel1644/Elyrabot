@@ -6,7 +6,7 @@ import { logMsg, logWarn, logInfo } from './logger.js'
 import { getCommand, isCommandEnabled, commandMap, aliasMap } from './loader.js'
 import { handleAIResponse } from './ai.js'
 import { getMessageText, getMentionedJids } from './utils.js'
-import { groupsDB, cooldownDB, automationsDB, allowedGroupsDB, configDB } from './database.js'
+import { groupsDB, cooldownDB, automationsDB, allowedGroupsDB, bannedGroupsDB, configDB } from './database.js'
 import { capturar, notifyOwner, handleOwnerReply } from './errorTracker.js'
 import { isLikelyCode, processCodeInChat } from './codeDetector.js'
 import { handleContribReply } from './contributions.js'
@@ -155,6 +155,9 @@ export async function handleMessage(sock, msg) {
     : (isGrupo ? (msg.key.participant || from) : from)
 
   // ── Restrição de grupos ────────────────────────────────
+  // Grupo explicitamente banido (blacklist — independente da whitelist)
+  if (isGrupo && bannedGroupsDB.has(from)) return
+
   if (isGrupo && configDB.get('groupRestriction', false)) {
     const allowed = allowedGroupsDB.has(from)
     if (!allowed) {
@@ -191,13 +194,8 @@ export async function handleMessage(sock, msg) {
       if (isGrupo) {
         try { const m = await sock.groupMetadata(from); grupoNome = m.subject } catch {}
       }
-      const res = trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
-      if (res?.up && CONFIG.notifyLevelUp !== false) {
-        await sock.sendMessage(from, { 
-          text: `🆙 *LEVEL UP!* @${userId.split('@')[0]}\n\n✨ Você subiu para o nível *${res.level}*!\n📊 XP: ${res.xp} / ${res.xpProx}`,
-          mentions: [userId]
-        })
-      }
+      trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
+      // Level-up notifications handled by xp.js addXP above
     }
     _trackAsync().catch(() => {})
   }

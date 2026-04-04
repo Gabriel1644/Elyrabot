@@ -11,7 +11,7 @@ import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
-import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB } from './database.js'
+import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB, bannedGroupsDB } from './database.js'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
@@ -258,6 +258,29 @@ export function startDashboard() {
 
   app.get('/api/groups', auth, (req, res) => res.json(groupsDB.all()))
 
+  // ── Grupos banidos (bot bloqueado no grupo) ──────────────
+  app.get('/api/groups/banned', auth, (req, res) => {
+    res.json(Object.values(bannedGroupsDB.all()))
+  })
+
+  app.post('/api/groups/ban', auth, async (req, res) => {
+    try {
+      const { jid, nome } = req.body
+      if (!jid) return res.status(400).json({ error: 'JID obrigatório' })
+      bannedGroupsDB.set(jid, { jid, nome: nome || jid, bannedAt: new Date().toISOString() })
+      // Also remove from allowed if present
+      if (allowedGroupsDB.has(jid)) allowedGroupsDB.delete(jid)
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  app.delete('/api/groups/ban/:jid', auth, (req, res) => {
+    try {
+      bannedGroupsDB.delete(decodeURIComponent(req.params.jid))
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
   app.get('/api/stats/groups', auth, (req, res) => {
     const groups = statsDB.get('groups', {})
     res.json(Object.entries(groups).map(([jid, data]) => ({ jid, ...data })))
@@ -393,6 +416,32 @@ export function startDashboard() {
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
 
+
+  // ── Enviar mensagem via painel ───────────────────────────
+  app.post('/api/send', auth, async (req, res) => {
+    try {
+      const { jid, text } = req.body
+      if (!jid || !text) return res.status(400).json({ error: 'jid e text obrigatórios' })
+      if (!_sock) return res.status(503).json({ error: 'Bot não conectado' })
+      await _sock.sendMessage(jid, { text })
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Teste de webhook ──────────────────────────────────────
+  app.post('/api/webhooks/test', auth, async (req, res) => {
+    try {
+      const { url } = req.body
+      if (!url) return res.status(400).json({ error: 'URL obrigatória' })
+      const { default: axios } = await import('axios')
+      const payload = { event: 'test', timestamp: Date.now(), bot: CONFIG.nome }
+      const r = await axios.post(url, payload, { timeout: 5000 })
+      res.json({ ok: true, status: r.status, data: r.data })
+    } catch (e) {
+      res.json({ ok: false, error: e.message, status: e.response?.status })
+    }
+  })
+
   // ── Pairing ──────────────────────────────────────────────
   app.post('/api/pairing', auth, (req, res) => {
     const { phone } = req.body
@@ -436,7 +485,7 @@ export function startDashboard() {
     // Lê o README para passar como contexto ao gerador
     let readmeCtx = ''
     try {
-      const readmePath = path.join(__dirname, '../CRIAR_COMANDOS.md')
+      const readmePath = path.join(__dirname, '../CRIAR_HOOKS.md')
       if (fs.existsSync(readmePath)) {
         // Pega apenas as primeiras 3000 chars (estrutura e exemplos básicos)
         readmeCtx = '\n\nCONTEXTO DO BOT (estrutura de comandos):\n' + 
