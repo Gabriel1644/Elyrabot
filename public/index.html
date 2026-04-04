@@ -278,6 +278,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   <div class="ni" data-tab="files"><i class="fas fa-folder-open"></i><span class="ni-label">Arquivos</span></div>
   <div class="ni" data-tab="termux"><i class="fas fa-code"></i><span class="ni-label">Termux</span></div>
   <div class="ni" data-tab="connect"><i class="fas fa-qrcode"></i><span class="ni-label">Conectar</span></div>
+  <div class="ni" data-tab="integra"><i class="fas fa-network-wired"></i><span class="ni-label">Integrações</span></div>
 </nav>
 
 <!-- MAIN -->
@@ -358,6 +359,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
           </div>
           <div class="fi"><label>Sub-item</label><input id="m-sub" value="└" maxlength="5" oninput="updPrev()"/></div>
           <div class="fi"><label>Rodapé</label><input id="m-footer" placeholder="Powered by DevSquad" oninput="updPrev()"/></div>
+          <div class="fi"><label>🖼️ URL da foto do menu</label><input id="m-foto" placeholder="https://... ou deixe vazio" oninput="updPrev()"/></div>
           <div class="fi"><label>Nome no menu</label><input id="m-botnome" placeholder="(usa nome do bot)" oninput="updPrev()"/></div>
           <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
             <label class="tog"><input type="checkbox" id="m-bold" checked onchange="updPrev()"/><div class="tog-t"><div class="tog-th"></div></div><span class="tog-lbl">Negrito</span></label>
@@ -604,7 +606,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   </div>
   <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-comment-alt"></i>Mensagens</div></div>
     <div class="pnl-bd">
-      <div class="fi"><label>Comando não encontrado (vazio = silencioso)</label><input id="cfg-cmdnotfound" placeholder="❓ Comando .{cmd} não existe! Use .menu para ver os comandos."/></div>
+      <div class="fi"><label>Comando não encontrado (vazio = silencioso)</label><input id="cfg-cmdnotfound" placeholder="❓ Comando .{cmd} não existe! Use .menu para ver os comandos."/><div style="font-size:10px;color:var(--tx3);margin-top:3px">Use *negrito* _itálico_ para formatação WhatsApp. Variáveis: {cmd} {prefix} {nome}</div></div>
       <div class="fi"><label>Banido</label><input id="cfg-msgban" placeholder="🚫 Você foi banido do bot."/></div>
       <div class="fi"><label>Cooldown</label><input id="cfg-msgcd" placeholder="⏳ Aguarde {tempo}s para usar {cmd}."/></div>
       <div class="fi"><label>Sem permissão</label><input id="cfg-msgnoperm" placeholder="❌ {cmd} requer: _{cargo}_"/></div>
@@ -656,23 +658,57 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
 
 <!-- GRUPOS -->
 <div id="tab-grupos" class="tab">
-  <div class="tb"><div class="tb-title">Grupos Autorizados</div></div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-lock"></i>Restrição de Grupos</div></div>
+  <div class="tb"><div class="tb-title">Controle de Grupos</div>
+    <button class="btn btn-q btn-sm" onclick="loadGrupos()"><i class="fas fa-sync"></i></button>
+  </div>
+
+  <!-- PAINEL: Banir bot de um grupo -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-ban"></i>Banir bot de um grupo</div></div>
+    <div class="pnl-bd">
+      <div class="hint" style="margin-bottom:12px">O bot ignora completamente mensagens de grupos banidos — sem resposta, sem XP, sem logs.</div>
+      <div class="row2">
+        <div class="fi"><label>Selecionar grupo conhecido</label>
+          <select id="grp-known-select" onchange="preencheBanGrupo(this)">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="fi"><label>ou JID manual</label><input id="grp-ban-jid" placeholder="120363...@g.us"/></div>
+      </div>
+      <div class="fi"><label>Nome (opcional)</label><input id="grp-ban-nome" placeholder="Nome do grupo"/></div>
+      <button class="btn btn-r" onclick="banGroup()"><i class="fas fa-ban"></i> Banir grupo</button>
+    </div>
+  </div>
+
+  <!-- Grupos banidos -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-times-circle"></i>Grupos Banidos</div></div>
+    <div class="pnl-bd"><div id="grp-banned-list"><div class="empty">Nenhum grupo banido</div></div></div>
+  </div>
+
+  <!-- Whitelist (restrição) -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-lock"></i>Whitelist (restrição de grupos)</div></div>
     <div class="pnl-bd">
       <label class="tog" style="margin-bottom:12px">
         <input type="checkbox" id="grp-restriction" onchange="toggleRestriction()"/>
         <div class="tog-t"><div class="tog-th"></div></div>
-        <span class="tog-lbl">Restringir bot a grupos autorizados</span>
+        <span class="tog-lbl">Ativar — bot só funciona em grupos autorizados</span>
       </label>
-      <div class="hint">Quando ativo, o bot só responde em grupos da lista abaixo.</div>
+      <div class="hint">Quando ativo, o bot só responde em grupos da lista abaixo. Use .bangp no WhatsApp para adicionar rapidamente.</div>
     </div>
   </div>
-  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-plus"></i>Autorizar grupo</div></div>
+
+  <div class="pnl"><div class="pnl-hd">
+    <div class="pnl-tt"><i class="fas fa-plus"></i>Autorizar grupo</div>
+  </div>
     <div class="pnl-bd">
       <div class="row2">
-        <div class="fi"><label>JID do Grupo</label><input id="grp-jid" placeholder="120363000000000@g.us"/></div>
-        <div class="fi"><label>Nome</label><input id="grp-nome" placeholder="Nome do grupo"/></div>
+        <div class="fi"><label>Selecionar grupo conhecido</label>
+          <select id="grp-known-allow" onchange="preencheAllowGrupo(this)">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="fi"><label>ou JID manual</label><input id="grp-jid" placeholder="120363000000000@g.us"/></div>
       </div>
+      <div class="fi"><label>Nome</label><input id="grp-nome" placeholder="Nome do grupo"/></div>
       <button class="btn btn-g" onclick="addAllowedGroup()"><i class="fas fa-plus"></i> Autorizar</button>
     </div>
   </div>
@@ -777,6 +813,76 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
         </div>
         <div id="clean-res" style="display:none;margin-top:12px;font-size:12px;padding:8px;background:var(--bg);border-radius:var(--r)"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- INTEGRAÇÕES -->
+<div id="tab-integra" class="tab">
+  <div class="tb"><div class="tb-title">Integrações Externas</div></div>
+
+  <!-- API REST interna -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-code"></i>API REST do Bot</div></div>
+    <div class="pnl-bd">
+      <div class="hint" style="margin-bottom:12px">
+        A API do dashboard aceita requisições externas (n8n, Zapier, scripts, etc).<br>
+        Base URL: <code id="api-base-url">http://SEU-IP:3000</code>
+        <button class="btn btn-q btn-sm" style="margin-left:8px" onclick="copyApiBase()"><i class="fas fa-copy"></i></button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+        <div style="padding:8px;background:var(--bg);border-radius:var(--r);border:1px solid var(--br)">
+          <div style="color:var(--ac);font-weight:600;margin-bottom:4px">GET /api/status</div>
+          <div style="color:var(--tx3)">Status e estatísticas do bot</div>
+        </div>
+        <div style="padding:8px;background:var(--bg);border-radius:var(--r);border:1px solid var(--br)">
+          <div style="color:var(--ac);font-weight:600;margin-bottom:4px">POST /api/send</div>
+          <div style="color:var(--tx3)">Enviar mensagem via API</div>
+        </div>
+        <div style="padding:8px;background:var(--bg);border-radius:var(--r);border:1px solid var(--br)">
+          <div style="color:var(--ac);font-weight:600;margin-bottom:4px">POST /api/exec</div>
+          <div style="color:var(--tx3)">Executar comando shell</div>
+        </div>
+        <div style="padding:8px;background:var(--bg);border-radius:var(--r);border:1px solid var(--br)">
+          <div style="color:var(--ac);font-weight:600;margin-bottom:4px">GET /api/groups</div>
+          <div style="color:var(--tx3)">Listar grupos conhecidos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enviar mensagem via painel -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-paper-plane"></i>Enviar Mensagem pelo Painel</div></div>
+    <div class="pnl-bd">
+      <div class="fi"><label>Destino (JID ou número)</label>
+        <div style="display:flex;gap:6px">
+          <input id="send-jid" placeholder="5511999999999 ou 120363...@g.us" style="flex:1"/>
+          <select id="send-jid-select" onchange="preencheEnvioJid(this)" style="width:200px;padding:8px;background:var(--bg3);border:1px solid var(--br2);color:var(--tx);border-radius:var(--r);font-size:12px">
+            <option value="">— Grupo conhecido —</option>
+          </select>
+        </div>
+      </div>
+      <div class="fi"><label>Mensagem</label><textarea id="send-msg" rows="4" placeholder="Sua mensagem aqui... *negrito* _itálico_"></textarea></div>
+      <button class="btn btn-g" onclick="sendViaPainel()"><i class="fas fa-paper-plane"></i> Enviar</button>
+      <div id="send-result" style="margin-top:8px;font-size:11px;color:var(--tx3)"></div>
+    </div>
+  </div>
+
+  <!-- Broadcast para todos os grupos -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-broadcast-tower"></i>Broadcast para Todos os Grupos</div></div>
+    <div class="pnl-bd">
+      <div class="hint" style="margin-bottom:12px;border-left-color:var(--or);background:rgba(255,107,53,.04)">⚠️ Envia para TODOS os grupos onde o bot está. Use com cuidado.</div>
+      <div class="fi"><label>Mensagem</label><textarea id="broadcast-msg" rows="3" placeholder="Mensagem de broadcast..."></textarea></div>
+      <button class="btn btn-o" onclick="doBroadcast()"><i class="fas fa-broadcast-tower"></i> Enviar para todos</button>
+    </div>
+  </div>
+
+  <!-- Webhook tester -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-vial"></i>Testar Webhook</div></div>
+    <div class="pnl-bd">
+      <div class="fi"><label>URL do Webhook</label><input id="wh-test-url" placeholder="https://seu-servidor/webhook"/></div>
+      <button class="btn btn-b" onclick="testWebhook()"><i class="fas fa-flask"></i> Disparar teste</button>
+      <div id="wh-test-result" style="margin-top:8px;font-size:11px;background:var(--bg);border-radius:var(--r);padding:8px;display:none;white-space:pre-wrap;word-break:break-all"></div>
     </div>
   </div>
 </div>
@@ -1137,7 +1243,7 @@ document.head.insertAdjacentHTML('beforeend',``)
 const LOADERS = {
     files: () => loadFiles(''),
   dash:loadStatus, cmds:loadCmds, menus:loadMenuCfg, auto:loadAutos,
-  cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos
+  cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos, integra:loadIntegra
 }
 
 function goTab(id) {
@@ -1527,7 +1633,7 @@ async function loadMenuCfg() {
   const sc=(id,v)=>{const e=G(id);if(e)e.checked=!!v}
   sv('m-top',m.borderTop); sv('m-bot',m.borderBot); sv('m-side',m.borderSide||'│')
   sv('m-item',m.itemPrefix||'├'); sv('m-sub',m.subPrefix||'└')
-  sv('m-footer',m.footerTexto); sv('m-botnome',m.botNomeDisplay)
+  sv('m-foto',m.botFoto||''); sv('m-footer',m.footerTexto); sv('m-botnome',m.botNomeDisplay)
   sc('m-bold',m.negrito); sc('m-italic',m.italico)
   menuLines = m.menuLines||[]; renderMenuLines(); updPrev()
 }
@@ -1573,7 +1679,7 @@ function applyTheme(nome) {
   updPrev(); toast(`Tema ${nome} aplicado!`)
 }
 async function saveMenu(){
-  const body={footerTexto:G('m-footer')?.value||'',botNomeDisplay:G('m-botnome')?.value||'',negrito:G('m-bold')?.checked,italico:G('m-italic')?.checked,borderTop:G('m-top')?.value||'',borderBot:G('m-bot')?.value||'',borderSide:G('m-side')?.value||'│',itemPrefix:G('m-item')?.value||'├',subPrefix:G('m-sub')?.value||'└',menuLines:[...menuLines]}
+  const body={botFoto:G('m-foto')?.value||'',footerTexto:G('m-footer')?.value||'',botNomeDisplay:G('m-botnome')?.value||'',negrito:G('m-bold')?.checked,italico:G('m-italic')?.checked,borderTop:G('m-top')?.value||'',borderBot:G('m-bot')?.value||'',borderSide:G('m-side')?.value||'│',itemPrefix:G('m-item')?.value||'├',subPrefix:G('m-sub')?.value||'└',menuLines:[...menuLines]}
   const r=await post('/api/config/menu',body)
   r.ok?toast('✅ Menu salvo!'):toast('Erro: '+(r.error||''),'e')
 }
@@ -1805,20 +1911,51 @@ async function rmSD(num){if(!confirm(`Remover +${num}?`))return;await del(`/api/
 
 // ── Grupos ───────────────────────────────────────────────────────
 async function loadGrupos(){
+  // Load known groups for selectors
+  const known = await api('/api/groups')
+  const knownArr = Object.values(known||{}).sort((a,b)=>(a.subject||a.jid||'').localeCompare(b.subject||b.jid||''))
+  const mkOpts = (selId) => {
+    const sel=G(selId); if(!sel)return
+    const prev=sel.value
+    sel.innerHTML='<option value="">— Selecione —</option>'+knownArr.map(g=>`<option value="${g.jid||''}" data-nome="${(g.subject||'').replace(/"/g,'&quot;')}">${g.subject||g.jid}</option>`).join('')
+    if(prev)sel.value=prev
+  }
+  mkOpts('grp-known-select'); mkOpts('grp-known-allow')
+
+  // Load banned groups
+  const banned=await api('/api/groups/banned')
+  const bel=G('grp-banned-list'); if(bel){
+    if(!Array.isArray(banned)||!banned.length){bel.innerHTML='<div class="empty">Nenhum grupo banido</div>'}
+    else bel.innerHTML=banned.map(g=>`<div class="ci"><div class="ci-info"><div class="ci-name" style="color:var(--rd)">🚫 ${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-g btn-sm" onclick="unbanGroup('${encodeURIComponent(g.jid)}')"><i class="fas fa-unlock"></i></button></div>`).join('')
+  }
+
+  // Load allowed groups (whitelist)
   const d=await api('/api/allowedgroups'); if(!d)return
   if(G('grp-restriction'))G('grp-restriction').checked=!!d.enabled
   const el=G('grp-list'); if(!el)return
-  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo autorizado</div>';return}
+  if(!d.groups?.length){el.innerHTML='<div class="empty">Nenhum grupo na whitelist</div>';return}
   el.innerHTML=d.groups.map(g=>`<div class="ci"><div class="ci-info"><div class="ci-name">${g.nome||g.jid}</div><div class="ci-desc" style="font-size:10px">${g.jid}</div></div><button class="btn btn-r btn-sm" onclick="rmGroup('${encodeURIComponent(g.jid)}')">✕</button></div>`).join('')
 }
-async function toggleRestriction(){await post('/api/allowedgroups/toggle',{enabled:G('grp-restriction')?.checked});toast('Salvo!')}
-async function addAllowedGroup(){
-  const jid=G('grp-jid')?.value.trim(),nome=G('grp-nome')?.value.trim()
-  if(!jid){toast('Informe o JID!','e');return}
-  await post('/api/allowedgroups',{jid,nome}); toast('✅ Autorizado!'); loadGrupos()
-  ;[G('grp-jid'),G('grp-nome')].forEach(e=>{if(e)e.value=''})
+function preencheBanGrupo(sel){const o=sel.options[sel.selectedIndex];if(!o||!o.value)return;const jid=o.value,nm=o.dataset.nome||'';if(G('grp-ban-jid'))G('grp-ban-jid').value=jid;if(G('grp-ban-nome'))G('grp-ban-nome').value=nm}
+function preencheAllowGrupo(sel){const o=sel.options[sel.selectedIndex];if(!o||!o.value)return;const jid=o.value,nm=o.dataset.nome||'';if(G('grp-jid'))G('grp-jid').value=jid;if(G('grp-nome'))G('grp-nome').value=nm}
+async function banGroup(){
+  const jid=(G('grp-ban-jid')?.value||'').trim(),nome=(G('grp-ban-nome')?.value||'').trim()
+  if(!jid){toast('Selecione ou informe o JID!','e');return}
+  if(!confirm(`Banir o bot de "${nome||jid}"?`))return
+  const r=await post('/api/groups/ban',{jid,nome})
+  if(r.ok){toast('✅ Grupo banido! Bot ignorará mensagens.');sfx('delete');loadGrupos();if(G('grp-ban-jid'))G('grp-ban-jid').value='';if(G('grp-ban-nome'))G('grp-ban-nome').value=''}
+  else toast('Erro: '+(r.error||''),'e')
 }
-async function rmGroup(jid){if(!confirm('Remover?'))return;await del(`/api/allowedgroups/${decodeURIComponent(jid)}`);toast('Removido','i');loadGrupos()}
+async function unbanGroup(jid){if(!confirm('Desbanir grupo?'))return;const r=await del(`/api/groups/ban/${jid}`);if(r.ok){toast('✅ Grupo desbanido!');loadGrupos()}else toast('Erro: '+(r.error||''),'e')}
+async function toggleRestriction(){const r=await post('/api/allowedgroups/toggle',{enabled:G('grp-restriction')?.checked});if(r.ok)toast('Salvo!');else toast('Erro','e')}
+async function addAllowedGroup(){
+  const jid=(G('grp-jid')?.value||'').trim(),nome=(G('grp-nome')?.value||'').trim()
+  if(!jid){toast('Informe o JID!','e');return}
+  const r=await post('/api/allowedgroups',{jid,nome})
+  if(r.ok){toast('✅ Autorizado!');loadGrupos();[G('grp-jid'),G('grp-nome'),G('grp-known-allow')].forEach(e=>{if(e)e.value=''})}
+  else toast('Erro: '+(r.error||''),'e')
+}
+async function rmGroup(jid){if(!confirm('Remover da whitelist?'))return;await del(`/api/allowedgroups/${decodeURIComponent(jid)}`);toast('Removido','i');loadGrupos()}
 
 // ── Logs ─────────────────────────────────────────────────────────
 function addLog(e) {
@@ -1883,6 +2020,50 @@ if (!_isStandalone) {
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
 
+
+// ── Integrações ──────────────────────────────────────────
+async function loadIntegra() {
+  // Fill URL
+  const base = window.location.origin
+  const el = G('api-base-url'); if(el) el.textContent = base
+
+  // Fill known groups in send selector
+  const known = await api('/api/groups')
+  const knownArr = Object.values(known||{}).sort((a,b)=>(a.subject||'').localeCompare(b.subject||''))
+  const sel = G('send-jid-select'); if(sel) {
+    sel.innerHTML = '<option value="">— Grupo conhecido —</option>' +
+      knownArr.map(g=>`<option value="${g.jid}">${g.subject||g.jid}</option>`).join('')
+  }
+}
+function preencheEnvioJid(sel){const v=sel.value;if(v&&G('send-jid'))G('send-jid').value=v}
+function copyApiBase(){navigator.clipboard?.writeText(G('api-base-url')?.textContent||'');toast('URL copiada!')}
+async function sendViaPainel(){
+  let jid=(G('send-jid')?.value||'').trim()
+  const msg=(G('send-msg')?.value||'').trim()
+  if(!jid||!msg){toast('Informe destino e mensagem!','e');return}
+  // Auto-format number to JID
+  if(!jid.includes('@')){jid=jid.replace(/\D/g,'')+'@s.whatsapp.net'}
+  const r=await post('/api/send',{jid,text:msg})
+  const el=G('send-result')
+  if(el){el.textContent=r.ok?'✅ Enviado!':'❌ '+(r.error||'Erro');el.style.color=r.ok?'var(--ac)':'var(--rd)'}
+  if(r.ok)toast('✅ Mensagem enviada!')
+  else toast('Erro: '+(r.error||''),'e')
+}
+async function doBroadcast(){
+  const msg=(G('broadcast-msg')?.value||'').trim()
+  if(!msg){toast('Digite a mensagem!','e');return}
+  if(!confirm('Enviar para TODOS os grupos?'))return
+  const r=await post('/api/groups/broadcast',{text:msg})
+  r.ok?toast(`✅ Enviado para ${r.count||0} grupos!`):toast('Erro: '+(r.error||''),'e')
+}
+async function testWebhook(){
+  const url=(G('wh-test-url')?.value||'').trim()
+  if(!url){toast('Informe a URL!','e');return}
+  const r=await post('/api/webhooks/test',{url})
+  const el=G('wh-test-result')
+  if(el){el.style.display='block';el.textContent=r.ok?`✅ Resposta (${r.status}):
+${JSON.stringify(r.data,null,2)}`:'❌ '+(r.error||'Erro')}
+}
 // ── Init ─────────────────────────────────────────────────────────
 ;(function init() {
   // Restore tab from URL hash
