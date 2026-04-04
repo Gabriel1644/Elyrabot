@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kaius — Offline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#07080f;color:#e2e8f0;
+  font-family:'JetBrains Mono',monospace;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;padding:24px;
+}
+.card{
+  max-width:360px;
+  background:rgba(14,15,26,.8);
+  border:1px solid #1e2235;
+  border-radius:16px;
+  padding:40px 32px;
+  backdrop-filter:blur(8px);
+}
+.icon{font-size:64px;margin-bottom:16px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+h1{font-family:'Rajdhani',sans-serif;font-size:24px;color:#00ff88;margin-bottom:8px}
+p{color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:24px}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 24px;border-radius:8px;border:none;cursor:pointer;
+  background:#00ff88;color:#000;font-weight:600;font-size:13px;
+  font-family:'JetBrains Mono',monospace;
+  transition:opacity .15s;
+}
+.btn:hover{opacity:.85}
+.status{
+  margin-top:20px;font-size:11px;color:#64748b;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:#ff4757;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🤖</div>
+  <h1>Kaius Offline</h1>
+  <p>Você está sem conexão com o servidor do bot.<br>Verifique se o bot está rodando no Termux e tente novamente.</p>
+  <button class="btn" onclick="window.location.reload()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    Tentar novamente
+  </button>
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-txt">Sem conexão</span>
+  </div>
+</div>
+<script>
+// Tenta reconectar automaticamente
+let attempts = 0
+function tryReconnect() {
+  attempts++
+  fetch('/api/status', { method: 'GET', cache: 'no-store' })
+    .then(r => { if (r.ok) window.location.href = '/' })
+    .catch(() => {})
+  const dot = document.getElementById('status-dot')
+  const txt = document.getElementById('status-txt')
+  if (dot) dot.style.background = attempts % 2 === 0 ? '#ff4757' : '#ffd32a'
+  if (txt) txt.textContent = `Tentativa ${attempts} de reconexão...`
+}
+setInterval(tryReconnect, 5000)
+</script>
+</body>
+</html>

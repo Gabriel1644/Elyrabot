@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- apple-mobile-web-app-capable deprecated, removed -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#07080f">
 <title>Kaius Dashboard</title>
@@ -240,6 +240,64 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
 @keyframes ptcl{from{transform:translate(0,0);opacity:1}to{transform:translate(var(--dx),var(--dy));opacity:0}}
 @keyframes ripple{from{transform:scale(0);opacity:1}to{transform:scale(2.5);opacity:0}}
 
+
+/* ── PWA Install Banner ─────────────────────────────────── */
+#pwa-banner, #pwa-update-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 8000;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(14,15,26,.96);
+  border-top: 1px solid var(--ac);
+  backdrop-filter: blur(12px);
+  animation: slideUp .35s cubic-bezier(.34,1.56,.64,1);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+#pwa-update-banner { border-top-color: var(--bl); }
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.pwa-icon { font-size: 28px; flex-shrink: 0 }
+.pwa-text { flex: 1; min-width: 0 }
+.pwa-title { font-family: var(--f2); font-size: 14px; font-weight: 700; color: var(--tx); }
+.pwa-sub { font-size: 11px; color: var(--tx3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.pwa-close {
+  background: none; border: none; color: var(--tx3); font-size: 16px;
+  cursor: pointer; padding: 4px 8px; border-radius: 4px; line-height: 1;
+  flex-shrink: 0;
+}
+.pwa-close:hover { color: var(--tx); background: var(--bg3) }
+
+/* iOS PWA toast */
+#pwa-ios-toast {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 8001; width: calc(100% - 32px); max-width: 340px;
+  background: rgba(14,15,26,.98); border: 1px solid var(--ac);
+  border-radius: 16px; padding: 20px; text-align: center;
+  backdrop-filter: blur(16px);
+  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 8px 32px rgba(0,255,136,.15);
+}
+@keyframes popIn { from { opacity:0; transform:translateX(-50%) scale(.85) } to { opacity:1; transform:translateX(-50%) scale(1) } }
+
+/* PWA install button in header */
+#btn-install-header {
+  display: none; /* shown when installable */
+  animation: fadeIn .3s ease;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* Status bar for standalone mode */
+.pwa-standalone-indicator {
+  display: none;
+}
+@media (display-mode: standalone) {
+  .pwa-standalone-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--ac); }
+}
+
+/* Safe area insets (notch support) */
+.main { padding-bottom: max(20px, calc(env(safe-area-inset-bottom) + 20px)) }
+@media (max-width: 600px) {
+  .mob-nav { padding-bottom: max(6px, env(safe-area-inset-bottom)) }
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
@@ -248,13 +306,40 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
 </head>
 <body>
 
-<!-- PWA SCREEN -->
-<div id="pwa-screen" style="display:none">
-  <div style="font-size:64px;margin-bottom:8px">🤖</div>
-  <h2>Instale o App</h2>
-  <p>Adicione o Kaius Dashboard à sua tela inicial para acesso rápido e experiência de app nativo.</p>
-  <button class="btn btn-g" style="padding:12px 28px;font-size:14px;margin-bottom:12px" onclick="installPWA()"><i class="fas fa-download"></i> Instalar App</button>
-  <button class="btn btn-q btn-sm" onclick="skipPWA()">Continuar no navegador</button>
+<!-- PWA INSTALL BANNER (compact, não bloqueia) -->
+<div id="pwa-banner" style="display:none">
+  <div class="pwa-icon">🤖</div>
+  <div class="pwa-text">
+    <div class="pwa-title">Instalar Kaius</div>
+    <div class="pwa-sub">Adicione à tela inicial para acesso rápido</div>
+  </div>
+  <button class="btn btn-g btn-sm" id="pwa-install-btn" onclick="installPWA()">
+    <i class="fas fa-download"></i> Instalar
+  </button>
+  <button class="pwa-close" onclick="dismissPWA()" title="Fechar">✕</button>
+</div>
+
+<!-- PWA TOAST para iOS -->
+<div id="pwa-ios-toast" style="display:none">
+  <div class="pwa-ios-inner">
+    <div style="font-size:20px;margin-bottom:8px">📲 Instalar no iPhone</div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:12px">
+      Toque em <b style="color:var(--tx)">Compartilhar</b> <span style="font-size:16px">⬆</span> e depois<br>
+      em <b style="color:var(--ac)">"Adicionar à Tela de Início"</b>
+    </div>
+    <button class="btn btn-q btn-sm" onclick="G('pwa-ios-toast').style.display='none'">Entendi</button>
+  </div>
+</div>
+
+<!-- PWA UPDATE BANNER -->
+<div id="pwa-update-banner" style="display:none">
+  <div class="pwa-icon">🔄</div>
+  <div class="pwa-text">
+    <div class="pwa-title">Nova versão disponível</div>
+    <div class="pwa-sub">Recarregue para aplicar a atualização</div>
+  </div>
+  <button class="btn btn-b btn-sm" onclick="location.reload()">Atualizar</button>
+  <button class="pwa-close" onclick="G('pwa-update-banner').style.display='none'">✕</button>
 </div>
 
 <!-- SIDEBAR (desktop) -->
@@ -279,6 +364,7 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   <div class="ni" data-tab="termux"><i class="fas fa-code"></i><span class="ni-label">Termux</span></div>
   <div class="ni" data-tab="connect"><i class="fas fa-qrcode"></i><span class="ni-label">Conectar</span></div>
   <div class="ni" data-tab="integra"><i class="fas fa-network-wired"></i><span class="ni-label">Integrações</span></div>
+  <div class="ni" data-tab="pwa"><i class="fas fa-mobile-alt"></i><span class="ni-label">PWA</span></div>
 </nav>
 
 <!-- MAIN -->
@@ -292,7 +378,11 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
       <div style="display:flex;align-items:center;gap:6px">
         <span class="badge offline" id="status-badge"></span>
         <span style="font-size:11px;color:var(--tx3)" id="status-txt">Conectando...</span>
+        <span class="pwa-standalone-indicator">📱 App</span>
       </div>
+      <button class="btn btn-q btn-sm" id="btn-install-header" onclick="installPWA()" title="Instalar App">
+        <i class="fas fa-download"></i>
+      </button>
       <button class="btn btn-q btn-sm" id="sfx-btn" onclick="toggleSFX()" title="Sons">🔊</button>
     </div>
   </div>
@@ -887,6 +977,63 @@ input:checked+.tog-t .tog-th{transform:translateX(16px)}
   </div>
 </div>
 
+
+<!-- PWA MANAGEMENT TAB -->
+<div id="tab-pwa" class="tab">
+  <div class="tb"><div class="tb-title">Progressive Web App</div></div>
+
+  <!-- Status atual -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-mobile-alt"></i>Status de Instalação</div></div>
+    <div class="pnl-bd">
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+        <div class="card" id="pwa-card-mode" style="border-color:var(--br)">
+          <span class="card-val" style="font-size:20px">🌐</span>
+          <div class="card-lbl">Modo atual</div>
+          <div id="pwa-mode-label" style="font-size:11px;color:var(--tx3);margin-top:4px">Navegador</div>
+        </div>
+        <div class="card" id="pwa-card-sw" style="border-color:var(--br)">
+          <span class="card-val" style="font-size:20px">⚙️</span>
+          <div class="card-lbl">Service Worker</div>
+          <div id="pwa-sw-label" style="font-size:11px;color:var(--tx3);margin-top:4px">Verificando...</div>
+        </div>
+      </div>
+      <div id="pwa-status-detail" style="font-size:12px;color:var(--tx2);line-height:1.8;padding:10px;background:var(--bg);border-radius:var(--r)"></div>
+    </div>
+  </div>
+
+  <!-- Instalar -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-download"></i>Instalar App</div></div>
+    <div class="pnl-bd">
+      <div id="pwa-install-section">
+        <button class="btn btn-g" style="width:100%;padding:14px;font-size:14px;margin-bottom:10px" onclick="installPWA()">
+          <i class="fas fa-download"></i> Instalar Kaius no dispositivo
+        </button>
+        <div class="hint">
+          <b>Android (Chrome/Edge):</b> clique em Instalar acima.<br>
+          <b>iPhone (Safari):</b> toque em <b>Compartilhar ⬆</b> → <b>Adicionar à Tela de Início</b>.<br>
+          <b>PC (Chrome/Edge):</b> ícone <b>⊕</b> na barra de endereço, ou clique acima.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funcionalidades PWA -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-check-circle"></i>Funcionalidades Disponíveis</div></div>
+    <div class="pnl-bd">
+      <div id="pwa-features-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- Ações -->
+  <div class="pnl"><div class="pnl-hd"><div class="pnl-tt"><i class="fas fa-tools"></i>Ações</div></div>
+    <div class="pnl-bd" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-b btn-sm" onclick="shareDashboard()"><i class="fas fa-share-alt"></i> Compartilhar</button>
+      <button class="btn btn-q btn-sm" onclick="clearSWCache()"><i class="fas fa-trash"></i> Limpar Cache SW</button>
+      <button class="btn btn-q btn-sm" onclick="checkSWUpdate()"><i class="fas fa-sync"></i> Verificar Update</button>
+    </div>
+  </div>
+</div>
+
 </main><!-- /MAIN -->
 
 <!-- MOBILE NAV -->
@@ -1243,7 +1390,7 @@ document.head.insertAdjacentHTML('beforeend',``)
 const LOADERS = {
     files: () => loadFiles(''),
   dash:loadStatus, cmds:loadCmds, menus:loadMenuCfg, auto:loadAutos,
-  cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos, integra:loadIntegra
+  cfg:loadCfg, minions:loadMinions, subdons:loadSDs, grupos:loadGrupos, integra:loadIntegra, pwa:loadPWATab
 }
 
 function goTab(id) {
@@ -1992,78 +2139,277 @@ async function cleanAuth(mode){
   res.ok?toast(res.message||'✅ Feito!'):toast(res.error||'Erro','e')
 }
 
-// ── PWA ──────────────────────────────────────────────────────────
-let _deferredPrompt = null
-const _isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone
 
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _deferredPrompt = e })
-window.addEventListener('appinstalled', () => { const s=G('pwa-screen');if(s)s.style.display='none'; toast('✅ App instalado!') })
+// ════════════════════════════════════════════════════════════
+//  PWA — Sistema completo v30
+//  • Banner discreto (não bloqueia acesso)
+//  • Detecção iOS com instrução correta
+//  • Botão no header quando instalável
+//  • Notificação de update quando SW atualiza
+//  • Nunca mostra se já é standalone
+// ════════════════════════════════════════════════════════════
 
-async function installPWA() {
-  sfx('install')
-  if (_deferredPrompt) {
-    _deferredPrompt.prompt()
-    const {outcome} = await _deferredPrompt.userChoice
-    _deferredPrompt = null
-    if (outcome === 'accepted') { const s=G('pwa-screen');if(s)s.style.display='none' }
+;(function pwaSystem() {
+  // ── Estado ──────────────────────────────────────────────
+  let _prompt      = null    // beforeinstallprompt event
+  let _dismissed   = false   // usuário fechou o banner
+  let _isStandalone = (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    navigator.standalone === true
+  )
+  const _isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+  const _isSafariIOS = _isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios|opios/i.test(navigator.userAgent)
+  const _dismissed_key = 'pwa-dismissed-v30'
+
+  // ── Captura o prompt cedo ────────────────────────────────
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault()
+    _prompt = e
+    // Mostra botão no header imediatamente
+    const btn = G('btn-install-header')
+    if (btn) btn.style.display = 'flex'
+    // Mostra banner após 8s de engajamento se não foi dispensado
+    if (!_isStandalone && !sessionStorage.getItem(_dismissed_key)) {
+      setTimeout(showBanner, 8000)
+    }
+  })
+
+  window.addEventListener('appinstalled', () => {
+    hideBanner()
+    _prompt = null
+    const btn = G('btn-install-header')
+    if (btn) btn.style.display = 'none'
+    toast('✅ Kaius instalado com sucesso! Abra pela tela inicial.', 's', 5000)
+    // Track
+    console.log('[PWA] App instalado')
+  })
+
+  // ── Mostra o banner correto ──────────────────────────────
+  function showBanner() {
+    if (_isStandalone || sessionStorage.getItem(_dismissed_key)) return
+    if (_prompt) {
+      const b = G('pwa-banner')
+      if (b) b.style.display = 'flex'
+    } else if (_isSafariIOS) {
+      const t = G('pwa-ios-toast')
+      if (t) t.style.display = 'block'
+    }
+  }
+
+  function hideBanner() {
+    const b = G('pwa-banner')
+    const t = G('pwa-ios-toast')
+    if (b) b.style.display = 'none'
+    if (t) t.style.display = 'none'
+  }
+
+  // ── Instalar ─────────────────────────────────────────────
+  window.installPWA = async function() {
+    if (_prompt) {
+      _prompt.prompt()
+      const { outcome } = await _prompt.userChoice
+      _prompt = null
+      hideBanner()
+      const btn = G('btn-install-header')
+      if (btn) btn.style.display = 'none'
+      if (outcome !== 'accepted') {
+        // Usuário recusou — não mostra de novo nessa sessão
+        sessionStorage.setItem(_dismissed_key, '1')
+      }
+      return
+    }
+    // Sem prompt (iOS Safari ou browser não suportado)
+    if (_isSafariIOS) {
+      const t = G('pwa-ios-toast')
+      if (t) { t.style.display = 'block'; return }
+    }
+    // Outros iOS browsers
+    if (_isIOS) {
+      toast('Abra no Safari e toque em Compartilhar ⬆ → Adicionar à Tela de Início', 'i', 6000)
+      return
+    }
+    // Fallback genérico
+    toast('No Chrome: menu ⋮ → "Adicionar à tela inicial"', 'i', 5000)
+  }
+
+  window.dismissPWA = function() {
+    hideBanner()
+    sessionStorage.setItem(_dismissed_key, '1')
+  }
+
+  // ── Service Worker com notificação de update ──────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      // Detecta quando há um novo SW esperando para ativar
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing
+        if (!newSW) return
+        newSW.addEventListener('statechange', () => {
+          if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+            // Nova versão disponível!
+            const b = G('pwa-update-banner')
+            if (b) b.style.display = 'flex'
+          }
+        })
+      })
+    }).catch(err => console.warn('[SW] Registro falhou:', err.message))
+
+    // Recebe mensagens do SW
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'SW_UPDATED') {
+        const b = G('pwa-update-banner')
+        if (b) b.style.display = 'flex'
+      }
+      if (e.data?.type === 'SYNC_COMPLETE') {
+        console.log('[PWA] Background sync completo')
+      }
+    })
+
+    // Verifica por updates a cada 30min
+    setInterval(() => {
+      navigator.serviceWorker.getRegistration().then(reg => reg?.update())
+    }, 30 * 60 * 1000)
+  }
+
+  // ── Indica modo standalone ───────────────────────────────
+  if (_isStandalone) {
+    document.documentElement.classList.add('is-pwa')
+    const btn = G('btn-install-header')
+    if (btn) btn.style.display = 'none'
+  }
+
+  // ── Background sync: agenda mensagens pendentes ──────────
+  window.scheduleSync = async function(tag = 'sync-messages') {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      const reg = await navigator.serviceWorker.ready
+      await reg.sync.register(tag).catch(() => {})
+    }
+  }
+
+  // ── Share API: compartilha link do dashboard ─────────────
+  window.shareDashboard = async function() {
+    const data = { title: 'Kaius Bot', text: 'Painel do Kaius Bot', url: location.origin }
+    if (navigator.share && navigator.canShare?.(data)) {
+      await navigator.share(data).catch(() => {})
+    } else {
+      navigator.clipboard?.writeText(location.origin)
+      toast('URL copiada!', 's')
+    }
+  }
+
+  // ── Visibility change: recarrega dados ao voltar ─────────
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && _isStandalone) {
+      // Em modo app, refresh status quando volta ao foco
+      if (typeof loadStatus === 'function') {
+        loadStatus().catch(() => {})
+      }
+    }
+  })
+
+})()
+
+
+
+// ── PWA Tab ─────────────────────────────────────────────
+async function loadPWATab() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const isSafariIOS = isIOS && /safari/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent)
+  const hasPrompt = !!window._pwaPromptAvailable
+
+  // Mode card
+  const modeCard = G('pwa-card-mode'), modeLabel = G('pwa-mode-label')
+  if (isStandalone) {
+    if(modeCard) modeCard.style.borderColor = 'rgba(0,255,136,.4)'
+    const cardVal = modeCard?.querySelector('.card-val'); if(cardVal) cardVal.textContent = '📱'
+    if(modeLabel) modeLabel.textContent = 'App nativo (standalone)'
   } else {
-    const ua=navigator.userAgent.toLowerCase()
-    if (/iphone|ipad/.test(ua)) alert('No iPhone:\n1. Toque em Compartilhar ⬆️\n2. Toque em "Adicionar à Tela de Início"')
-    else alert('No Chrome/Android:\n1. Menu ⋮\n2. "Adicionar à tela inicial"')
+    if(modeLabel) modeLabel.textContent = isIOS ? 'Navegador (iOS)' : 'Navegador'
+  }
+
+  // SW card
+  const swLabel = G('pwa-sw-label'), swCard = G('pwa-card-sw')
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (reg) {
+      if(swCard) swCard.style.borderColor = 'rgba(0,255,136,.4)'
+      const swVal = swCard?.querySelector('.card-val'); if(swVal) swVal.textContent = '✅'
+      if(swLabel) swLabel.textContent = reg.active ? 'Ativo (v30)' : 'Instalando...'
+    } else {
+      if(swLabel) swLabel.textContent = 'Não registrado'
+    }
+  } else {
+    if(swLabel) swLabel.textContent = 'Não suportado'
+  }
+
+  // Status detail
+  const det = G('pwa-status-detail')
+  if (det) det.innerHTML = `
+    📍 URL: <code>${location.origin}</code><br>
+    🌐 Modo: ${isStandalone ? '<span style="color:var(--ac)">Standalone (app)</span>' : 'Navegador'}<br>
+    📱 Plataforma: ${isIOS ? 'iOS' : /android/i.test(navigator.userAgent) ? 'Android' : 'Desktop'}<br>
+    🔒 HTTPS: ${location.protocol === 'https:' ? '<span style="color:var(--ac)">Sim</span>' : '<span style="color:var(--yl)">Não (local OK)</span>'}<br>
+    ⚡ SW: ${'serviceWorker' in navigator ? '<span style="color:var(--ac)">Suportado</span>' : '<span style="color:var(--rd)">Não suportado</span>'}<br>
+    📦 Cache: ${typeof caches !== 'undefined' ? '<span style="color:var(--ac)">Disponível</span>' : '<span style="color:var(--rd)">Indisponível</span>'}
+  `
+
+  // Install section
+  const installSec = G('pwa-install-section')
+  if (installSec) {
+    if (isStandalone) {
+      installSec.innerHTML = '<div class="hint" style="color:var(--ac)">✅ Já instalado como app! Você está usando a versão standalone.</div>'
+    } else if (isSafariIOS) {
+      installSec.innerHTML = `
+        <div class="hint">
+          <b style="color:var(--ac)">Instalar no iPhone:</b><br>
+          1. Toque no ícone <b>Compartilhar</b> ⬆ no Safari<br>
+          2. Role para baixo e toque em <b>"Adicionar à Tela de Início"</b><br>
+          3. Toque em <b>Adicionar</b> no canto superior direito<br><br>
+          <span style="color:var(--tx3)">Use apenas no Safari — Chrome/Firefox no iOS não suportam instalação.</span>
+        </div>`
+    }
+  }
+
+  // Features list
+  const feats = G('pwa-features-list')
+  if (feats) {
+    const checks = [
+      ['serviceWorker' in navigator, 'Service Worker (offline + cache)'],
+      [typeof caches !== 'undefined', 'Cache API (arquivos offline)'],
+      ['Notification' in window, 'Push Notifications'],
+      ['SyncManager' in window, 'Background Sync'],
+      ['share' in navigator, 'Web Share API'],
+      ['clipboard' in navigator, 'Clipboard API'],
+      [isStandalone, 'Modo Standalone (instalado)'],
+      ['standalone' in navigator || window.matchMedia('(display-mode: standalone)').matches, 'Instalável'],
+    ]
+    feats.innerHTML = checks.map(([ok, label]) => `
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <span style="color:${ok?'var(--ac)':'var(--rd)'};font-size:14px">${ok?'✅':'❌'}</span>
+        <span style="color:${ok?'var(--tx)':'var(--tx3)'}">${label}</span>
+      </div>`).join('')
   }
 }
-function skipPWA() { const s=G('pwa-screen');if(s)s.style.display='none' }
 
-if (!_isStandalone) {
-  window.addEventListener('load', () => setTimeout(() => { const s=G('pwa-screen');if(s)s.style.display='flex' }, 1000))
+async function clearSWCache() {
+  const keys = await caches.keys()
+  await Promise.all(keys.map(k => caches.delete(k)))
+  toast('✅ Cache do Service Worker limpo!', 's')
+  sfx('delete')
+  await checkSWUpdate()
 }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{})
+async function checkSWUpdate() {
+  if (!('serviceWorker' in navigator)) return toast('SW não suportado', 'w')
+  const reg = await navigator.serviceWorker.getRegistration()
+  if (!reg) return toast('SW não registrado', 'w')
+  await reg.update()
+  toast('✅ Verificando atualização...', 'i')
+  loadPWATab()
+}
 
-
-// ── Integrações ──────────────────────────────────────────
-async function loadIntegra() {
-  // Fill URL
-  const base = window.location.origin
-  const el = G('api-base-url'); if(el) el.textContent = base
-
-  // Fill known groups in send selector
-  const known = await api('/api/groups')
-  const knownArr = Object.values(known||{}).sort((a,b)=>(a.subject||'').localeCompare(b.subject||''))
-  const sel = G('send-jid-select'); if(sel) {
-    sel.innerHTML = '<option value="">— Grupo conhecido —</option>' +
-      knownArr.map(g=>`<option value="${g.jid}">${g.subject||g.jid}</option>`).join('')
-  }
-}
-function preencheEnvioJid(sel){const v=sel.value;if(v&&G('send-jid'))G('send-jid').value=v}
-function copyApiBase(){navigator.clipboard?.writeText(G('api-base-url')?.textContent||'');toast('URL copiada!')}
-async function sendViaPainel(){
-  let jid=(G('send-jid')?.value||'').trim()
-  const msg=(G('send-msg')?.value||'').trim()
-  if(!jid||!msg){toast('Informe destino e mensagem!','e');return}
-  // Auto-format number to JID
-  if(!jid.includes('@')){jid=jid.replace(/\D/g,'')+'@s.whatsapp.net'}
-  const r=await post('/api/send',{jid,text:msg})
-  const el=G('send-result')
-  if(el){el.textContent=r.ok?'✅ Enviado!':'❌ '+(r.error||'Erro');el.style.color=r.ok?'var(--ac)':'var(--rd)'}
-  if(r.ok)toast('✅ Mensagem enviada!')
-  else toast('Erro: '+(r.error||''),'e')
-}
-async function doBroadcast(){
-  const msg=(G('broadcast-msg')?.value||'').trim()
-  if(!msg){toast('Digite a mensagem!','e');return}
-  if(!confirm('Enviar para TODOS os grupos?'))return
-  const r=await post('/api/groups/broadcast',{text:msg})
-  r.ok?toast(`✅ Enviado para ${r.count||0} grupos!`):toast('Erro: '+(r.error||''),'e')
-}
-async function testWebhook(){
-  const url=(G('wh-test-url')?.value||'').trim()
-  if(!url){toast('Informe a URL!','e');return}
-  const r=await post('/api/webhooks/test',{url})
-  const el=G('wh-test-result')
-  if(el){el.style.display='block';el.textContent=r.ok?`✅ Resposta (${r.status}):
-${JSON.stringify(r.data,null,2)}`:'❌ '+(r.error||'Erro')}
-}
 // ── Init ─────────────────────────────────────────────────────────
 ;(function init() {
   // Restore tab from URL hash
