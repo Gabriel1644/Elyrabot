@@ -1,13 +1,13 @@
 {
   "name": "Kaius Bot Dashboard",
   "short_name": "Kaius",
-  "description": "Painel de controle completo do bot Kaius para WhatsApp. Gerencie comandos, automações, minions e muito mais.",
+  "description": "Painel de controle completo do Kaius Bot para WhatsApp.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#07080f",
-  "theme_color": "#00ff88",
+  "background_color": "#08090f",
+  "theme_color": "#08090f",
   "orientation": "any",
   "lang": "pt-BR",
   "dir": "ltr",
@@ -27,60 +27,32 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.svg",
+      "src": "/assets/logo.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Dashboard do Kaius Bot"
-    }
-  ],
   "shortcuts": [
     {
-      "name": "Comandos",
-      "short_name": "Cmds",
-      "description": "Gerenciar comandos do bot",
-      "url": "/#cmds",
+      "name": "Dashboard",
+      "url": "/#dashboard",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Logs ao Vivo",
-      "short_name": "Logs",
-      "description": "Ver logs em tempo real",
       "url": "/#logs",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Automações",
-      "short_name": "Auto",
-      "description": "Gerenciar automações",
-      "url": "/#auto",
+      "name": "Comandos",
+      "url": "/#commands",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Configurações",
-      "short_name": "Config",
-      "description": "Configurar o bot",
-      "url": "/#cfg",
+      "url": "/#config",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
-  ],
-  "share_target": {
-    "action": "/",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
-  "related_applications": [],
-  "handle_links": "preferred"
+  ]
 }

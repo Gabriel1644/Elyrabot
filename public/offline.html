@@ -1,72 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Kaius — Offline</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:#07080f;color:#e2e8f0;
-  font-family:'JetBrains Mono',monospace;
-  display:flex;align-items:center;justify-content:center;
-  min-height:100vh;text-align:center;padding:24px;
-}
-.card{
-  max-width:360px;
-  background:rgba(14,15,26,.8);
-  border:1px solid #1e2235;
-  border-radius:16px;
-  padding:40px 32px;
-  backdrop-filter:blur(8px);
-}
-.icon{font-size:64px;margin-bottom:16px;animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-h1{font-family:'Rajdhani',sans-serif;font-size:24px;color:#00ff88;margin-bottom:8px}
-p{color:#94a3b8;font-size:13px;line-height:1.7;margin-bottom:24px}
-.btn{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:10px 24px;border-radius:8px;border:none;cursor:pointer;
-  background:#00ff88;color:#000;font-weight:600;font-size:13px;
-  font-family:'JetBrains Mono',monospace;
-  transition:opacity .15s;
-}
-.btn:hover{opacity:.85}
-.status{
-  margin-top:20px;font-size:11px;color:#64748b;
-  display:flex;align-items:center;justify-content:center;gap:6px;
-}
-.dot{width:7px;height:7px;border-radius:50%;background:#ff4757;flex-shrink:0}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaius · Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #08090f;
+      color: #e2e8f0;
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 24px;
+    }
+    .container { max-width: 400px; }
+    .icon { margin-bottom: 24px; opacity: 0.4; }
+    .icon svg { width: 64px; height: 64px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; color: #00e87a; }
+    p { color: #6b7894; font-size: 0.9rem; line-height: 1.6; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #00e87a;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn:hover { background: #00b85f; }
+    .version { margin-top: 32px; font-family: monospace; font-size: 0.7rem; color: #3d4460; }
+  </style>
 </head>
 <body>
-<div class="card">
-  <div class="icon">🤖</div>
-  <h1>Kaius Offline</h1>
-  <p>Você está sem conexão com o servidor do bot.<br>Verifique se o bot está rodando no Termux e tente novamente.</p>
-  <button class="btn" onclick="window.location.reload()">
-    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    Tentar novamente
-  </button>
-  <div class="status">
-    <div class="dot" id="status-dot"></div>
-    <span id="status-txt">Sem conexão</span>
+  <div class="container">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#00e87a" stroke-width="1.5">
+        <path d="M1 6l10.5 7.5L22 6"/>
+        <path d="M22 6H2a1 1 0 00-1 1v10a1 1 0 001 1h20a1 1 0 001-1V7a1 1 0 00-1-1z"/>
+        <line x1="1" y1="20" x2="9" y2="12"/>
+        <line x1="23" y1="20" x2="15" y2="12"/>
+      </svg>
+    </div>
+    <h1>Sem conexão</h1>
+    <p>O painel do Kaius não consegue se conectar ao servidor.<br>Verifique se o bot está rodando e tente novamente.</p>
+    <a class="btn" href="/" onclick="location.reload()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+      </svg>
+      Tentar novamente
+    </a>
+    <div class="version">Kaius Dashboard v31 — PWA offline</div>
   </div>
-</div>
-<script>
-// Tenta reconectar automaticamente
-let attempts = 0
-function tryReconnect() {
-  attempts++
-  fetch('/api/status', { method: 'GET', cache: 'no-store' })
-    .then(r => { if (r.ok) window.location.href = '/' })
-    .catch(() => {})
-  const dot = document.getElementById('status-dot')
-  const txt = document.getElementById('status-txt')
-  if (dot) dot.style.background = attempts % 2 === 0 ? '#ff4757' : '#ffd32a'
-  if (txt) txt.textContent = `Tentativa ${attempts} de reconexão...`
-}
-setInterval(tryReconnect, 5000)
-</script>
 </body>
 </html>
