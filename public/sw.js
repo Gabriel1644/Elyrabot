@@ -23,6 +23,7 @@ const SHELL_FILES = [
   '/components/Users.js',
   '/components/Config.js',
   '/components/System.js',
+  '/components/BangPanel.js',
   '/manifest.json',
   '/offline.html',
   'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap',

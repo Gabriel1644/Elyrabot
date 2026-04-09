@@ -247,6 +247,7 @@ const PAGE_TITLES = {
   webhooks:    'Webhooks',
   groups:      'Grupos',
   users:       'Usuários',
+  bang:        '⚡ Ações Rápidas',
   config:      'Configurações',
   system:      'Sistema',
 }
@@ -259,6 +260,7 @@ const PAGE_COMPONENTS = {
   webhooks:    typeof PageWebhooks    !== 'undefined' ? PageWebhooks    : null,
   groups:      typeof PageGroups      !== 'undefined' ? PageGroups      : null,
   users:       typeof PageUsers       !== 'undefined' ? PageUsers       : null,
+  bang:        typeof PageBangPanel   !== 'undefined' ? PageBangPanel   : null,
   config:      typeof PageConfig      !== 'undefined' ? PageConfig      : null,
   system:      typeof PageSystem      !== 'undefined' ? PageSystem      : null,
 }
