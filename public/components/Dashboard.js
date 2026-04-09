@@ -70,7 +70,7 @@ const PageDashboard = (() => {
           ${quickActionBtn('Recarregar Comandos', ICONS.reload, 'reload', 'green')}
           ${quickActionBtn('Ver Logs', ICONS.zap, 'logs', 'blue')}
           ${quickActionBtn('Gerenciar Comandos', ICONS.code, 'commands', 'purple')}
-          ${quickActionBtn('Configurações', ICONS.ai, 'config', 'orange')}
+          ${quickActionBtn('⚡ Ações Rápidas (Bang)', ICONS.zap, 'bang', 'red')}
         </div>
       </div>
 
@@ -273,16 +273,22 @@ const PageDashboard = (() => {
   }
 
   function bindEvents() {
-    // Quick actions
+    // Quick actions: 'reload' chama API diretamente, resto navega
     document.querySelectorAll('[data-quickaction]').forEach(btn => {
-      btn.addEventListener('click', () => loadPage(btn.dataset.quickaction))
+      btn.addEventListener('click', async () => {
+        const action = btn.dataset.quickaction
+        if (action === 'reload') {
+          btn.disabled = true
+          try {
+            const r = await POST('/api/reload')
+            toastSuccess('Recarregado!', `${r.total} comandos`)
+          } catch(e){ toastError('Erro', e.message) }
+          finally { btn.disabled = false }
+        } else {
+          loadPage(action)
+        }
+      })
     })
-
-    // Reload
-    const reloadBtnDash = document.querySelector('[data-quickaction="reload"]')
-    if (reloadBtnDash) {
-      // O botão do sidebar já faz o reload, este navega para logs
-    }
 
     // Enviar mensagem
     document.getElementById('sendMsgBtn')?.addEventListener('click', async () => {
