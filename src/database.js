@@ -81,3 +81,4 @@ export const automationsDB  = new JsonDB('automations')    // automações (trig
 export const allowedGroupsDB  = new JsonDB('allowedgroups')  // whitelist
 export const bannedGroupsDB   = new JsonDB('bannedgroups')   // blacklist — bot bloqueado
 export const schedulerDB     = new JsonDB('scheduler')     // agendador de mensagens
+export const cmdPriorityDB   = new JsonDB('cmdpriority')   // prioridade de comandos (painel)

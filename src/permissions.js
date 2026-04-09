@@ -159,6 +159,32 @@ export function isGroupAllowed(jid) {
   return allowedGroupsDB.has(jid)
 }
 
+// ── Ban de usuários (via painel) ─────────────────────────
+export function banUser(userId, motivo = 'via painel') {
+  const num = cleanNum(userId)
+  if (!num) return
+  subdonsDB.set(num, {
+    num, role: ROLES.BANIDO, label: motivo,
+    adicionadoEm: new Date().toISOString(),
+    permissoes: {},
+  })
+  const m = minionsDB.get(num, {})
+  minionsDB.set(num, { ...m, bloqueado: true, role: ROLES.BANIDO })
+}
+
+export function unbanUser(userId) {
+  const num = cleanNum(userId)
+  subdonsDB.delete(num)
+  const m = minionsDB.get(num, {})
+  minionsDB.set(num, { ...m, bloqueado: false, role: ROLES.USUARIO })
+}
+
+export function listBannedUsers() {
+  return Object.values(subdonsDB.all())
+    .filter(u => u.role === ROLES.BANIDO)
+    .sort((a, b) => new Date(b.adicionadoEm) - new Date(a.adicionadoEm))
+}
+
 export function banGroup(jid) { bannedGroupsDB.set(jid, true) }
 export function unbanGroup(jid) { bannedGroupsDB.delete(jid) }
 export function isGroupBanned(jid) { return bannedGroupsDB.has(jid) }

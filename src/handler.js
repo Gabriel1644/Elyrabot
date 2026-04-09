@@ -172,30 +172,14 @@ export async function handleMessage(sock, msg) {
     }
   }
 
-  // ── XP por mensagem (grupos) ─────────────────────────────
-  if (!isMe && isGrupo && !texto.startsWith(p)) {
-    // Fire and forget — não bloqueia
-    import('./commands/fun/xp.js').then(({ addXP }) => {
-      const r = addXP(userId, usuario)
-      if (r.levelUp) {
-        sock.sendMessage(from, {
-          text: `🎉 @${userId.split('@')[0]} subiu para o *Nível ${r.nivel}*! ⚡`,
-          mentions: [userId]
-        }).catch(() => {})
-      }
-    }).catch(() => {})
-  }
-
   // ── Tracking (assíncrono — não bloqueia o processamento) ──
   if (!isMe) {
-    // Não bloqueia: tracking roda em background
     const _trackAsync = async () => {
       let grupoNome = null
       if (isGrupo) {
         try { const m = await sock.groupMetadata(from); grupoNome = m.subject } catch {}
       }
       trackUser({ userId, usuario, isGrupo, grupo: grupoNome, from })
-      // Level-up notifications handled by xp.js addXP above
     }
     _trackAsync().catch(() => {})
   }

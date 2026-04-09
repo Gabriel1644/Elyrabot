@@ -8,7 +8,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import { logInfo, logOk, logWarn } from './logger.js'
 import { loadHooksFromModule, removeHook, listHooks } from './hooks.js'
-import { configDB } from './database.js'
+import { configDB, cmdPriorityDB } from './database.js'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // metadados editados pelo painel         // ← único import
 
@@ -172,11 +172,26 @@ export function toggleCommand(name, state) {
   configDB.set('comandosAtivos', overrides)
 }
 
+// ── Prioridade de comandos ────────────────────────────────
+// Comandos com prioridade maior sobrepõem os de prioridade menor no handler
+export function getCommandPriority(name) {
+  return cmdPriorityDB.get(name, 0)
+}
+
+export function setCommandPriority(name, priority) {
+  cmdPriorityDB.set(name, Number(priority) || 0)
+}
+
+// Retorna o comando com maior prioridade para o nome dado
+export function getCommandByPriority(name) {
+  const cmd = commandMap.get(name) || commandMap.get(aliasMap.get(name))
+  return cmd || null
+}
+
 export function getCommandList() {
   const overrides   = configDB.get('comandosAtivos', {})
   const dynAliases  = getDynamicAliases()
   return Array.from(commandMap.values()).map(cmd => {
-    // Merge static aliases with dynamic aliases for this command
     const staticAliases = cmd.aliases || []
     const dynForCmd = Object.entries(dynAliases)
       .filter(([, c]) => c === cmd.name)
@@ -190,8 +205,9 @@ export function getCommandList() {
       usage:       cmd.usage || `!${cmd.name}`,
       enabled:     cmd.name in overrides ? overrides[cmd.name] : (cmd.enabled !== false),
       cooldown:    cmd.cooldown || 0,
+      priority:    cmdPriorityDB.get(cmd.name, 0),
     }
-  })
+  }).sort((a, b) => b.priority - a.priority)
 }
 
 // ── Shell / npm ───────────────────────────────────────────

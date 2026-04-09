@@ -10,12 +10,12 @@ import os from 'os'
 import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
 import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
-import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand } from './loader.js'
+import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand, getCommandPriority, setCommandPriority } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB, bannedGroupsDB } from './database.js'
 import JsonDB from './database.js'
 const cmdMetaDB = new JsonDB('cmdmeta')  // armazena desc/usage/cooldown editados pelo painel
 import { getUptime } from './utils.js'
-import { getMinionList, getMinionStats, addSubdono, removeSubdono, listSubdonos, ROLE_NAMES } from './permissions.js'
+import { getMinionList, getMinionStats, addSubdono, removeSubdono, listSubdonos, ROLE_NAMES, banUser, unbanUser, listBannedUsers } from './permissions.js'
 import { getAllContribs, getContribStats, approveContrib, rejectContrib } from './contributions.js'
 import { pullFullBot } from './github.js'
 
@@ -937,6 +937,74 @@ export function startDashboard() {
       const r = await checkForUpdates()
       if (r.updated) await loadCommands()
       res.json(r)
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Prioridade de Comandos ───────────────────────────────
+  app.get('/api/commands/:name/priority', auth, (req, res) => {
+    try {
+      const priority = getCommandPriority(req.params.name)
+      res.json({ name: req.params.name, priority })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  app.post('/api/commands/:name/priority', auth, (req, res) => {
+    try {
+      const { priority } = req.body
+      if (priority === undefined) return res.status(400).json({ error: 'priority obrigatório' })
+      setCommandPriority(req.params.name, priority)
+      res.json({ ok: true, name: req.params.name, priority: Number(priority) })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Prioridade de Hooks ───────────────────────────────────
+  app.post('/api/hooks/priority', auth, async (req, res) => {
+    try {
+      const { id, priority } = req.body
+      if (!id || priority === undefined) return res.status(400).json({ error: 'id e priority obrigatórios' })
+      const { listHooks, registerHook, removeHook } = await import('./hooks.js')
+      const hook = listHooks().find(h => h.id === id)
+      if (!hook) return res.status(404).json({ error: 'Hook não encontrado' })
+      const updated = { ...hook, priority: Number(priority) }
+      removeHook(id)
+      registerHook(updated)
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Ban de Usuários (painel Bang) ─────────────────────────
+  app.get('/api/users/banned', auth, (req, res) => {
+    try { res.json(listBannedUsers()) }
+    catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  app.post('/api/users/ban', auth, (req, res) => {
+    try {
+      const { num, motivo } = req.body
+      if (!num) return res.status(400).json({ error: 'num obrigatório' })
+      banUser(num, motivo || 'via painel')
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  app.delete('/api/users/ban/:num', auth, (req, res) => {
+    try {
+      unbanUser(decodeURIComponent(req.params.num))
+      res.json({ ok: true })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+  // ── Quick Actions (Bang Panel) ────────────────────────────
+  app.post('/api/quick/exec', auth, async (req, res) => {
+    try {
+      const { jid, command } = req.body
+      if (!jid || !command) return res.status(400).json({ error: 'jid e command obrigatórios' })
+      if (!_sock) return res.status(503).json({ error: 'Bot não conectado' })
+      // Envia o comando como mensagem (o bot irá processar)
+      const prefix = CONFIG.prefixo || '!'
+      const text = command.startsWith(prefix) ? command : `${prefix}${command}`
+      await _sock.sendMessage(jid, { text })
+      res.json({ ok: true, sent: text })
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
 
