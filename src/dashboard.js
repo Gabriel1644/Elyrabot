@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url'
 import os from 'os'
 import Groq from 'groq-sdk'
 import { CONFIG } from './config.js'
-import { getLogs, setSocket, logInfo, getLastStatus } from './logger.js'
+import { getLogs, setSocket, logInfo, logWarn, getLastStatus } from './logger.js'
 import { getCommandList, loadCommands, toggleCommand, createCommand, deleteCommand, execShell, installPackage, getCommandSource, addDynamicAlias, removeDynamicAlias, listAliasesForCommand, getCommandPriority, setCommandPriority } from './loader.js'
 import { configDB, statsDB, groupsDB, rpgDB, cmdPermsDB, menuTargetDB, minionsDB, subdonsDB, automationsDB, allowedGroupsDB, schedulerDB, bannedGroupsDB } from './database.js'
 import JsonDB from './database.js'
@@ -20,6 +20,7 @@ import { getAllContribs, getContribStats, approveContrib, rejectContrib } from '
 import { pullFullBot } from './github.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT = path.resolve(__dirname, '..')  // raiz do projeto
 
 
 // ── Gemini support ────────────────────────────────────
@@ -57,7 +58,6 @@ import axios from 'axios'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 const execAsync = promisify(exec)
-import { promisify } from 'util'
 import fs from 'fs'
 import { CONFIG } from '../../config.js'
 import { configDB, groupsDB, usersDB, statsDB } from '../../database.js'
@@ -65,6 +65,10 @@ import { handleAIResponse } from '../../ai.js'
 
 Regras: ES Modules, try/catch sempre, cooldown mínimo 2s para APIs, use import() dinâmico.
 Responda APENAS com código JS.`
+
+let _sock = null  // referência global ao socket WhatsApp
+export function getSock() { return _sock }
+export function setDashSock(sock) { _sock = sock }
 
 export function startDashboard() {
   const app  = express()
@@ -962,12 +966,9 @@ export function startDashboard() {
     try {
       const { id, priority } = req.body
       if (!id || priority === undefined) return res.status(400).json({ error: 'id e priority obrigatórios' })
-      const { listHooks, registerHook, removeHook } = await import('./hooks.js')
-      const hook = listHooks().find(h => h.id === id)
-      if (!hook) return res.status(404).json({ error: 'Hook não encontrado' })
-      const updated = { ...hook, priority: Number(priority) }
-      removeHook(id)
-      registerHook(updated)
+      const { updateHookPriority } = await import('./hooks.js')
+      const ok = updateHookPriority(id, priority)
+      if (!ok) return res.status(404).json({ error: 'Hook não encontrado' })
       res.json({ ok: true })
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
@@ -1005,6 +1006,36 @@ export function startDashboard() {
       const text = command.startsWith(prefix) ? command : `${prefix}${command}`
       await _sock.sendMessage(jid, { text })
       res.json({ ok: true, sent: text })
+    } catch (e) { res.status(500).json({ error: e.message }) }
+  })
+
+
+  // ── Salvar API Keys no .env (groqKey/geminiKey são ENV_ONLY) ──
+  // Edita o arquivo .env diretamente para persistir as chaves
+  app.post('/api/config/envkeys', auth, async (req, res) => {
+    try {
+      const { groqKey, geminiKey } = req.body
+      const envPath = path.join(__dirname, '../.env')
+      if (!fs.existsSync(envPath)) return res.status(404).json({ error: '.env não encontrado' })
+
+      let envContent = fs.readFileSync(envPath, 'utf-8')
+
+      const setEnvVar = (content, key, value) => {
+        const regex = new RegExp(`^${key}=.*$`, 'm')
+        if (regex.test(content)) return content.replace(regex, `${key}=${value}`)
+        return content + `\n${key}=${value}`
+      }
+
+      if (groqKey && !groqKey.startsWith('***')) {
+        envContent = setEnvVar(envContent, 'GROQ_API_KEY', groqKey)
+      }
+      if (geminiKey && !geminiKey.startsWith('***')) {
+        envContent = setEnvVar(envContent, 'GEMINI_API_KEY', geminiKey)
+      }
+
+      fs.writeFileSync(envPath, envContent, 'utf-8')
+      logInfo('API keys atualizadas no .env')
+      res.json({ ok: true, message: 'Chaves salvas no .env. Reinicie o bot para aplicar.' })
     } catch (e) { res.status(500).json({ error: e.message }) }
   })
 

@@ -79,6 +79,15 @@ export function removeHook(id) {
   return ok
 }
 
+// Atualiza prioridade sem perder a função handle
+export function updateHookPriority(id, priority) {
+  const hook = _hooks.get(id)
+  if (!hook) return false
+  hook.priority = Number(priority)
+  _hooks.set(id, hook)
+  return true
+}
+
 export function listHooks() {
   return [..._hooks.values()].sort((a, b) => a.priority - b.priority)
 }
