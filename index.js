@@ -8,7 +8,7 @@ import { CONFIG }  from './src/config.js'
 import { printBanner, startPulse, stopPulse } from './src/utils.js'
 import { handleMessage, setBotJid, setSock as setHandlerSock } from './src/handler.js'
 import { loadCommands } from './src/loader.js'
-import { startDashboard } from './src/dashboard.js'
+import { startDashboard, setDashSock } from './src/dashboard.js'
 import { logInfo, logOk, logWarn, logError, emitStatus, emitQR } from './src/logger.js'
 import { groupsDB, configDB, allowedGroupsDB } from './src/database.js'
 import { initErrorTracker, setTrackerSocket, setTrackerSock } from './src/errorTracker.js'
@@ -91,6 +91,7 @@ async function conectar() {
   })
 
   _sock = sock
+  setDashSock(sock)   // Passa o sock ao dashboard para send/broadcast
   setHandlerSock(sock)
   setTrackerSock(sock)
 
